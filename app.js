@@ -50,6 +50,8 @@ checkInteractions(ingredients);
 
 displayInteractions(interactionWarnings);
 
+await saveResult(text, interactionWarnings.join("; "));
+
 await analyzeWithAI(ingredients);
 
 }
@@ -179,5 +181,33 @@ return text
 .replace(/\s/g,",")
 .replace(/,+/g,",")
 .trim();
+
+}
+
+async function testConnection(){
+
+const { data, error } = await supabase
+.from("test")
+.select("*")
+
+console.log(data, error)
+
+}
+
+testConnection()
+
+
+async function saveResult(input, result){
+
+const { data, error } = await supabase
+.from("ingredient_checks")
+.insert([
+{
+input: input,
+result: result
+}
+])
+
+console.log(data, error)
 
 }
