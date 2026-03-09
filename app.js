@@ -1,5 +1,6 @@
 console.log("Wykta app started");
 
+
 function extractIngredients(text){
 
 return text
@@ -7,6 +8,7 @@ return text
 .map(i => i.trim().toLowerCase());
 
 }
+
 
 function checkInteractions(ingredients){
 
@@ -34,6 +36,7 @@ return warnings;
 
 }
 
+
 async function analyzeIngredients(){
 
 let text =
@@ -51,6 +54,7 @@ await analyzeWithAI(ingredients);
 
 }
 
+
 function displayInteractions(warnings){
 
 let container =
@@ -66,7 +70,10 @@ container.innerHTML += "<p>" + w + "</p>";
 
 }
 
+
 async function analyzeWithAI(ingredients){
+
+try{
 
 let response = await fetch(
 "https://YOURPROJECT.supabase.co/functions/v1/analyze",
@@ -83,6 +90,94 @@ ingredients: ingredients
 let data = await response.json();
 
 document.getElementById("ingredientResult")
-.innerText = data.result;
+.innerText = data.result || "No AI response yet.";
+
+}catch(error){
+
+console.error(error);
+
+document.getElementById("ingredientResult")
+.innerText = "AI analysis unavailable.";
+
+}
+
+}
+
+
+async function startScan(){
+
+try{
+
+const video =
+document.getElementById("camera");
+
+const stream =
+await navigator.mediaDevices.getUserMedia({
+video: true
+});
+
+video.srcObject = stream;
+
+}catch(error){
+
+alert("Camera access failed.");
+
+}
+
+}
+
+
+function capture(){
+
+const video =
+document.getElementById("camera");
+
+const canvas =
+document.getElementById("snapshot");
+
+const context =
+canvas.getContext("2d");
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+context.drawImage(
+video,
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+scanImage(canvas);
+
+}
+
+
+async function scanImage(canvas){
+
+const result =
+await Tesseract.recognize(
+canvas,
+"eng"
+);
+
+let text = result.data.text;
+
+text = cleanOCR(text);
+
+document.getElementById("ingredients").value = text;
+
+}
+
+
+function cleanOCR(text){
+
+return text
+.replace(/\n/g,",")
+.replace(/\s{2,}/g,",")
+.replace(/\s/g,",")
+.replace(/,+/g,",")
+.trim();
 
 }
