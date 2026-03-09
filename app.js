@@ -90,10 +90,10 @@ ingredients: ingredients
 })
 });
 
-let data = await response.json();
+let data = await response.text();
 
 document.getElementById("ingredientResult")
-.innerText = data.result || "No AI response yet.";
+.innerText = data || "No AI response yet.";
 
 }catch(error){
 
