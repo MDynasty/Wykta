@@ -82,7 +82,8 @@ let response = await fetch(
 {
 method:"POST",
 headers:{
-"Content-Type":"application/json"
+"Content-Type":"application/json",
+"Authorization": `Bearer ${window.SUPABASE_ANON_KEY}`
 },
 body: JSON.stringify({
 ingredients: ingredients
@@ -122,7 +123,9 @@ video.srcObject = stream;
 
 }catch(error){
 
-alert("Camera access failed.");
+console.error("Camera error:", error);
+
+alert("Camera access failed. Please ensure you're on HTTPS or localhost, and allow camera permissions.");
 
 }
 

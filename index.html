@@ -42,27 +42,25 @@ placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol"></textarea>
 
 <canvas id="snapshot" style="display:none;"></canvas>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-
-<script src="app.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
 const SUPABASE_URL = "https://rryuicpnjxxzsmkotgrj.supabase.co"
 
 const SUPABASE_ANON_KEY =
-"YOUR_FULL_ANON_KEY"
+"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeXVpY3Buanh4enNta290Z3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTY1NzYsImV4cCI6MjA4ODYzMjU3Nn0.283wfb_yVscOYWHigTbIFjm6GIeVmSiVuM-XwyinNBc"
 
 const supabase = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_ANON_KEY
 )
+
+window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
 </script>
 
 <script src="app.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 
 </body>
 </html>
