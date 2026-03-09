@@ -1,0 +1,1 @@
+console.log("Wykta app started");
