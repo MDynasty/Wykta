@@ -78,7 +78,7 @@ async function analyzeWithAI(ingredients){
 try{
 
 let response = await fetch(
-"https://YOURPROJECT.supabase.co/functions/v1/analyze",
+"https://rryuicpnjxxzsmkotgrj.supabase.co/functions/v1/analyze",
 {
 method:"POST",
 headers:{
