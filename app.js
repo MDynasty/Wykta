@@ -50,8 +50,6 @@ el.innerText = warnings.join("\n")
 
 async function saveResult(input, result){
 
-try{
-
 const { data, error } =
 await supabaseClient
 .from("ingredient_checks")
@@ -61,10 +59,13 @@ input: input,
 result: result
 }
 ])
+.select()
 
 console.log("Saved:", data, error)
 
-}catch(err){
+}
+
+catch(err){
 
 console.error("Database save error:", err)
 
