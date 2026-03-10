@@ -231,9 +231,8 @@ runOCR(canvas)
 /* -----------------------
 OCR TEXT RECOGNITION
 ----------------------- */
-
 /* -----------------------
-OCR TEXT RECOGNITION (Simpler)
+OCR TEXT RECOGNITION (Simpler, main thread)
 ----------------------- */
 async function runOCR(canvas) {
   try {
