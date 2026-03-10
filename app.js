@@ -23,7 +23,7 @@ INGREDIENT PARSER
 function extractIngredients(text){
 
 return text
-.split(",")
+.split(/,|;|•|\n/)
 .map(i => i.trim().toLowerCase())
 .filter(i => i.length > 0)
 
@@ -129,8 +129,13 @@ console.log("AI result:", data)
 const el = document.getElementById("ingredientResult")
 
 if(el){
-el.innerText =
-data?.analysis || "No AI analysis returned."
+
+const lines = (data?.analysis || "No AI analysis returned.").split("\n")
+
+el.innerHTML = lines.map(line =>
+`<div class="result-card">${line}</div>`
+).join("")
+
 }
 
 }catch(err){
@@ -140,13 +145,7 @@ console.error("AI function error:", err)
 const el = document.getElementById("ingredientResult")
 
 if(el){
-
-const lines = (data?.analysis || "").split("\n")
-
-el.innerHTML = lines.map(line =>
-`<div class="result-card">${line}</div>`
-).join("")
-
+el.innerText = "AI analysis unavailable."
 }
 
 }
@@ -220,6 +219,10 @@ canvas.width = video.videoWidth
 canvas.height = video.videoHeight
 
 ctx.drawImage(video, 0, 0)
+
+if(stream){
+stream.getTracks().forEach(track => track.stop())
+}
 
 runOCR(canvas)
 
