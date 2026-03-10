@@ -1,27 +1,17 @@
-const SUPABASE_URL = "https://rryuicpnjxxzsmkotgrj.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeXVpY3Buanh4enNta290Z3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTY1NzYsImV4cCI6MjA4ODYzMjU3Nn0.283wfb_yVscOYWHigTbIFjm6GIeVmSiVuM-XwyinNBc";
-
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-console.log("Wykta app started");
-console.log("supabaseClient object", supabaseClient);
-console.log("supabaseClient.from function", typeof supabaseClient.from);
-console.log("window.supabase object", window.supabase);
-
-
+console.log("Wykta app started")
 
 function extractIngredients(text){
 
 return text
 .split(",")
-.map(i => i.trim().toLowerCase());
+.map(i => i.trim().toLowerCase())
+.filter(i => i.length > 0)
 
 }
 
-
 function checkInteractions(ingredients){
 
-let warnings = [];
+let warnings = []
 
 if(
 ingredients.includes("retinol") &&
@@ -29,182 +19,107 @@ ingredients.includes("glycolic acid")
 ){
 warnings.push(
 "Retinol combined with glycolic acid may increase skin irritation."
-);
+)
 }
 
 if(
-ingredients.includes("salicylic acid") &&
-ingredients.includes("benzoyl peroxide")
+ingredients.includes("benzoyl peroxide") &&
+ingredients.includes("retinol")
 ){
 warnings.push(
-"Salicylic acid and benzoyl peroxide together may cause dryness."
-);
+"Benzoyl peroxide may deactivate retinol."
+)
 }
 
-return warnings;
+return warnings
 
 }
-
-
-async function analyzeIngredients(){
-
-let text =
-document.getElementById("ingredients").value;
-
-let ingredients =
-extractIngredients(text);
-
-let interactionWarnings =
-checkInteractions(ingredients);
-
-displayInteractions(interactionWarnings);
-
-await saveResult(text, interactionWarnings.join("; "));
-
-await analyzeWithAI(ingredients);
-
-}
-
 
 function displayInteractions(warnings){
 
-let container =
-document.getElementById("interactionResult");
+const el = document.getElementById("interactionWarnings")
 
-container.innerHTML = "";
+if(!warnings.length){
+el.innerText = "No obvious ingredient conflicts detected."
+return
+}
 
-warnings.forEach(w => {
-
-container.innerHTML += "<p>" + w + "</p>";
-
-});
+el.innerText = warnings.join("\n")
 
 }
 
+async function saveResult(input, result){
+
+try{
+
+const { data, error } =
+await supabaseClient
+.from("ingredient_checks")
+.insert([
+{
+input: input,
+result: result
+}
+])
+
+console.log("Saved:", data, error)
+
+}catch(err){
+
+console.error("Database save error:", err)
+
+}
+
+}
 
 async function analyzeWithAI(ingredients){
 
-try {
+try{
 
 const { data, error } =
 await supabaseClient.functions.invoke(
 "Wykta-backend",
 {
 body: { ingredients }
-});
+}
+)
 
-if (error) throw error;
+if(error) throw error
+
+console.log("AI result:", data)
 
 document.getElementById("ingredientResult").innerText =
-data?.analysis || "No AI result";
+data?.analysis || "No AI analysis returned."
 
-} catch (error) {
+}catch(err){
 
-console.error("AI function error:", error);
+console.error("AI function error:", err)
+
 document.getElementById("ingredientResult").innerText =
-"AI analysis unavailable.";
+"AI analysis unavailable."
 
 }
 
 }
 
+async function analyzeIngredients(){
 
-async function startScan(){
+let text =
+document.getElementById("ingredients").value
 
-try{
+let ingredients =
+extractIngredients(text)
 
-const video =
-document.getElementById("camera");
+let warnings =
+checkInteractions(ingredients)
 
-const stream =
-await navigator.mediaDevices.getUserMedia({
-video: true
-});
+displayInteractions(warnings)
 
-video.srcObject = stream;
+await saveResult(
+text,
+warnings.join("; ")
+)
 
-}catch(error){
-
-console.error("Camera error:", error);
-
-alert("Camera access failed. Please ensure you're on HTTPS or localhost, and allow camera permissions.");
-
-}
-
-}
-
-
-function capture(){
-
-const video =
-document.getElementById("camera");
-
-const canvas =
-document.getElementById("snapshot");
-
-const context =
-canvas.getContext("2d");
-
-canvas.width = video.videoWidth;
-canvas.height = video.videoHeight;
-
-context.drawImage(
-video,
-0,
-0,
-canvas.width,
-canvas.height
-);
-
-scanImage(canvas);
-
-}
-
-
-async function scanImage(canvas){
-
-const result =
-await Tesseract.recognize(
-canvas,
-"eng"
-);
-
-let text = result.data.text;
-
-text = cleanOCR(text);
-
-document.getElementById("ingredients").value = text;
-
-}
-
-
-function cleanOCR(text){
-
-return text
-.replace(/\n/g,",")
-.replace(/\s{2,}/g,",")
-.replace(/\s/g,",")
-.replace(/,+/g,",")
-.trim();
-
-}
-
-
-async function saveResult(input, result){
-
-const { data, error } = await supabaseClient
-.from("ingredient_checks")
-.insert([
-{
-input,
-result
-}
-])
-
-if(error){
-console.error("Insert error:", error)
-}else{
-console.log("Saved:", data)
-}
+await analyzeWithAI(ingredients)
 
 }
