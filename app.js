@@ -84,45 +84,19 @@ container.innerHTML += "<p>" + w + "</p>";
 
 async function analyzeWithAI(ingredients){
 
-try{
-
-let response = await fetch(
-"https://rryuicpnjxxzsmkotgrj.supabase.co/functions/v1/analyze",
-{
-method:"POST",
-headers:{
-"Content-Type":"application/json",
-"Authorization": `Bearer ${window.SUPABASE_ANON_KEY}`
-},
-body: JSON.stringify({
-ingredients: ingredients
-})
-});
-
-let text = await response.text();
-console.log("AI function status", response.status, response.statusText);
-console.log("AI function raw response", text);
-
-if (!response.ok) {
-  throw new Error(`AI function error ${response.status}: ${text}`);
-}
-
-let data;
 try {
-  data = JSON.parse(text);
-} catch (e) {
-  data = { result: text };
-}
 
-document.getElementById("ingredientResult")
-.innerText = data.result || data || "No AI response yet.";
+const { data, error } = await supabaseClient.functions.invoke("Wykta-backend", {
+  body: { ingredients }
+});
+if (error) throw error;
+const resultText = typeof data === "string" ? data : (data?.result || JSON.stringify(data));
+document.getElementById("ingredientResult").innerText = resultText || "No AI response yet.";
 
-}catch(error){
+} catch (error) {
 
-console.error(error);
-
-document.getElementById("ingredientResult")
-.innerText = "AI analysis unavailable.";
+console.error("AI function error:", error);
+document.getElementById("ingredientResult").innerText = "AI analysis unavailable.";
 
 }
 
