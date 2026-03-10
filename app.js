@@ -8,7 +8,9 @@ const supabaseUrl = "https://rryuicpnjxxzsmkotgrj.supabase.co"
 
 const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeXVpY3Buanh4enNta290Z3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTY1NzYsImV4cCI6MjA4ODYzMjU3Nn0.283wfb_yVscOYWHigTbIFjm6GIeVmSiVuM-XwyinNBc"
 
-const supabaseClient = supabase.createClient(
+const { createClient } = supabase
+
+const supabaseClient = createClient(
   supabaseUrl,
   supabaseKey
 )
