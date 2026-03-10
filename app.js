@@ -6,7 +6,7 @@ SUPABASE CONNECTION
 
 const supabaseUrl = "https://rryuicpnjxxzsmkotgrj.supabase.co"
 
-const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeXVpY3Buanh4enNta290Z3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTY1NzYsImV4cCI6MjA4ODYzMjU3Nn0.283wfb_yVscOYWHigTbIFjm6GIeVmSiVuM-XwyinNBc"
+const supabaseKey = "eyJhbGc..."; // sensitive
 
 const { createClient } = supabase
 
@@ -232,18 +232,34 @@ runOCR(canvas)
 OCR TEXT RECOGNITION
 ----------------------- */
 
-async function runOCR(canvas){
+/* -----------------------
+OCR TEXT RECOGNITION (CSP-SAFE)
+----------------------- */
 
-const result = await Tesseract.recognize(
-canvas,
-"eng"
-)
+// Create Tesseract worker
+const ocrWorker = Tesseract.createWorker({
+  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/worker.min.js',
+  corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract-core.wasm.js',
+  logger: m => console.log(m) // optional: logs OCR progress
+});
 
-const text = result.data.text
+async function runOCR(canvas) {
+  try {
+    await ocrWorker.load();
+    await ocrWorker.loadLanguage('eng');
+    await ocrWorker.initialize('eng');
 
-document.getElementById("ocrResult").innerText = text
-document.getElementById("ingredients").value = text
+    const { data } = await ocrWorker.recognize(canvas);
+    const text = data.text;
 
-analyzeIngredients()
+    document.getElementById("ocrResult").innerText = text;
+    document.getElementById("ingredients").value = text;
 
+    await analyzeIngredients();
+  } catch (err) {
+    console.error("OCR error:", err);
+    document.getElementById("ocrResult").innerText = "OCR failed. Try again.";
+  } finally {
+    await ocrWorker.terminate();
+  }
 }

@@ -95,24 +95,23 @@ border-radius:10px;
 
 <div class="section">
 
-<label>Language</label>
-
+<label for="language">Language</label>
 <select id="language">
-<option value="en">English</option>
-<option value="fr">Français</option>
-<option value="de">Deutsch</option>
-<option value="zh">中文</option>
+  <option value="en">English</option>
+  <option value="fr">Français</option>
+  <option value="de">Deutsch</option>
+  <option value="zh">中文</option>
 </select>
 
 </div>
 
+<label for="ingredients">Ingredients</label>
 <textarea
-id="ingredients"
-rows="6"
-cols="60"
-placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol">
+  id="ingredients"
+  rows="6"
+  cols="60"
+  placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol">
 </textarea>
-
 <br><br>
 
 <button onclick="analyzeIngredients()">
