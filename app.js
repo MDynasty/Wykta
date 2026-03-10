@@ -195,17 +195,45 @@ console.log(data, error)
 testConnection()
 
 
+async function analyzeIngredients(ingredients){
+
+const { data, error } =
+await supabase.functions.invoke(
+"Wykta-backend",
+{
+body: { ingredients }
+}
+)
+
+if(error){
+console.error(error)
+return
+}
+
+const result = data.analysis
+
+await saveResult(
+ingredients,
+result
+)
+
+}
+
 async function saveResult(input, result){
 
 const { data, error } = await supabaseClient
 .from("ingredient_checks")
 .insert([
 {
-input: input,
-result: result
+input,
+result
 }
 ])
 
-console.log(data, error)
+if(error){
+console.error("Insert error:", error)
+}else{
+console.log("Saved:", data)
+}
 
 }
