@@ -112,11 +112,13 @@ async function analyzeWithAI(ingredients){
 
 try{
 
+const lang = document.getElementById("language").value
+
 const { data, error } =
 await supabaseClient.functions.invoke(
 "Wykta-backend",
 {
-body: { ingredients }
+body: { ingredients, lang }
 }
 )
 
@@ -138,7 +140,13 @@ console.error("AI function error:", err)
 const el = document.getElementById("ingredientResult")
 
 if(el){
-el.innerText = "AI analysis unavailable."
+
+const lines = (data?.analysis || "").split("\n")
+
+el.innerHTML = lines.map(line =>
+`<div class="result-card">${line}</div>`
+).join("")
+
 }
 
 }
@@ -231,5 +239,8 @@ canvas,
 const text = result.data.text
 
 document.getElementById("ocrResult").innerText = text
+document.getElementById("ingredients").value = text
+
+analyzeIngredients()
 
 }
