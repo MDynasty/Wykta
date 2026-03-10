@@ -233,23 +233,11 @@ OCR TEXT RECOGNITION
 ----------------------- */
 
 /* -----------------------
-OCR TEXT RECOGNITION (CSP-SAFE)
+OCR TEXT RECOGNITION (Simpler)
 ----------------------- */
-
-// Create Tesseract worker
-const ocrWorker = Tesseract.createWorker({
-  workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/worker.min.js',
-  corePath: 'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract-core.wasm.js',
-  logger: m => console.log(m) // optional: logs OCR progress
-});
-
 async function runOCR(canvas) {
   try {
-    await ocrWorker.load();
-    await ocrWorker.loadLanguage('eng');
-    await ocrWorker.initialize('eng');
-
-    const { data } = await ocrWorker.recognize(canvas);
+    const { data } = await Tesseract.recognize(canvas, 'eng');
     const text = data.text;
 
     document.getElementById("ocrResult").innerText = text;
@@ -259,7 +247,5 @@ async function runOCR(canvas) {
   } catch (err) {
     console.error("OCR error:", err);
     document.getElementById("ocrResult").innerText = "OCR failed. Try again.";
-  } finally {
-    await ocrWorker.terminate();
   }
 }
