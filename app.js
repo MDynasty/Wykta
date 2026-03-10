@@ -90,8 +90,7 @@ const { data, error } = await supabaseClient.functions.invoke("Wykta-backend", {
   body: { ingredients }
 });
 if (error) throw error;
-const resultText = typeof data === "string" ? data : (data?.result || JSON.stringify(data));
-document.getElementById("ingredientResult").innerText = resultText || "No AI response yet.";
+document.getElementById("ingredientResult").innerText = data?.result || (typeof data==="string"? data : JSON.stringify(data));
 
 } catch (error) {
 
