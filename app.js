@@ -1,5 +1,21 @@
 console.log("Wykta app started")
 
+/* -----------------------
+SUPABASE CONNECTION
+----------------------- */
+
+const supabaseUrl = "https://rryuicpnjxxzsmkotgrj.supabase.co"
+const supabaseKey = "YOUR_PUBLIC_ANON_KEY"
+
+const supabaseClient = window.supabase.createClient(
+  supabaseUrl,
+  supabaseKey
+)
+
+/* -----------------------
+INGREDIENT PARSER
+----------------------- */
+
 function extractIngredients(text){
 
 return text
@@ -8,6 +24,10 @@ return text
 .filter(i => i.length > 0)
 
 }
+
+/* -----------------------
+INTERACTION CHECKER
+----------------------- */
 
 function checkInteractions(ingredients){
 
@@ -35,9 +55,15 @@ return warnings
 
 }
 
+/* -----------------------
+DISPLAY WARNINGS
+----------------------- */
+
 function displayInteractions(warnings){
 
 const el = document.getElementById("interactionWarnings")
+
+if(!el) return
 
 if(!warnings.length){
 el.innerText = "No obvious ingredient conflicts detected."
@@ -48,9 +74,13 @@ el.innerText = warnings.join("\n")
 
 }
 
+/* -----------------------
+SAVE TO DATABASE
+----------------------- */
+
 async function saveResult(input, result){
 
-try {
+try{
 
 const { data, error } =
 await supabaseClient
@@ -58,17 +88,21 @@ await supabaseClient
 .insert([{ input, result }])
 .select()
 
-if (error) throw error
+if(error) throw error
 
 console.log("Saved:", data)
 
-} catch(err){
+}catch(err){
 
 console.error("Database save error:", err)
 
 }
 
 }
+
+/* -----------------------
+AI ANALYSIS
+----------------------- */
 
 async function analyzeWithAI(ingredients){
 
@@ -86,29 +120,40 @@ if(error) throw error
 
 console.log("AI result:", data)
 
-document.getElementById("ingredientResult").innerText =
+const el = document.getElementById("ingredientResult")
+
+if(el){
+el.innerText =
 data?.analysis || "No AI analysis returned."
+}
 
 }catch(err){
 
 console.error("AI function error:", err)
 
-document.getElementById("ingredientResult").innerText =
-"AI analysis unavailable."
+const el = document.getElementById("ingredientResult")
 
+if(el){
+el.innerText = "AI analysis unavailable."
 }
 
 }
+
+}
+
+/* -----------------------
+MAIN ANALYSIS BUTTON
+----------------------- */
 
 async function analyzeIngredients(){
 
-let text =
+const text =
 document.getElementById("ingredients").value
 
-let ingredients =
+const ingredients =
 extractIngredients(text)
 
-let warnings =
+const warnings =
 checkInteractions(ingredients)
 
 displayInteractions(warnings)
@@ -119,5 +164,68 @@ warnings.join("; ")
 )
 
 await analyzeWithAI(ingredients)
+
+}
+
+/* -----------------------
+CAMERA SCAN
+----------------------- */
+
+let stream
+
+async function startScan(){
+
+try{
+
+stream = await navigator.mediaDevices.getUserMedia({
+video: true
+})
+
+const video = document.getElementById("camera")
+
+video.srcObject = stream
+
+}catch(err){
+
+console.error("Camera error:", err)
+
+}
+
+}
+
+/* -----------------------
+CAPTURE IMAGE
+----------------------- */
+
+async function capture(){
+
+const video = document.getElementById("camera")
+const canvas = document.getElementById("snapshot")
+
+const ctx = canvas.getContext("2d")
+
+canvas.width = video.videoWidth
+canvas.height = video.videoHeight
+
+ctx.drawImage(video, 0, 0)
+
+runOCR(canvas)
+
+}
+
+/* -----------------------
+OCR TEXT RECOGNITION
+----------------------- */
+
+async function runOCR(canvas){
+
+const result = await Tesseract.recognize(
+canvas,
+"eng"
+)
+
+const text = result.data.text
+
+document.getElementById("ocrResult").innerText = text
 
 }
