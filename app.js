@@ -86,16 +86,23 @@ async function analyzeWithAI(ingredients){
 
 try {
 
-const { data, error } = await supabaseClient.functions.invoke("Wykta-backend", {
-  body: { ingredients }
+const { data, error } =
+await supabaseClient.functions.invoke(
+"Wykta-backend",
+{
+body: { ingredients }
 });
+
 if (error) throw error;
-document.getElementById("ingredientResult").innerText = data?.result || (typeof data==="string"? data : JSON.stringify(data));
+
+document.getElementById("ingredientResult").innerText =
+data?.analysis || "No AI result";
 
 } catch (error) {
 
 console.error("AI function error:", error);
-document.getElementById("ingredientResult").innerText = "AI analysis unavailable.";
+document.getElementById("ingredientResult").innerText =
+"AI analysis unavailable.";
 
 }
 
@@ -182,42 +189,6 @@ return text
 
 }
 
-async function testConnection(){
-
-const { data, error } = await supabaseClient
-.from("test")
-.select("*")
-
-console.log(data, error)
-
-}
-
-testConnection()
-
-
-async function analyzeIngredients(ingredients){
-
-const { data, error } =
-await supabase.functions.invoke(
-"Wykta-backend",
-{
-body: { ingredients }
-}
-)
-
-if(error){
-console.error(error)
-return
-}
-
-const result = data.analysis
-
-await saveResult(
-ingredients,
-result
-)
-
-}
 
 async function saveResult(input, result){
 
