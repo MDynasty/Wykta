@@ -1,3 +1,8 @@
+const SUPABASE_URL = "https://rryuicpnjxxzsmkotgrj.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeXVpY3Buanh4enNta290Z3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTY1NzYsImV4cCI6MjA4ODYzMjU3Nn0.283wfb_yVscOYWHigTbIFjm6GIeVmSiVuM-XwyinNBc";
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 console.log("Wykta app started");
 
 
@@ -90,10 +95,23 @@ ingredients: ingredients
 })
 });
 
-let data = await response.text();
+let text = await response.text();
+console.log("AI function status", response.status, response.statusText);
+console.log("AI function raw response", text);
+
+if (!response.ok) {
+  throw new Error(`AI function error ${response.status}: ${text}`);
+}
+
+let data;
+try {
+  data = JSON.parse(text);
+} catch (e) {
+  data = { result: text };
+}
 
 document.getElementById("ingredientResult")
-.innerText = data || "No AI response yet.";
+.innerText = data.result || data || "No AI response yet.";
 
 }catch(error){
 
