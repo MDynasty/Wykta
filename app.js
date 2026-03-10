@@ -55,15 +55,10 @@ try {
 const { data, error } =
 await supabaseClient
 .from("ingredient_checks")
-.insert([
-{
-input: input,
-result: result
-}
-])
+.insert([{ input, result }])
 .select()
 
-if(error) throw error
+if (error) throw error
 
 console.log("Saved:", data)
 
