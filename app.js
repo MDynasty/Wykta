@@ -4,6 +4,10 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 console.log("Wykta app started");
+console.log("supabase object", supabase);
+console.log("supabase.from function", typeof supabase.from);
+console.log("window.supabase object", window.supabase);
+
 
 
 function extractIngredients(text){
