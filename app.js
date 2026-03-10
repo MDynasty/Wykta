@@ -1,11 +1,11 @@
 const SUPABASE_URL = "https://rryuicpnjxxzsmkotgrj.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJyeXVpY3Buanh4enNta290Z3JqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNTY1NzYsImV4cCI6MjA4ODYzMjU3Nn0.283wfb_yVscOYWHigTbIFjm6GIeVmSiVuM-XwyinNBc";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 console.log("Wykta app started");
-console.log("supabase object", supabase);
-console.log("supabase.from function", typeof supabase.from);
+console.log("supabaseClient object", supabaseClient);
+console.log("supabaseClient.from function", typeof supabaseClient.from);
 console.log("window.supabase object", window.supabase);
 
 
@@ -211,7 +211,7 @@ return text
 
 async function testConnection(){
 
-const { data, error } = await supabase
+const { data, error } = await supabaseClient
 .from("test")
 .select("*")
 
@@ -224,7 +224,7 @@ testConnection()
 
 async function saveResult(input, result){
 
-const { data, error } = await supabase
+const { data, error } = await supabaseClient
 .from("ingredient_checks")
 .insert([
 {
