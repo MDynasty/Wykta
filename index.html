@@ -3,6 +3,7 @@
 
 <head>
 <title>Wykta</title>
+<meta charset="UTF-8">
 </head>
 
 <body>
@@ -11,26 +12,42 @@
 
 <p>Paste a product ingredient list to understand what each ingredient means.</p>
 
-<textarea id="ingredients" rows="6" cols="60"
-placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol"></textarea>
+<textarea
+id="ingredients"
+rows="6"
+cols="60"
+placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol">
+</textarea>
 
 <br><br>
 
-<button onclick="analyzeIngredients()">Analyze Ingredients</button>
+<button onclick="analyzeIngredients()">
+Analyze Ingredients
+</button>
 
-<h2>Ingredient Analysis</h2>
+<hr>
 
-<div id="ingredientResult"></div>
+<h2>AI Ingredient Analysis</h2>
+
+<div id="ingredientResult">
+AI results will appear here
+</div>
+
+<hr>
 
 <h2>Interaction Warnings</h2>
 
-<div id="interactionResult"></div>
+<div id="interactionWarnings">
+Ingredient conflicts will appear here
+</div>
 
 <hr>
 
 <h2>Scan Ingredient Label</h2>
 
-<button onclick="startScan()">Open Camera</button>
+<button onclick="startScan()">
+Open Camera
+</button>
 
 <br><br>
 
@@ -38,15 +55,26 @@ placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol"></textarea>
 
 <br><br>
 
-<button onclick="capture()">Capture</button>
+<button onclick="capture()">
+Capture
+</button>
 
 <canvas id="snapshot" style="display:none;"></canvas>
 
+<hr>
+
+<h2>Detected Text</h2>
+
+<div id="ocrResult"></div>
+
+<!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script src="app.js"></script>
-
+<!-- OCR library -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<!-- Your application logic -->
+<script src="app.js"></script>
 
 </body>
 </html>
