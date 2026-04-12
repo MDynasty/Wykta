@@ -137,19 +137,39 @@ function displayDefinitions(definitions) {
   ).join("")
 }
 
+function displayAIAnalysis(message, rawLines) {
+  const el = document.getElementById("aiAnalysis")
+  if(!el) return
+
+  el.innerHTML = ""
+
+  if(message){
+    el.insertAdjacentHTML(
+      "beforeend",
+      `<div class="warning">${message}</div>`
+    )
+  }
+
+  if(Array.isArray(rawLines) && rawLines.length){
+    el.insertAdjacentHTML(
+      "beforeend",
+      rawLines.map(line =>
+        `<div class="result-card">${line}</div>`
+      ).join("")
+    )
+  }
+}
+
 /* -----------------------
 AI ANALYSIS
 ----------------------- */
 
 async function analyzeWithAI(ingredients){
-  const el = document.getElementById("ingredientResult")
+  displayAIAnalysis("", [])
 
   if(!supabaseClient){
-    if(el && ingredients.length){
-      el.insertAdjacentHTML(
-        "afterbegin",
-        `<div class="warning">AI analysis unavailable. Showing local ingredient definitions instead.</div>`
-      )
+    if(ingredients.length){
+      displayAIAnalysis("AI analysis unavailable. Showing local ingredient definitions instead.", [])
     }
     return
   }
@@ -169,19 +189,13 @@ async function analyzeWithAI(ingredients){
 
     console.log("AI result:", data)
 
-    if(!el) return
-
-    const lines = (data?.analysis || "No AI analysis returned.").split("\n")
-    el.innerHTML = lines.map(line =>
-      `<div class="result-card">${line}</div>`
-    ).join("")
+    const analysis = (data && data.analysis) ? data.analysis : "No AI analysis returned."
+    const lines = analysis.split("\n")
+    displayAIAnalysis("", lines)
 
   } catch(err){
     console.error("AI function error:", err)
-
-    if(el){
-      el.innerText = "AI analysis unavailable."
-    }
+    displayAIAnalysis("AI analysis unavailable. Showing local ingredient definitions instead.", [])
   }
 }
 
