@@ -22,6 +22,7 @@ if (supabaseClient) {
 }
 
 const ingredientDefinitions = {
+  // English
   water: "A moisturizing base and solvent used in most skincare formulations.",
   glycerin: "A humectant that draws moisture to the skin and helps maintain hydration.",
   niacinamide: "Vitamin B3 that can help improve skin texture, reduce pores, and brighten tone.",
@@ -31,8 +32,45 @@ const ingredientDefinitions = {
   "benzoyl peroxide": "An acne-fighting ingredient that kills acne-causing bacteria.",
   "tocopherol": "Vitamin E, an antioxidant that protects skin from free-radical damage.",
   "sodium hyaluronate": "A form of hyaluronic acid that helps skin retain moisture.",
-  "aloe vera": "A soothing plant extract with calming and hydrating properties."
+  "aloe vera": "A soothing plant extract with calming and hydrating properties.",
+
+  // German
+  wasser: "Eine feuchtigkeitsspendende Basis und Lösungsmittel, die in den meisten Hautpflegeformulierungen verwendet wird.",
+  glycerin: "Ein Feuchthaltemittel, das Feuchtigkeit in die Haut zieht und die Hydratation unterstützt.",
+  niacinamid: "Vitamin B3, das helfen kann, die Hauttextur zu verbessern, Poren zu reduzieren und den Teint aufzuhellen.",
+  phenoxyethanol: "Ein Konservierungsmittel, das häufig verwendet wird, um das Bakterienwachstum in Kosmetika zu verhindern.",
+  retinol: "Ein Vitamin-A-Derivat, das die Zellumsatzrate erhöht und feine Linien verbessern kann.",
+  "glykolsäure": "Ein AHA-Peeling, das hilft, abgestorbene Hautzellen zu entfernen und die Textur zu glätten.",
+  "benzoylperoxid": "Ein aknebekämpfender Inhaltsstoff, der akneverursachende Bakterien abtötet.",
+  tocopherol: "Vitamin E, ein Antioxidans, das die Haut vor freien Radikalen schützt.",
+  "natriumhyaluronat": "Eine Form von Hyaluronsäure, die hilft, die Hautfeuchtigkeit zu speichern.",
+  "aloe vera": "Ein beruhigender Pflanzenextrakt mit beruhigenden und feuchtigkeitsspendenden Eigenschaften.",
+
+  // French
+  eau: "Une base hydratante et solvant utilisée dans la plupart des formulations de soins de la peau.",
+  glycérine: "Un humectant qui attire l'humidité dans la peau et aide à maintenir l'hydratation.",
+  niacinamide: "Vitamine B3 qui peut aider à améliorer la texture de la peau, réduire les pores et éclaircir le teint.",
+  phénoxyéthanol: "Un conservateur couramment utilisé pour prévenir la croissance bactérienne dans les cosmétiques.",
+  rétinol: "Un dérivé de la vitamine A qui stimule le renouvellement cellulaire et peut améliorer les rides fines.",
+  "acide glycolique": "Un exfoliant AHA qui aide à éliminer les cellules mortes de la peau et à lisser la texture.",
+  "peroxyde de benzoyle": "Un ingrédient anti-acné qui tue les bactéries causant l'acné.",
+  tocophérol: "Vitamine E, un antioxydant qui protège la peau des dommages causés par les radicaux libres.",
+  "hyaluronate de sodium": "Une forme d'acide hyaluronique qui aide la peau à retenir l'humidité.",
+  "aloe vera": "Un extrait végétal apaisant avec des propriétés calmantes et hydratantes.",
+
+  // Chinese
+  水: "一种保湿基质和溶剂，用于大多数护肤配方。",
+  甘油: "一种保湿剂，能将水分吸入皮肤，帮助维持水分。",
+  烟酰胺: "维生素B3，可以帮助改善皮肤质地、减少毛孔、提亮肤色。",
+  苯氧乙醇: "一种常用防腐剂，用于防止化妆品中的细菌生长。",
+  视黄醇: "一种维生素A衍生物，能促进细胞更新，并改善细纹。",
+  果酸: "一种AHA去角质剂，帮助去除死皮细胞，平滑质地。",
+  过氧化苯甲酰: "一种抗痘成分，能杀死引起痘痘的细菌。",
+  生育酚: "维生素E，一种抗氧化剂，能保护皮肤免受自由基损伤。",
+  玻尿酸钠: "一种玻尿酸形式，帮助皮肤保持水分。",
+  芦荟: "一种舒缓植物提取物，具有镇静和保湿特性。"
 }
+
 
 function extractIngredients(text){
   return text
@@ -144,6 +182,22 @@ const languageNames = {
   zh: "中文"
 }
 
+const languageLocales = {
+  en: "en",
+  fr: "fr-FR",
+  de: "de-DE",
+  zh: "zh-CN"
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
 function displayAIAnalysis(message, rawLines) {
   const el = document.getElementById("aiAnalysis")
   if(!el) return
@@ -184,12 +238,18 @@ async function analyzeWithAI(ingredients){
   try{
     const lang = document.getElementById("language").value
     const langName = languageNames[lang] || lang
+    const langLocale = languageLocales[lang] || lang
 
     const { data, error } =
       await supabaseClient.functions.invoke(
         "Wykta-backend",
         {
-          body: { ingredients, lang, langName }
+          body: {
+            ingredients,
+            lang: langLocale,
+            targetLanguage: langName,
+            promptLanguage: langName
+          }
         }
       )
 
@@ -198,7 +258,15 @@ async function analyzeWithAI(ingredients){
     console.log("AI result:", data)
 
     if(!data || !data.analysis){
-      displayAIAnalysis(`AI analysis returned no text for ${langName}.`, [])
+      displayAIAnalysis(`AI returned no analysis for ${langName}. Raw response shown below.`, [])
+      const aiEl = document.getElementById("aiAnalysis")
+      if(aiEl){
+        const rawResponse = escapeHtml(JSON.stringify(data || {}, null, 2))
+        aiEl.insertAdjacentHTML(
+          "beforeend",
+          `<pre class="result-card" style="white-space: pre-wrap;">${rawResponse}</pre>`
+        )
+      }
       return
     }
 
