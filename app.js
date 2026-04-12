@@ -137,6 +137,13 @@ function displayDefinitions(definitions) {
   ).join("")
 }
 
+const languageNames = {
+  en: "English",
+  fr: "Français",
+  de: "Deutsch",
+  zh: "中文"
+}
+
 function displayAIAnalysis(message, rawLines) {
   const el = document.getElementById("aiAnalysis")
   if(!el) return
@@ -176,12 +183,13 @@ async function analyzeWithAI(ingredients){
 
   try{
     const lang = document.getElementById("language").value
+    const langName = languageNames[lang] || lang
 
     const { data, error } =
       await supabaseClient.functions.invoke(
         "Wykta-backend",
         {
-          body: { ingredients, lang }
+          body: { ingredients, lang, langName }
         }
       )
 
@@ -189,8 +197,12 @@ async function analyzeWithAI(ingredients){
 
     console.log("AI result:", data)
 
-    const analysis = (data && data.analysis) ? data.analysis : "No AI analysis returned."
-    const lines = analysis.split("\n")
+    if(!data || !data.analysis){
+      displayAIAnalysis(`AI analysis returned no text for ${langName}.`, [])
+      return
+    }
+
+    const lines = data.analysis.split("\n")
     displayAIAnalysis("", lines)
 
   } catch(err){
