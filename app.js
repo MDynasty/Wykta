@@ -409,7 +409,7 @@ function displayAIAnalysis(message, rawLines) {
     startIdx = 1
   }
 
-  const dangerWords  = ["allergen", "allergène", "allergen", "allergy", "avoid"]
+  const dangerWords  = ["allergen", "allergène", "allergy", "avoid"]
   const cautionWords = ["irritat", "sensitiv", "caution", "monitor", "deactivat", "increase skin", "may affect", "peut augmenter", "kann"]
 
   filteredLines.slice(startIdx).forEach(line => {
