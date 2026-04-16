@@ -21,31 +21,37 @@ if (supabaseClient) {
   console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
 }
 
+const knownIngredients = [
+  "water", "aqua", "glycerin", "niacinamide", "hyaluronic acid", "sodium hyaluronate",
+  "retinol", "glycolic acid", "salicylic acid", "benzoyl peroxide", "vitamin c",
+  "ascorbic acid", "ceramide", "panthenol", "shea butter", "cetearyl alcohol",
+  "fragrance", "parfum", "phenoxyethanol", "tocopherol", "zinc oxide", "titanium dioxide",
+  "petrolatum", "mineral oil", "dimethicone", "aloe vera", "green tea extract",
+  "rice", "wheat", "milk", "egg", "soy", "peanut", "tree nuts", "almond", "cashew",
+  "hazelnut", "fish", "shellfish", "shrimp", "sesame", "salt", "sugar", "palm oil",
+  "coconut oil", "olive oil", "citric acid", "sodium benzoate", "potassium sorbate",
+  "monosodium glutamate", "msg", "artificial flavor"
+]
+
+const knownIngredientMatchers = knownIngredients
+  .slice()
+  .sort((a, b) => b.length - a.length)
+  .map(ingredient => {
+    const escapedIngredient = ingredient.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    return {
+      ingredient,
+      regex: new RegExp(`(^|[^a-z0-9])${escapedIngredient}($|[^a-z0-9])`, "i")
+    }
+  })
+
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
   if(!normalizedText) return []
 
-  const knownIngredients = [
-    "water", "aqua", "glycerin", "niacinamide", "hyaluronic acid", "sodium hyaluronate",
-    "retinol", "glycolic acid", "salicylic acid", "benzoyl peroxide", "vitamin c",
-    "ascorbic acid", "ceramide", "panthenol", "shea butter", "cetearyl alcohol",
-    "fragrance", "parfum", "phenoxyethanol", "tocopherol", "zinc oxide", "titanium dioxide",
-    "petrolatum", "mineral oil", "dimethicone", "aloe vera", "green tea extract",
-    "rice", "wheat", "milk", "egg", "soy", "peanut", "tree nuts", "almond", "cashew",
-    "hazelnut", "fish", "shellfish", "shrimp", "sesame", "salt", "sugar", "palm oil",
-    "coconut oil", "olive oil", "citric acid", "sodium benzoate", "potassium sorbate",
-    "monosodium glutamate", "msg", "artificial flavor"
-  ]
-
-  const escapedKnown = knownIngredients
-    .slice()
-    .sort((a, b) => b.length - a.length)
-    .map(i => i.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-
-  const foundByVocabulary = escapedKnown
-    .filter(ingredient => new RegExp(`(^|[^a-z0-9])${ingredient}($|[^a-z0-9])`, "i").test(normalizedText))
-    .map(i => i.replace(/\\([.*+?^${}()|[\]\\])/g, "$1"))
+  const foundByVocabulary = knownIngredientMatchers
+    .filter(({ regex }) => regex.test(normalizedText))
+    .map(({ ingredient }) => ingredient)
 
   const splitByPunctuation = normalizedText
     .split(/[,\.;:•\n\r\t，；。、|/\\]+/)
@@ -57,17 +63,11 @@ function extractIngredients(text){
     : foundByVocabulary.length
       ? []
       : normalizedText
-        .split(/\s+(?:and|und|et|y|e|和)\s+|\s{2,}/i)
+        .split(/\s+(?:and|und|et|和)\s+|\s{2,}/i)
         .map(i => i.trim())
         .filter(i => i.length > 0)
 
-  const unique = []
-  ;[...foundByVocabulary, ...fallbackSplit].forEach(item => {
-    if(!item) return
-    if(!unique.includes(item)) unique.push(item)
-  })
-
-  return unique
+  return [...new Set([...foundByVocabulary, ...fallbackSplit].filter(Boolean))]
 }
 
 
