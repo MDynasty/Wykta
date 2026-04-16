@@ -1,164 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 <title>Wykta – Ingredient Analyzer</title>
 <meta charset="UTF-8">
-
-<style>
-
-body{
-font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto;
-background:#f3f4f6;
-margin:0;
-padding:40px;
-display:flex;
-justify-content:center;
-}
-
-.app{
-width:650px;
-background:white;
-border-radius:14px;
-padding:30px;
-box-shadow:0 15px 40px rgba(0,0,0,0.08);
-}
-
-h1{
-margin-top:0;
-font-size:28px;
-}
-
-.subtitle{
-color:#666;
-margin-bottom:20px;
-}
-
-textarea{
-width:100%;
-height:120px;
-border-radius:10px;
-border:1px solid #ddd;
-padding:12px;
-font-size:14px;
-}
-
-button{
-background:#4f46e5;
-color:white;
-border:none;
-padding:12px 18px;
-border-radius:10px;
-cursor:pointer;
-margin-top:10px;
-font-weight:500;
-}
-
-button:hover{
-background:#4338ca;
-}
-
-.section{
-margin-top:25px;
-}
-
-.result-card{
-background:#f9fafb;
-border-radius:10px;
-padding:12px;
-margin-top:8px;
-}
-
-.warning{
-background:#fff3cd;
-padding:12px;
-border-radius:10px;
-margin-top:8px;
-}
-
-video{
-margin-top:10px;
-border-radius:10px;
-}
-
-</style>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="app">
+<!-- ── NAVIGATION ───────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#">
+      <div class="brand-mark">⚗</div>
+      <span>Wykta</span>
+    </a>
+    <div class="nav-right">
+      <select id="language" class="lang-select" aria-label="Language">
+        <option value="en">🌐 English</option>
+        <option value="fr">🌐 Français</option>
+        <option value="de">🌐 Deutsch</option>
+        <option value="zh">🌐 中文</option>
+      </select>
+    </div>
+  </div>
+</nav>
 
-<h1>Wykta Ingredient Analyzer</h1>
+<main class="main">
 
-<p>Paste a product ingredient list to understand what each ingredient means.</p>
+  <!-- ── HERO ─────────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="hero-badge">✨ AI-Powered Ingredient Intelligence</div>
+    <h1 class="hero-title" id="heroTitle" data-i18n="heroTitle">
+      Know exactly what's <span class="gradient-text">in your products</span>
+    </h1>
+    <p class="hero-sub" id="heroSubtitle" data-i18n="heroSubtitle">
+      Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.
+    </p>
+    <div class="chips">
+      <span class="chip" data-i18n="chipCoverage">✅ Food + Skincare Coverage</span>
+      <span class="chip" data-i18n="chipLanguage">🌐 4-Language Support</span>
+      <span class="chip" data-i18n="chipSpeed">⚡ OCR-to-Analysis in Seconds</span>
+      <span class="chip" data-i18n="chipUpgrade">💎 Upgrade-ready UX</span>
+    </div>
+  </section>
 
-<div class="section">
+  <!-- ── TOOL GRID ─────────────────────────────────────────── -->
+  <section class="tool-grid">
 
-<label for="language">Language</label>
-<select id="language">
-  <option value="en">English</option>
-  <option value="fr">Français</option>
-  <option value="de">Deutsch</option>
-  <option value="zh">中文</option>
-</select>
+    <!-- Input card -->
+    <div class="card">
+      <h2 class="card-title">🔬 <span data-i18n="analysisTitle">AI Ingredient Analysis</span></h2>
 
-</div>
+      <label class="field-label" for="ingredients" data-i18n="ingredientList">Ingredient List</label>
+      <textarea
+        id="ingredients"
+        class="input-area"
+        data-i18n-placeholder="ingredientsPlaceholder"
+        placeholder="Paste ingredients from food or skincare labels"></textarea>
 
-<label for="ingredients">Ingredients</label>
-<textarea
-  id="ingredients"
-  rows="6"
-  cols="60"
-  placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol">
-</textarea>
-<br><br>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeIngredients()">
+          <span class="btn-icon">🔬</span>
+          <span data-i18n="analyzeButton">Analyze Ingredients</span>
+        </button>
+        <button class="btn btn-secondary" onclick="startScan()">
+          <span class="btn-icon">📷</span>
+          <span data-i18n="openCameraButton">Open Camera</span>
+        </button>
+        <button class="btn btn-secondary" onclick="capture()">
+          <span class="btn-icon">⚡</span>
+          <span data-i18n="captureButton">Capture Label</span>
+        </button>
+      </div>
+    </div>
 
-<button onclick="analyzeIngredients()">
-Analyze Ingredients
-</button>
+    <!-- Camera card -->
+    <div class="card camera-card">
+      <h2 class="card-title">📷 <span data-i18n="scanTitle">Scan Ingredient Label</span></h2>
 
-<hr>
+      <div class="camera-wrapper">
+        <video id="camera" autoplay></video>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <span class="cam-icon">📷</span>
+          <span>Click "Open Camera" to start scanning</span>
+        </div>
+      </div>
+      <canvas id="snapshot" style="display:none;"></canvas>
 
-<h2>AI Ingredient Analysis</h2>
+      <label class="field-label" data-i18n="detectedTitle">Detected Text</label>
+      <div id="ocrResult" class="ocr-result"></div>
+    </div>
 
-<div id="ingredientResult">
-AI analysis will appear here
-</div>
+  </section>
 
-<hr>
+  <!-- ── RESULTS (hidden until analysis runs) ──────────────── -->
+  <section class="results-section" id="resultsSection" style="display:none;">
+    <div class="results-grid">
 
-<h2>Interaction Warnings</h2>
+      <div class="card">
+        <h2 class="card-title">🧪 <span data-i18n="analysisTitle">AI Ingredient Analysis</span></h2>
+        <div id="ingredientResult">
+          <div class="empty-state">
+            <span class="empty-icon">🧪</span>
+            <span data-i18n="analysisPlaceholder">AI analysis will appear here</span>
+          </div>
+        </div>
+      </div>
 
-<div id="interactionWarnings">
-Ingredient conflicts will appear here
-</div>
+      <div class="card">
+        <h2 class="card-title">⚠️ <span data-i18n="warningTitle">Interaction Warnings</span></h2>
+        <div id="interactionWarnings">
+          <div class="empty-state">
+            <span class="empty-icon">🛡️</span>
+            <span data-i18n="warningPlaceholder">Ingredient conflicts will appear here</span>
+          </div>
+        </div>
+      </div>
 
-<hr>
+    </div>
+  </section>
 
-<h2>Scan Ingredient Label</h2>
+  <!-- ── PRICING / VALUE ───────────────────────────────────── -->
+  <section>
+    <div class="value-header">
+      <h2 data-i18n="valueTitle">Why users pay for Wykta</h2>
+      <p data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
+    </div>
 
-<button onclick="startScan()">
-Open Camera
-</button>
+    <div class="pricing-grid">
 
-<br><br>
+      <div class="plan-card">
+        <div class="plan-name" data-i18n="starterTitle">Starter (Free)</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-period">forever free</div>
+        <ul class="plan-features">
+          <li data-i18n="starterBody">Quick scans, basic warnings, multilingual output.</li>
+          <li>Paste or camera input</li>
+          <li>4-language support</li>
+          <li class="muted">Priority analysis</li>
+          <li class="muted">Export reports</li>
+        </ul>
+      </div>
 
-<video id="camera" width="300" autoplay></video>
+      <div class="plan-card featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name" data-i18n="proTitle">Pro (Recommended)</div>
+        <div class="plan-price">$9<small style="font-size:16px;font-weight:500">/mo</small></div>
+        <div class="plan-period">billed monthly</div>
+        <ul class="plan-features">
+          <li>Everything in Starter</li>
+          <li data-i18n="proBody">Priority analysis, richer ingredient insights, premium trust reports.</li>
+          <li>Unlimited scans</li>
+          <li>Export PDF reports</li>
+        </ul>
+      </div>
 
-<br><br>
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">Custom</div>
+        <div class="plan-period">contact us</div>
+        <ul class="plan-features">
+          <li>Everything in Pro</li>
+          <li>REST API access</li>
+          <li>White-label option</li>
+          <li>SLA guarantee</li>
+          <li>Dedicated support</li>
+        </ul>
+      </div>
 
-<button onclick="capture()">
-Capture
-</button>
+    </div>
+  </section>
 
-<canvas id="snapshot" style="display:none;"></canvas>
+  <!-- ── FOOTER ────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <p>Wykta &copy; 2025 &mdash; <span data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</span></p>
+  </footer>
 
-<hr>
-
-<h2>Detected Text</h2>
-
-<div id="ocrResult"></div>
+</main>
 
 <!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
