@@ -178,19 +178,19 @@ video{
 <div class="app">
 
   <section class="hero">
-    <h1>Wykta Premium Ingredient Intelligence</h1>
-    <p>Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.</p>
+    <h1 id="heroTitle" data-i18n="heroTitle">Wykta Premium Ingredient Intelligence</h1>
+    <p id="heroSubtitle" data-i18n="heroSubtitle">Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.</p>
     <div class="kpis">
-      <span class="chip">✅ Food + Skincare Coverage</span>
-      <span class="chip">🌐 4-Language Support</span>
-      <span class="chip">⚡ OCR-to-Analysis in Seconds</span>
-      <span class="chip">💎 Upgrade-ready UX</span>
+      <span class="chip" data-i18n="chipCoverage">✅ Food + Skincare Coverage</span>
+      <span class="chip" data-i18n="chipLanguage">🌐 4-Language Support</span>
+      <span class="chip" data-i18n="chipSpeed">⚡ OCR-to-Analysis in Seconds</span>
+      <span class="chip" data-i18n="chipUpgrade">💎 Upgrade-ready UX</span>
     </div>
   </section>
 
   <section class="grid">
     <div class="card">
-      <label class="label" for="language">Analysis Language</label>
+      <label class="label" for="language" data-i18n="analysisLanguage">Analysis Language</label>
       <select id="language">
         <option value="en">English</option>
         <option value="fr">Français</option>
@@ -198,48 +198,49 @@ video{
         <option value="zh">中文</option>
       </select>
 
-      <label class="label" for="ingredients">Ingredient List</label>
+      <label class="label" for="ingredients" data-i18n="ingredientList">Ingredient List</label>
       <textarea
         id="ingredients"
         rows="6"
         cols="60"
+        data-i18n-placeholder="ingredientsPlaceholder"
         placeholder="Paste ingredients from food or skincare labels"></textarea>
 
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="analyzeIngredients()">Analyze Ingredients</button>
-        <button class="btn btn-secondary" onclick="startScan()">Open Camera</button>
-        <button class="btn btn-secondary" onclick="capture()">Capture Label</button>
+        <button class="btn btn-primary" onclick="analyzeIngredients()" data-i18n="analyzeButton">Analyze Ingredients</button>
+        <button class="btn btn-secondary" onclick="startScan()" data-i18n="openCameraButton">Open Camera</button>
+        <button class="btn btn-secondary" onclick="capture()" data-i18n="captureButton">Capture Label</button>
       </div>
     </div>
 
     <aside class="card value-card">
-      <h2>Why users pay for Wykta</h2>
+      <h2 data-i18n="valueTitle">Why users pay for Wykta</h2>
       <div class="pricing">
-        <div class="plan"><strong>Starter (Free)</strong>Quick scans, basic warnings, multilingual output.</div>
-        <div class="plan pro"><strong>Pro (Recommended)</strong>Priority analysis, richer ingredient insights, premium trust reports.</div>
+        <div class="plan"><strong data-i18n="starterTitle">Starter (Free)</strong><span data-i18n="starterBody">Quick scans, basic warnings, multilingual output.</span></div>
+        <div class="plan pro"><strong data-i18n="proTitle">Pro (Recommended)</strong><span data-i18n="proBody">Priority analysis, richer ingredient insights, premium trust reports.</span></div>
       </div>
-      <p class="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
+      <p class="footnote" data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
     </aside>
   </section>
 
   <section class="card">
-    <h2>AI Ingredient Analysis</h2>
+    <h2 data-i18n="analysisTitle">AI Ingredient Analysis</h2>
     <div id="ingredientResult">AI analysis will appear here</div>
   </section>
 
   <section class="card">
-    <h2>Interaction Warnings</h2>
+    <h2 data-i18n="warningTitle">Interaction Warnings</h2>
     <div id="interactionWarnings">Ingredient conflicts will appear here</div>
   </section>
 
   <section class="card">
-    <h2>Scan Ingredient Label</h2>
+    <h2 data-i18n="scanTitle">Scan Ingredient Label</h2>
     <video id="camera" width="300" autoplay></video>
     <canvas id="snapshot" style="display:none;"></canvas>
   </section>
 
   <section class="card">
-    <h2>Detected Text</h2>
+    <h2 data-i18n="detectedTitle">Detected Text</h2>
     <div id="ocrResult"></div>
   </section>
 

@@ -178,6 +178,30 @@ const ocrLanguageCodes = {
 
 const uiMessages = {
   en: {
+    heroTitle: "Wykta Premium Ingredient Intelligence",
+    heroSubtitle: "Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.",
+    chipCoverage: "✅ Food + Skincare Coverage",
+    chipLanguage: "🌐 4-Language Support",
+    chipSpeed: "⚡ OCR-to-Analysis in Seconds",
+    chipUpgrade: "💎 Upgrade-ready UX",
+    analysisLanguage: "Analysis Language",
+    ingredientList: "Ingredient List",
+    ingredientsPlaceholder: "Paste ingredients from food or skincare labels",
+    analyzeButton: "Analyze Ingredients",
+    openCameraButton: "Open Camera",
+    captureButton: "Capture Label",
+    valueTitle: "Why users pay for Wykta",
+    starterTitle: "Starter (Free)",
+    starterBody: "Quick scans, basic warnings, multilingual output.",
+    proTitle: "Pro (Recommended)",
+    proBody: "Priority analysis, richer ingredient insights, premium trust reports.",
+    footnote: "Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.",
+    analysisTitle: "AI Ingredient Analysis",
+    warningTitle: "Interaction Warnings",
+    scanTitle: "Scan Ingredient Label",
+    detectedTitle: "Detected Text",
+    analysisPlaceholder: "AI analysis will appear here",
+    warningPlaceholder: "Ingredient conflicts will appear here",
     noConflicts: "No obvious ingredient conflicts detected.",
     retinolGlycolic: "Retinol combined with glycolic acid may increase skin irritation.",
     peroxideRetinol: "Benzoyl peroxide may deactivate retinol.",
@@ -188,6 +212,30 @@ const uiMessages = {
     ocrFailed: "OCR failed. Try again."
   },
   fr: {
+    heroTitle: "Wykta Intelligence Premium des Ingrédients",
+    heroSubtitle: "Scannez les étiquettes alimentaires ou skincare instantanément, réduisez les risques d'ingrédients et augmentez la confiance.",
+    chipCoverage: "✅ Couverture alimentaire + skincare",
+    chipLanguage: "🌐 Support 4 langues",
+    chipSpeed: "⚡ OCR vers analyse en quelques secondes",
+    chipUpgrade: "💎 UX prête pour l'abonnement",
+    analysisLanguage: "Langue d'analyse",
+    ingredientList: "Liste d'ingrédients",
+    ingredientsPlaceholder: "Collez les ingrédients d'étiquettes alimentaires ou skincare",
+    analyzeButton: "Analyser les ingrédients",
+    openCameraButton: "Ouvrir la caméra",
+    captureButton: "Capturer l'étiquette",
+    valueTitle: "Pourquoi les utilisateurs paient Wykta",
+    starterTitle: "Starter (Gratuit)",
+    starterBody: "Scans rapides, alertes de base, sortie multilingue.",
+    proTitle: "Pro (Recommandé)",
+    proBody: "Analyse prioritaire, insights plus riches, rapports premium.",
+    footnote: "Conçu pour la conversion: valeur claire, résultats immédiats, et montée en gamme premium.",
+    analysisTitle: "Analyse IA des ingrédients",
+    warningTitle: "Avertissements d'interaction",
+    scanTitle: "Scanner l'étiquette d'ingrédients",
+    detectedTitle: "Texte détecté",
+    analysisPlaceholder: "L'analyse IA apparaîtra ici",
+    warningPlaceholder: "Les conflits d'ingrédients apparaîtront ici",
     noConflicts: "Aucun conflit évident entre ingrédients détecté.",
     retinolGlycolic: "Le rétinol combiné à l'acide glycolique peut augmenter l'irritation cutanée.",
     peroxideRetinol: "Le peroxyde de benzoyle peut désactiver le rétinol.",
@@ -198,6 +246,30 @@ const uiMessages = {
     ocrFailed: "Échec de l'OCR. Réessayez."
   },
   de: {
+    heroTitle: "Wykta Premium-Inhaltsstoff-Intelligenz",
+    heroSubtitle: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort, reduzieren Sie Risiken und steigern Sie Vertrauen.",
+    chipCoverage: "✅ Lebensmittel + Hautpflege",
+    chipLanguage: "🌐 Unterstützung für 4 Sprachen",
+    chipSpeed: "⚡ OCR-zu-Analyse in Sekunden",
+    chipUpgrade: "💎 Upgrade-fähige UX",
+    analysisLanguage: "Analysesprache",
+    ingredientList: "Inhaltsstoffliste",
+    ingredientsPlaceholder: "Inhaltsstoffe von Lebensmittel- oder Hautpflegeetiketten einfügen",
+    analyzeButton: "Inhaltsstoffe analysieren",
+    openCameraButton: "Kamera öffnen",
+    captureButton: "Etikett erfassen",
+    valueTitle: "Warum Nutzer für Wykta zahlen",
+    starterTitle: "Starter (Kostenlos)",
+    starterBody: "Schnelle Scans, Basiswarnungen, mehrsprachige Ausgabe.",
+    proTitle: "Pro (Empfohlen)",
+    proBody: "Priorisierte Analyse, tiefere Insights, Premium-Vertrauensberichte.",
+    footnote: "Für hohe Conversion entwickelt: klarer Nutzen, sofortige Ergebnisse, starkes Upgrade-Design.",
+    analysisTitle: "KI-Inhaltsstoffanalyse",
+    warningTitle: "Interaktionswarnungen",
+    scanTitle: "Inhaltsstoffetikett scannen",
+    detectedTitle: "Erkannter Text",
+    analysisPlaceholder: "KI-Analyse erscheint hier",
+    warningPlaceholder: "Inhaltsstoffkonflikte erscheinen hier",
     noConflicts: "Keine offensichtlichen Inhaltsstoffkonflikte erkannt.",
     retinolGlycolic: "Retinol in Kombination mit Glykolsäure kann Hautreizungen verstärken.",
     peroxideRetinol: "Benzoylperoxid kann Retinol deaktivieren.",
@@ -208,6 +280,30 @@ const uiMessages = {
     ocrFailed: "OCR fehlgeschlagen. Bitte erneut versuchen."
   },
   zh: {
+    heroTitle: "Wykta 高级成分智能分析",
+    heroSubtitle: "即时扫描食品或护肤标签，降低成分风险，提升用户付费信心。",
+    chipCoverage: "✅ 食品 + 护肤双场景覆盖",
+    chipLanguage: "🌐 支持 4 种语言",
+    chipSpeed: "⚡ OCR 到分析仅需数秒",
+    chipUpgrade: "💎 可升级的高端体验",
+    analysisLanguage: "分析语言",
+    ingredientList: "成分列表",
+    ingredientsPlaceholder: "粘贴食品或护肤品标签中的成分",
+    analyzeButton: "分析成分",
+    openCameraButton: "打开相机",
+    captureButton: "拍摄标签",
+    valueTitle: "用户愿意为 Wykta 付费的原因",
+    starterTitle: "基础版（免费）",
+    starterBody: "快速扫描、基础预警、多语言输出。",
+    proTitle: "专业版（推荐）",
+    proBody: "优先分析、更丰富洞察、高级可信报告。",
+    footnote: "围绕高转化设计：价值清晰、结果即时、升级路径明确。",
+    analysisTitle: "AI 成分分析",
+    warningTitle: "成分相互作用预警",
+    scanTitle: "扫描成分标签",
+    detectedTitle: "识别文本",
+    analysisPlaceholder: "AI 分析结果将显示在这里",
+    warningPlaceholder: "成分冲突将显示在这里",
     noConflicts: "未检测到明显成分冲突。",
     retinolGlycolic: "视黄醇与乙醇酸同时使用可能增加皮肤刺激。",
     peroxideRetinol: "过氧化苯甲酰可能使视黄醇失活。",
@@ -232,6 +328,42 @@ function t(key){
 function tf(key, ...args){
   const template = t(key)
   return typeof template === "function" ? template(...args) : template
+}
+
+function localizeStaticUI(){
+  document.querySelectorAll("[data-i18n]").forEach((node) => {
+    const key = node.getAttribute("data-i18n")
+    if(!key) return
+    node.textContent = t(key)
+  })
+
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-placeholder")
+    if(!key) return
+    node.setAttribute("placeholder", t(key))
+  })
+
+  const analysisEl = document.getElementById("ingredientResult")
+  const warningEl = document.getElementById("interactionWarnings")
+  const analysisPlaceholderValues = Object.values(uiMessages).map(m => m.analysisPlaceholder)
+  const warningPlaceholderValues = [
+    ...Object.values(uiMessages).map(m => m.warningPlaceholder),
+    ...Object.values(uiMessages).map(m => m.noConflicts)
+  ]
+
+  if(analysisEl){
+    const currentText = analysisEl.innerText.trim()
+    if(!analysisEl.children.length && (!currentText || analysisPlaceholderValues.includes(currentText))){
+      analysisEl.innerText = t("analysisPlaceholder")
+    }
+  }
+
+  if(warningEl){
+    const currentText = warningEl.innerText.trim()
+    if(!currentText || warningPlaceholderValues.includes(currentText)){
+      warningEl.innerText = t("warningPlaceholder")
+    }
+  }
 }
 
 function escapeHtml(text) {
@@ -401,3 +533,14 @@ async function runOCR(canvas) {
     document.getElementById("ocrResult").innerText = t("ocrFailed");
   }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  localizeStaticUI()
+
+  const languageSelect = document.getElementById("language")
+  if(languageSelect){
+    languageSelect.addEventListener("change", () => {
+      localizeStaticUI()
+    })
+  }
+})
