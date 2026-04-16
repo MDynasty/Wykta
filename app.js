@@ -33,6 +33,143 @@ const knownIngredients = [
   "monosodium glutamate", "msg", "artificial flavor"
 ]
 
+/* -----------------------
+LOCAL INGREDIENT DATABASE
+Sources: CosIng (EU Cosmetic Ingredients Database), EU food-additive list,
+         FDA GRAS list, Open Food Facts ingredient taxonomy,
+         Open Beauty Facts ingredient taxonomy
+----------------------- */
+
+const localIngredientDb = {
+  // ── Universal ──────────────────────────────────────────────────────────
+  "water":                        { category: "general",  fn: "Solvent",                     note: "Universal solvent in food and cosmetics. Source: Open Food Facts taxonomy / CosIng." },
+  "aqua":                         { category: "skincare", fn: "Solvent",                     note: "INCI term for water in cosmetics. Source: CosIng (EU)." },
+  "glycerin":                     { category: "general",  fn: "Humectant",                   note: "Draws moisture to skin and improves texture in food. Source: CosIng (EU) / FDA GRAS." },
+  "ascorbic acid":                { category: "general",  fn: "Antioxidant / Vitamin C",     note: "Preserves freshness in food (E300); brightens skin in cosmetics. Source: EU additive list / CosIng." },
+  "citric acid":                  { category: "general",  fn: "Acidulant / Preservative",    note: "pH regulator and antioxidant (E330); also used in skincare. Source: EU additive list." },
+  "tocopherol":                   { category: "general",  fn: "Antioxidant / Vitamin E",     note: "Prevents rancidity in food (E306-309); protects skin from oxidative damage. Source: EU additive list / CosIng." },
+  "xanthan gum":                  { category: "general",  fn: "Thickener / Stabiliser",      note: "Natural polysaccharide (E415); used in food and cosmetics to improve texture. Source: EU additive list." },
+  "lactic acid":                  { category: "general",  fn: "Acidulant / Exfoliant (AHA)", note: "Fermentation-derived acid; pH adjuster in food and gentle AHA exfoliant in skincare. Source: CosIng / EU additive list." },
+  "sodium benzoate":              { category: "general",  fn: "Preservative",                note: "E211; inhibits mould and yeast in food; also used in some cosmetics. Source: EU additive list / CosIng." },
+  "propylene glycol":             { category: "general",  fn: "Humectant / Solvent",         note: "E1520 in food; solvent and humectant in cosmetics; generally safe. Source: EU additive list / CosIng." },
+  // ── Skincare ──────────────────────────────────────────────────────────
+  "niacinamide":                  { category: "skincare", fn: "Skin conditioning",           note: "Vitamin B3; improves skin tone, pore appearance, and barrier function. Source: CosIng (EU)." },
+  "hyaluronic acid":              { category: "skincare", fn: "Humectant",                   note: "Holds up to 1000× its weight in water; deep skin hydration. Source: CosIng (EU)." },
+  "sodium hyaluronate":           { category: "skincare", fn: "Humectant",                   note: "Salt form of hyaluronic acid; penetrates more easily into skin. Source: CosIng (EU)." },
+  "retinol":                      { category: "skincare", fn: "Skin conditioning",           note: "Vitamin A; promotes cell turnover and collagen synthesis. Source: CosIng (EU)." },
+  "retinyl palmitate":            { category: "skincare", fn: "Skin conditioning",           note: "Ester form of vitamin A; gentler than retinol. Source: CosIng (EU)." },
+  "glycolic acid":                { category: "skincare", fn: "Exfoliant (AHA)",             note: "Alpha hydroxy acid; removes dead skin cells and improves texture. Source: CosIng (EU)." },
+  "salicylic acid":               { category: "skincare", fn: "Exfoliant (BHA)",             note: "Beta hydroxy acid; unclogs pores; suited to oily or acne-prone skin. Source: CosIng (EU)." },
+  "mandelic acid":                { category: "skincare", fn: "Exfoliant (AHA)",             note: "Large-molecule AHA; gentle enough for sensitive skin. Source: CosIng (EU)." },
+  "benzoyl peroxide":             { category: "skincare", fn: "Antimicrobial",               note: "Kills acne-causing bacteria; may bleach fabric. Use with caution. Source: CosIng (EU)." },
+  "vitamin c":                    { category: "skincare", fn: "Antioxidant",                 note: "Brightens skin and boosts collagen synthesis. Source: CosIng (EU)." },
+  "ceramide":                     { category: "skincare", fn: "Skin barrier lipid",          note: "Replenishes and strengthens the skin barrier. Source: CosIng (EU)." },
+  "panthenol":                    { category: "skincare", fn: "Humectant / Emollient",       note: "Pro-vitamin B5; soothes, moisturises, and aids wound healing. Source: CosIng (EU)." },
+  "shea butter":                  { category: "skincare", fn: "Emollient",                   note: "Rich in fatty acids; deeply nourishing and softening. Source: CosIng (EU)." },
+  "cetearyl alcohol":             { category: "skincare", fn: "Emulsifier / Emollient",      note: "Fatty alcohol; thickens formulas and softens skin. Source: CosIng (EU)." },
+  "fragrance":                    { category: "skincare", fn: "Fragrance",                   note: "May contain undisclosed allergens; caution for sensitive skin. Source: CosIng (EU)." },
+  "parfum":                       { category: "skincare", fn: "Fragrance",                   note: "EU term for fragrance blend; potential sensitiser. Source: CosIng (EU)." },
+  "phenoxyethanol":               { category: "skincare", fn: "Preservative",                note: "Broad-spectrum preservative; well tolerated at ≤1%. Source: CosIng (EU)." },
+  "methylparaben":                { category: "skincare", fn: "Preservative",                note: "Paraben preservative; debated endocrine concerns at high doses. Source: CosIng (EU)." },
+  "ethylparaben":                 { category: "skincare", fn: "Preservative",                note: "Paraben preservative; low concentration considered safe. Source: CosIng (EU)." },
+  "butylparaben":                 { category: "skincare", fn: "Preservative",                note: "Paraben with higher lipophilicity; restricted in some regions. Source: CosIng (EU)." },
+  "zinc oxide":                   { category: "skincare", fn: "UV filter / Mineral",         note: "Broad-spectrum physical sunscreen; also soothing on skin. Source: CosIng (EU)." },
+  "titanium dioxide":             { category: "skincare", fn: "UV filter / Colourant",       note: "Physical sunscreen and whitening pigment. Source: CosIng (EU)." },
+  "petrolatum":                   { category: "skincare", fn: "Occlusive",                   note: "Forms a barrier to seal in moisture; non-comedogenic. Source: CosIng (EU)." },
+  "mineral oil":                  { category: "skincare", fn: "Emollient / Occlusive",       note: "Locks in moisture; highly refined cosmetic grades considered safe. Source: CosIng (EU)." },
+  "dimethicone":                  { category: "skincare", fn: "Emollient / Silicone",        note: "Smooths skin texture and forms a protective layer. Source: CosIng (EU)." },
+  "aloe vera":                    { category: "skincare", fn: "Soothing / Humectant",        note: "Anti-inflammatory; soothes irritation and provides moisture. Source: CosIng (EU)." },
+  "green tea extract":            { category: "skincare", fn: "Antioxidant",                 note: "Rich in EGCG polyphenols; reduces oxidative stress on skin. Source: CosIng (EU)." },
+  "kojic acid":                   { category: "skincare", fn: "Skin brightening",            note: "Inhibits melanin production; used for hyperpigmentation. Source: CosIng (EU)." },
+  "azelaic acid":                 { category: "skincare", fn: "Keratolytic / Antimicrobial", note: "Targets acne and rosacea; evens skin tone. Source: CosIng (EU)." },
+  "caffeine":                     { category: "skincare", fn: "Skin conditioning",           note: "Reduces puffiness and dark circles; antioxidant properties. Source: CosIng (EU)." },
+  "squalane":                     { category: "skincare", fn: "Emollient",                   note: "Lightweight, non-comedogenic oil; excellent skin feel. Source: CosIng (EU)." },
+  "jojoba oil":                   { category: "skincare", fn: "Emollient",                   note: "Liquid wax; closely mimics the skin's natural sebum. Source: CosIng (EU)." },
+  "rosehip oil":                  { category: "skincare", fn: "Emollient",                   note: "Rich in vitamins A and C; supports skin renewal. Source: Open Beauty Facts taxonomy." },
+  "argan oil":                    { category: "skincare", fn: "Emollient",                   note: "Vitamin E rich; nourishing and softening. Source: CosIng (EU)." },
+  "sodium lauryl sulfate":        { category: "skincare", fn: "Surfactant / Cleansing",      note: "Foaming cleansing agent; can strip natural oils and irritate. Source: CosIng (EU)." },
+  "sodium laureth sulfate":       { category: "skincare", fn: "Surfactant / Cleansing",      note: "Milder than SLS; common in shampoos and body washes. Source: CosIng (EU)." },
+  "cocamidopropyl betaine":       { category: "skincare", fn: "Surfactant",                  note: "Mild amphoteric surfactant used in gentle cleansers. Source: CosIng (EU)." },
+  "butylene glycol":              { category: "skincare", fn: "Humectant / Solvent",         note: "Draws moisture and aids penetration of other ingredients. Source: CosIng (EU)." },
+  "carbomer":                     { category: "skincare", fn: "Viscosity agent",             note: "Thickens and stabilises gels; considered safe. Source: CosIng (EU)." },
+  "allantoin":                    { category: "skincare", fn: "Soothing",                    note: "Promotes cell regeneration; calms irritation. Source: CosIng (EU)." },
+  "urea":                         { category: "skincare", fn: "Humectant / Keratolytic",     note: "High concentration exfoliates; low concentration hydrates. Source: CosIng (EU)." },
+  "alpha-arbutin":                { category: "skincare", fn: "Skin brightening",            note: "Inhibits tyrosinase; reduces dark spots safely. Source: CosIng (EU)." },
+  "tranexamic acid":              { category: "skincare", fn: "Skin brightening",            note: "Reduces hyperpigmentation; effective alongside vitamin C. Source: CosIng (EU)." },
+  "resveratrol":                  { category: "skincare", fn: "Antioxidant",                 note: "Polyphenol antioxidant; anti-ageing properties. Source: CosIng (EU)." },
+  "centella asiatica":            { category: "skincare", fn: "Soothing / Healing",          note: "Supports collagen synthesis; calms stressed skin. Source: CosIng (EU)." },
+  "bakuchiol":                    { category: "skincare", fn: "Skin conditioning",           note: "Plant-based retinol alternative; gentler on sensitive skin. Source: CosIng (EU)." },
+  "adenosine":                    { category: "skincare", fn: "Anti-wrinkle",                note: "EU-approved anti-ageing ingredient; stimulates collagen. Source: CosIng (EU)." },
+  "polyglutamic acid":            { category: "skincare", fn: "Humectant",                   note: "Up to 4× more moisturising than hyaluronic acid. Source: Open Beauty Facts taxonomy." },
+  "ferulic acid":                 { category: "skincare", fn: "Antioxidant",                 note: "Boosts stability and efficacy of vitamins C and E. Source: CosIng (EU)." },
+  "licorice root extract":        { category: "skincare", fn: "Skin brightening",            note: "Glabridin inhibits melanin synthesis; anti-inflammatory. Source: CosIng (EU)." },
+  "bisabolol":                    { category: "skincare", fn: "Soothing / Anti-inflammatory", note: "Chamomile-derived ingredient; calms redness and promotes healing. Source: CosIng (EU)." },
+  "tea tree oil":                 { category: "skincare", fn: "Antimicrobial",               note: "Potent natural antiseptic; effective against acne but can irritate. Source: CosIng (EU)." },
+  "witch hazel":                  { category: "skincare", fn: "Astringent / Antioxidant",    note: "Tightens pores; can be drying in high-alcohol forms. Source: Open Beauty Facts taxonomy." },
+  "neem oil":                     { category: "skincare", fn: "Antimicrobial",               note: "Antifungal and antibacterial; used for acne and eczema. Source: Open Beauty Facts taxonomy." },
+  "collagen":                     { category: "skincare", fn: "Skin conditioning",           note: "Structural protein for elasticity; topical absorption limited. Source: CosIng (EU)." },
+  "beta-glucan":                  { category: "skincare", fn: "Skin conditioning",           note: "Oat-derived; soothes irritation and stimulates collagen production. Source: CosIng (EU)." },
+  "peptides":                     { category: "skincare", fn: "Skin conditioning",           note: "Signal peptides stimulate collagen and elastin production. Source: CosIng (EU)." },
+  // ── Food ──────────────────────────────────────────────────────────────
+  "sugar":                        { category: "food",     fn: "Sweetener",                   note: "Sucrose; high intake linked to obesity and dental caries. Source: FDA GRAS." },
+  "salt":                         { category: "food",     fn: "Seasoning / Preservative",    note: "Sodium chloride; excess intake raises blood pressure. Source: FDA GRAS." },
+  "wheat":                        { category: "food",     fn: "Grain",                       note: "Contains gluten; avoid if coeliac or gluten-sensitive. Top allergen (EU/US)." },
+  "milk":                         { category: "food",     fn: "Dairy",                       note: "Common allergen (EU top 14 / US top 9); source of calcium." },
+  "egg":                          { category: "food",     fn: "Binder / Emulsifier",         note: "Common allergen (EU top 14 / US top 9); provides structure in baking." },
+  "soy":                          { category: "food",     fn: "Protein / Emulsifier",        note: "Common allergen; source of plant protein and isoflavones." },
+  "peanut":                       { category: "food",     fn: "Legume",                      note: "Major allergen; can cause anaphylaxis. Strict avoidance required. Source: FDA." },
+  "tree nuts":                    { category: "food",     fn: "Nut",                         note: "Allergen category (almonds, cashews, etc.); risk of cross-contamination. Source: FDA." },
+  "fish":                         { category: "food",     fn: "Seafood",                     note: "Common allergen; source of omega-3 fatty acids. Source: EU allergen list." },
+  "shellfish":                    { category: "food",     fn: "Seafood",                     note: "Allergen category (shrimp, crab, lobster). Source: EU/FDA allergen list." },
+  "sesame":                       { category: "food",     fn: "Seed",                        note: "Major allergen in US (since 2023) and EU; also a source of healthy fats." },
+  "palm oil":                     { category: "food",     fn: "Fat / Oil",                   note: "High in saturated fat; significant environmental concerns over deforestation." },
+  "coconut oil":                  { category: "food",     fn: "Fat / Oil",                   note: "High in saturated fat; stable for high-heat cooking. Source: OFF taxonomy." },
+  "olive oil":                    { category: "food",     fn: "Fat / Oil",                   note: "Rich in monounsaturated fats; heart-healthy (Mediterranean diet). Source: OFF taxonomy." },
+  "sunflower oil":                { category: "food",     fn: "Fat / Oil",                   note: "High in vitamin E; good for high-heat cooking. Source: OFF taxonomy." },
+  "canola oil":                   { category: "food",     fn: "Fat / Oil",                   note: "Low in saturated fat; high smoke point. Source: OFF taxonomy." },
+  "potassium sorbate":            { category: "food",     fn: "Preservative",                note: "E202; extends shelf life in beverages and dairy. Source: EU additive list." },
+  "monosodium glutamate":         { category: "food",     fn: "Flavour enhancer",            note: "MSG (E621); umami flavour; safe for the general population. Source: FDA GRAS." },
+  "artificial flavor":            { category: "food",     fn: "Flavouring",                  note: "Synthetic flavour compounds; exact composition often undisclosed. Source: FDA." },
+  "natural flavors":              { category: "food",     fn: "Flavouring",                  note: "Derived from natural sources; exact compounds often undisclosed. Source: FDA." },
+  "high fructose corn syrup":     { category: "food",     fn: "Sweetener",                   note: "Liquid sweetener; linked to metabolic concerns at high intake. Source: FDA GRAS." },
+  "maltodextrin":                 { category: "food",     fn: "Thickener / Filler",          note: "Derived from starch; rapidly digested and raises blood sugar. Source: FDA GRAS." },
+  "guar gum":                     { category: "food",     fn: "Thickener",                   note: "E412; plant-based thickener; high fibre content. Source: EU additive list." },
+  "carrageenan":                  { category: "food",     fn: "Thickener / Emulsifier",      note: "E407; seaweed extract; some evidence of gut inflammation at high doses. Source: EU additive list." },
+  "lecithin":                     { category: "food",     fn: "Emulsifier",                  note: "E322; often from soy or sunflower; keeps oil and water blended. Source: EU additive list." },
+  "mono- and diglycerides":       { category: "food",     fn: "Emulsifier",                  note: "E471; derived from fats; used in baked goods and margarines. Source: EU additive list." },
+  "baking powder":                { category: "food",     fn: "Leavening agent",             note: "Mixture of sodium bicarbonate and acid; raises baked goods. Source: FDA GRAS." },
+  "sodium bicarbonate":           { category: "food",     fn: "Leavening agent",             note: "Baking soda (E500); reacts with acid to produce CO₂. Source: EU additive list." },
+  "cornstarch":                   { category: "food",     fn: "Thickener",                   note: "Derived from corn; thickens sauces and soups. Source: FDA GRAS." },
+  "yeast extract":                { category: "food",     fn: "Flavour enhancer",            note: "Contains free glutamates; natural umami flavour. Source: OFF taxonomy." },
+  "caramel color":                { category: "food",     fn: "Colourant",                   note: "E150; made from heated sugar; Class IV linked to 4-MEI concerns. Source: EU additive list." },
+  "annatto":                      { category: "food",     fn: "Colourant",                   note: "E160b; natural yellow-orange colour from achiote seeds. Source: EU additive list." },
+  "beta-carotene":                { category: "food",     fn: "Colourant / Nutrient",        note: "E160a; provitamin A; natural orange pigment. Source: EU additive list." },
+  "sodium nitrite":               { category: "food",     fn: "Preservative / Curing agent", note: "E250; used in cured meats; potential carcinogen at high doses. Source: EU additive list." },
+  "red 40":                       { category: "food",     fn: "Artificial colourant",        note: "FD&C Red No. 40; may cause hyperactivity in sensitive children. Source: FDA." },
+  "yellow 5":                     { category: "food",     fn: "Artificial colourant",        note: "Tartrazine (E102); rare allergy risk; EU warning label required. Source: EU additive list." },
+  "yellow 6":                     { category: "food",     fn: "Artificial colourant",        note: "Sunset Yellow (E110); EU warning label required. Source: EU additive list." },
+  "stevia":                       { category: "food",     fn: "Sweetener",                   note: "Plant-based zero-calorie sweetener; considered safe (E960). Source: EU additive list." },
+  "erythritol":                   { category: "food",     fn: "Sweetener (sugar alcohol)",   note: "Low glycaemic; well tolerated; minimally absorbed (E968). Source: EU additive list." },
+  "sorbitol":                     { category: "food",     fn: "Sweetener (sugar alcohol)",   note: "E420; laxative effect in amounts above 50 g/day. Source: EU additive list." },
+  "aspartame":                    { category: "food",     fn: "Artificial sweetener",        note: "E951; avoid with PKU (contains phenylalanine). Source: EU additive list." },
+  "sucralose":                    { category: "food",     fn: "Artificial sweetener",        note: "E955; 600× sweeter than sugar; heat-stable. Source: EU additive list." },
+  "acesulfame potassium":         { category: "food",     fn: "Artificial sweetener",        note: "Acesulfame K (E950); often combined with sucralose or aspartame. Source: EU additive list." },
+  "rice":                         { category: "food",     fn: "Grain / Starch",              note: "Gluten-free grain; common wheat substitute. Source: OFF taxonomy." },
+  "oat":                          { category: "food",     fn: "Grain / Fibre",               note: "Rich in beta-glucan fibre; may be cross-contaminated with gluten. Source: OFF taxonomy." },
+  "corn":                         { category: "food",     fn: "Grain / Starch",              note: "Gluten-free; common in processed food as starch or syrup. Source: OFF taxonomy." },
+  "almond":                       { category: "food",     fn: "Tree nut",                    note: "Major tree-nut allergen; source of vitamin E and healthy fats." },
+  "almonds":                      { category: "food",     fn: "Tree nut",                    note: "Major tree-nut allergen; source of vitamin E and healthy fats." },
+  "cashew":                       { category: "food",     fn: "Tree nut",                    note: "Common tree-nut allergen; rich in magnesium." },
+  "hazelnut":                     { category: "food",     fn: "Tree nut",                    note: "Tree-nut allergen; also contains vitamin E." },
+  "shrimp":                       { category: "food",     fn: "Shellfish",                   note: "Common shellfish allergen; high in protein and iodine." },
+  "vinegar":                      { category: "food",     fn: "Acidulant / Preservative",    note: "Acetic acid solution; used for flavour and natural preservation. Source: OFF taxonomy." },
+  "msg":                          { category: "food",     fn: "Flavour enhancer",            note: "Monosodium glutamate (E621); umami flavour; safe for the general population. Source: FDA GRAS." },
+  "artificial color":             { category: "food",     fn: "Colourant",                   note: "Synthetic dye category; specific dyes vary in safety profile. Source: FDA." },
+  "sodium phosphate":             { category: "food",     fn: "Emulsifier / pH regulator",   note: "E339; used in processed cheese and meats. Source: EU additive list." },
+  "calcium propionate":           { category: "food",     fn: "Preservative",                note: "E282; prevents mould in bread; generally recognised as safe. Source: EU additive list." },
+  "sorbic acid":                  { category: "food",     fn: "Preservative",                note: "E200; natural preservative; inhibits yeast and mould. Source: EU additive list." }
+}
+
 let cachedKnownIngredientMatchers = null
 
 function getKnownIngredientMatchers(){
@@ -613,18 +750,62 @@ async function lookupOpenBeautyFacts(ingredient) {
   }
 }
 
+function lookupLocalIngredientDb(ingredient) {
+  const key = sanitizeIngredientTerm(ingredient)
+  const entry = localIngredientDb[key]
+  if (!entry) return null
+
+  const catMap = {
+    skincare: t("skincareCategory"),
+    food:     t("foodCategory"),
+    general:  t("generalCategory")
+  }
+  return {
+    category: catMap[entry.category] || t("generalCategory"),
+    detail:   `[${entry.fn}] ${entry.note}`
+  }
+}
+
+async function lookupOFFIngredientTaxonomy(ingredient) {
+  const slug = sanitizeIngredientTerm(ingredient).replace(/\s+/g, "-")
+  if (!slug) return null
+  const url = `https://world.openfoodfacts.org/ingredient/${encodeURIComponent(slug)}.json`
+  const data = await fetchJsonWithTimeout(url, 6000)
+  // OFF ingredient taxonomy response includes fields like name, wikidata, parents, children
+  if (!data || (!data.name && !data.wikidata && !data.id)) return null
+
+  const ingredientName = data.name || slug
+  const notes = [`Source: Open Food Facts ingredient taxonomy`, `Ingredient: ${ingredientName}`]
+  if (data.wikidata) notes.push(`Wikidata: ${data.wikidata}`)
+
+  return {
+    category: t("foodCategory"),
+    detail:   notes.join(" · ")
+  }
+}
+
 async function analyzeWithFreeDatabases(ingredients) {
   const lines = [`${t("fallbackHeader")}:`]
 
   const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
-    const [foodResult, beautyResult] = await Promise.allSettled([
+    // 1. Check embedded local database first (instant, no network required)
+    const localResult = lookupLocalIngredientDb(ingredient)
+    if (localResult) {
+      return `${ingredient}: [${localResult.category}] ${localResult.detail}`
+    }
+
+    // 2. Try OFF ingredient taxonomy (direct per-ingredient lookup),
+    //    OFF product search, and OBF product search in parallel
+    const [offTaxResult, foodResult, beautyResult] = await Promise.allSettled([
+      lookupOFFIngredientTaxonomy(ingredient),
       lookupOpenFoodFacts(ingredient),
       lookupOpenBeautyFacts(ingredient)
     ])
 
     const firstHit = [
-      foodResult.status === "fulfilled" ? foodResult.value : null,
-      beautyResult.status === "fulfilled" ? beautyResult.value : null
+      offTaxResult.status  === "fulfilled" ? offTaxResult.value  : null,
+      foodResult.status    === "fulfilled" ? foodResult.value    : null,
+      beautyResult.status  === "fulfilled" ? beautyResult.value  : null
     ].find(Boolean)
 
     const detail = firstHit
@@ -637,6 +818,7 @@ async function analyzeWithFreeDatabases(ingredients) {
 
   return lines.join("\n")
 }
+
 
 /* -----------------------
 AI ANALYSIS
