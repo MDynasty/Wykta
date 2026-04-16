@@ -185,6 +185,15 @@ const uiMessages = {
     chipLanguage: "🌐 4-Language Support",
     chipSpeed: "⚡ OCR-to-Analysis in Seconds",
     chipUpgrade: "💎 Upgrade-ready UX",
+    proofData: "Data Sources",
+    proofTrust: "Trust Signal",
+    proofTrustValue: "Community-maintained open databases",
+    proofSpeed: "Speed",
+    proofSpeedValue: "Live lookup + instant warnings",
+    analysisSubtitle: "Now enriched with free food and skincare databases for broader ingredient coverage.",
+    scanSubtitle: "Use your camera to pull ingredients from labels in seconds.",
+    ctaTitle: "Turn ingredient uncertainty into buying confidence",
+    ctaBody: "Wykta combines fast OCR, interaction checks, and open ingredient intelligence so users can decide what to buy faster.",
     analysisLanguage: "Analysis Language",
     ingredientList: "Ingredient List",
     ingredientsPlaceholder: "Paste ingredients from food or skincare labels",
@@ -210,7 +219,11 @@ const uiMessages = {
     aiUnavailable: "AI analysis unavailable. Please check your Supabase configuration.",
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Please try again or check the backend function.`,
     failed: "AI analysis failed. Please check your internet connection and Supabase setup.",
-    ocrFailed: "OCR failed. Try again."
+    ocrFailed: "OCR failed. Try again.",
+    fallbackHeader: "Open-data ingredient analysis",
+    foodCategory: "Food",
+    skincareCategory: "Skincare",
+    noPublicData: "No clear match was found in public ingredient databases."
   },
   fr: {
     heroTitle: "Wykta Intelligence Premium des Ingrédients",
@@ -219,6 +232,15 @@ const uiMessages = {
     chipLanguage: "🌐 Support 4 langues",
     chipSpeed: "⚡ OCR vers analyse en quelques secondes",
     chipUpgrade: "💎 UX prête pour l'abonnement",
+    proofData: "Sources de données",
+    proofTrust: "Signal de confiance",
+    proofTrustValue: "Bases ouvertes maintenues par la communauté",
+    proofSpeed: "Vitesse",
+    proofSpeedValue: "Recherche en direct + alertes instantanées",
+    analysisSubtitle: "Désormais enrichi avec des bases alimentaires et skincare gratuites pour élargir la couverture.",
+    scanSubtitle: "Utilisez votre caméra pour extraire les ingrédients en quelques secondes.",
+    ctaTitle: "Transformez l'incertitude ingrédients en confiance d'achat",
+    ctaBody: "Wykta combine OCR rapide, vérification des interactions et intelligence ouverte des ingrédients pour accélérer la décision d'achat.",
     analysisLanguage: "Langue d'analyse",
     ingredientList: "Liste d'ingrédients",
     ingredientsPlaceholder: "Collez les ingrédients d'étiquettes alimentaires ou skincare",
@@ -244,7 +266,11 @@ const uiMessages = {
     aiUnavailable: "Analyse IA indisponible. Vérifiez la configuration Supabase.",
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Veuillez réessayer ou vérifier la fonction backend.`,
     failed: "Échec de l'analyse IA. Vérifiez votre connexion et Supabase.",
-    ocrFailed: "Échec de l'OCR. Réessayez."
+    ocrFailed: "Échec de l'OCR. Réessayez.",
+    fallbackHeader: "Analyse d'ingrédients via données ouvertes",
+    foodCategory: "Alimentaire",
+    skincareCategory: "Soin de la peau",
+    noPublicData: "Aucune correspondance claire trouvée dans les bases publiques."
   },
   de: {
     heroTitle: "Wykta Premium-Inhaltsstoff-Intelligenz",
@@ -253,6 +279,15 @@ const uiMessages = {
     chipLanguage: "🌐 Unterstützung für 4 Sprachen",
     chipSpeed: "⚡ OCR-zu-Analyse in Sekunden",
     chipUpgrade: "💎 Upgrade-fähige UX",
+    proofData: "Datenquellen",
+    proofTrust: "Vertrauenssignal",
+    proofTrustValue: "Community-gepflegte offene Datenbanken",
+    proofSpeed: "Geschwindigkeit",
+    proofSpeedValue: "Live-Abfrage + sofortige Warnungen",
+    analysisSubtitle: "Jetzt mit kostenlosen Lebensmittel- und Hautpflege-Datenbanken für breitere Abdeckung.",
+    scanSubtitle: "Nutzen Sie Ihre Kamera, um Inhaltsstoffe in Sekunden zu erfassen.",
+    ctaTitle: "Machen Sie aus Unsicherheit Kaufvertrauen",
+    ctaBody: "Wykta kombiniert schnelles OCR, Interaktionschecks und offene Inhaltsstoffdaten für schnellere Kaufentscheidungen.",
     analysisLanguage: "Analysesprache",
     ingredientList: "Inhaltsstoffliste",
     ingredientsPlaceholder: "Inhaltsstoffe von Lebensmittel- oder Hautpflegeetiketten einfügen",
@@ -278,7 +313,11 @@ const uiMessages = {
     aiUnavailable: "KI-Analyse nicht verfügbar. Bitte Supabase-Konfiguration prüfen.",
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Bitte erneut versuchen oder die Backend-Funktion prüfen.`,
     failed: "KI-Analyse fehlgeschlagen. Bitte Internetverbindung und Supabase prüfen.",
-    ocrFailed: "OCR fehlgeschlagen. Bitte erneut versuchen."
+    ocrFailed: "OCR fehlgeschlagen. Bitte erneut versuchen.",
+    fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
+    foodCategory: "Lebensmittel",
+    skincareCategory: "Hautpflege",
+    noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden."
   },
   zh: {
     heroTitle: "Wykta 高级成分智能分析",
@@ -287,6 +326,15 @@ const uiMessages = {
     chipLanguage: "🌐 支持 4 种语言",
     chipSpeed: "⚡ OCR 到分析仅需数秒",
     chipUpgrade: "💎 可升级的高端体验",
+    proofData: "数据来源",
+    proofTrust: "信任信号",
+    proofTrustValue: "社区维护的开放数据库",
+    proofSpeed: "速度",
+    proofSpeedValue: "实时查询 + 即时预警",
+    analysisSubtitle: "现已接入免费的食品与护肤数据库，成分覆盖更广。",
+    scanSubtitle: "使用相机可在数秒内提取标签成分。",
+    ctaTitle: "把成分不确定性变成购买信心",
+    ctaBody: "Wykta 将 OCR、相互作用检查与开放成分数据结合，帮助用户更快决策。",
     analysisLanguage: "分析语言",
     ingredientList: "成分列表",
     ingredientsPlaceholder: "粘贴食品或护肤品标签中的成分",
@@ -312,7 +360,11 @@ const uiMessages = {
     aiUnavailable: "AI 分析不可用。请检查 Supabase 配置。",
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果。请重试或检查后端函数。`,
     failed: "AI 分析失败。请检查网络连接和 Supabase 设置。",
-    ocrFailed: "OCR 失败，请重试。"
+    ocrFailed: "OCR 失败，请重试。",
+    fallbackHeader: "开放数据成分分析",
+    foodCategory: "食品",
+    skincareCategory: "护肤",
+    noPublicData: "在公共数据库中未找到明确匹配。"
   }
 }
 
@@ -446,6 +498,136 @@ function displayAIAnalysis(message, rawLines) {
   })
 }
 
+function stripTagPrefix(tag = "") {
+  return String(tag).replace(/^[a-z]{2}:/i, "").replace(/-/g, " ").trim()
+}
+
+function sanitizeIngredientTerm(value = "") {
+  return String(value)
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[^a-z0-9\u00C0-\u024F\u4e00-\u9fa5\s-]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(url, { signal: controller.signal })
+    if(!response.ok) throw new Error(`HTTP ${response.status}`)
+    return await response.json()
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function getBestProductMatch(products = [], ingredient) {
+  if(!products.length) return null
+  const normalizedIngredient = sanitizeIngredientTerm(ingredient)
+  if(!normalizedIngredient) return products[0]
+
+  return products.find((product) => {
+    const ingredientsText = sanitizeIngredientTerm(product.ingredients_text || product.ingredients_text_en || "")
+    return ingredientsText.includes(normalizedIngredient)
+  }) || products[0]
+}
+
+async function lookupOpenFoodFacts(ingredient) {
+  const params = new URLSearchParams({
+    search_terms: ingredient,
+    search_simple: "1",
+    action: "process",
+    json: "1",
+    page_size: "8",
+    fields: "product_name,ingredients_text,ingredients_text_en,ingredients_analysis_tags,allergens_tags"
+  })
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?${params.toString()}`
+  const data = await fetchJsonWithTimeout(url)
+  const match = getBestProductMatch(data.products || [], ingredient)
+  if(!match) return null
+
+  const productName = match.product_name || "N/A"
+  const allergenTag = Array.isArray(match.allergens_tags) && match.allergens_tags.length
+    ? stripTagPrefix(match.allergens_tags[0])
+    : null
+  const processingTag = Array.isArray(match.ingredients_analysis_tags) && match.ingredients_analysis_tags.length
+    ? stripTagPrefix(match.ingredients_analysis_tags[0])
+    : null
+
+  const notes = [
+    `Source: Open Food Facts`,
+    `Seen in: ${productName}`
+  ]
+  if(allergenTag) notes.push(`Allergen indicator: ${allergenTag}`)
+  if(processingTag) notes.push(`Ingredient analysis tag: ${processingTag}`)
+
+  return {
+    category: t("foodCategory"),
+    detail: notes.join(" · ")
+  }
+}
+
+async function lookupOpenBeautyFacts(ingredient) {
+  const params = new URLSearchParams({
+    search_terms: ingredient,
+    search_simple: "1",
+    action: "process",
+    json: "1",
+    page_size: "8",
+    fields: "product_name,ingredients_text,ingredients_text_en,categories_tags,ingredients_analysis_tags"
+  })
+  const url = `https://world.openbeautyfacts.org/cgi/search.pl?${params.toString()}`
+  const data = await fetchJsonWithTimeout(url)
+  const match = getBestProductMatch(data.products || [], ingredient)
+  if(!match) return null
+
+  const productName = match.product_name || "N/A"
+  const categoryTag = Array.isArray(match.categories_tags) && match.categories_tags.length
+    ? stripTagPrefix(match.categories_tags[0])
+    : null
+  const ingredientTag = Array.isArray(match.ingredients_analysis_tags) && match.ingredients_analysis_tags.length
+    ? stripTagPrefix(match.ingredients_analysis_tags[0])
+    : null
+
+  const notes = [
+    `Source: Open Beauty Facts`,
+    `Seen in: ${productName}`
+  ]
+  if(categoryTag) notes.push(`Product type: ${categoryTag}`)
+  if(ingredientTag) notes.push(`Ingredient tag: ${ingredientTag}`)
+
+  return {
+    category: t("skincareCategory"),
+    detail: notes.join(" · ")
+  }
+}
+
+async function analyzeWithFreeDatabases(ingredients) {
+  const lines = [`${t("fallbackHeader")}:`]
+
+  await Promise.all(ingredients.map(async (ingredient) => {
+    const [foodResult, beautyResult] = await Promise.allSettled([
+      lookupOpenFoodFacts(ingredient),
+      lookupOpenBeautyFacts(ingredient)
+    ])
+
+    const firstHit = [
+      foodResult.status === "fulfilled" ? foodResult.value : null,
+      beautyResult.status === "fulfilled" ? beautyResult.value : null
+    ].find(Boolean)
+
+    const detail = firstHit
+      ? firstHit
+      : { category: t("foodCategory"), detail: t("noPublicData") }
+
+    lines.push(`${ingredient}: [${detail.category}] ${detail.detail}`)
+  }))
+
+  return lines.join("\n")
+}
+
 /* -----------------------
 AI ANALYSIS
 ----------------------- */
@@ -453,43 +635,51 @@ AI ANALYSIS
 async function analyzeWithAI(ingredients){
   displayAIAnalysis(t("analyzing"), [])
 
-  if(!supabaseClient){
-    displayAIAnalysis(t("aiUnavailable"), [])
+  if(!Array.isArray(ingredients) || !ingredients.length){
+    displayAIAnalysis(t("analysisPlaceholder"), [])
     return
   }
 
-  try{
-    const lang = document.getElementById("language").value
-    const langName = languageNames[lang] || lang
-    const langLocale = languageLocales[lang] || lang
+  if(supabaseClient){
+    try{
+      const lang = document.getElementById("language").value
+      const langName = languageNames[lang] || lang
+      const langLocale = languageLocales[lang] || lang
 
-    const { data, error } =
-      await supabaseClient.functions.invoke(
-        "Wykta-backend",
-        {
-          body: {
-            ingredients,
-            lang: langLocale,
-            targetLanguage: langName,
-            promptLanguage: langName
+      const { data, error } =
+        await supabaseClient.functions.invoke(
+          "Wykta-backend",
+          {
+            body: {
+              ingredients,
+              lang: langLocale,
+              targetLanguage: langName,
+              promptLanguage: langName
+            }
           }
-        }
-      )
+        )
 
-    if(error) throw error
+      if(error) throw error
 
-    console.log("AI result:", data)
+      console.log("AI result:", data)
 
-    if(!data || !data.analysis){
-      displayAIAnalysis(tf("noAnalysisFor", langName), [])
-      return
+      if(data && data.analysis){
+        const lines = data.analysis.split("\n")
+        displayAIAnalysis("", lines)
+        return
+      }
+
+      console.warn(tf("noAnalysisFor", langName))
+    } catch(err){
+      console.error("AI function error, using open databases fallback:", err)
     }
+  }
 
-    const lines = data.analysis.split("\n")
-    displayAIAnalysis("", lines)
-
+  try{
+    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients)
+    displayAIAnalysis("", fallbackAnalysis.split("\n"))
   } catch(err){
-    console.error("AI function error:", err)
+    console.error("Public database lookup error:", err)
     displayAIAnalysis(t("failed"), [])
   }
 }
