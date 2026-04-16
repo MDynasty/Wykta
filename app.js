@@ -23,10 +23,51 @@ if (supabaseClient) {
 
 
 function extractIngredients(text){
-  return text
-    .split(/[,\.;•\n，；]/)  // Added Chinese comma and semicolon
-    .map(i => i.trim().toLowerCase())
+  const normalizedText = (text || "").toLowerCase().trim()
+  if(!normalizedText) return []
+
+  const knownIngredients = [
+    "water", "aqua", "glycerin", "niacinamide", "hyaluronic acid", "sodium hyaluronate",
+    "retinol", "glycolic acid", "salicylic acid", "benzoyl peroxide", "vitamin c",
+    "ascorbic acid", "ceramide", "panthenol", "shea butter", "cetearyl alcohol",
+    "fragrance", "parfum", "phenoxyethanol", "tocopherol", "zinc oxide", "titanium dioxide",
+    "petrolatum", "mineral oil", "dimethicone", "aloe vera", "green tea extract",
+    "rice", "wheat", "milk", "egg", "soy", "peanut", "tree nuts", "almond", "cashew",
+    "hazelnut", "fish", "shellfish", "shrimp", "sesame", "salt", "sugar", "palm oil",
+    "coconut oil", "olive oil", "citric acid", "sodium benzoate", "potassium sorbate",
+    "monosodium glutamate", "msg", "artificial flavor"
+  ]
+
+  const escapedKnown = knownIngredients
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map(i => i.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+
+  const foundByVocabulary = escapedKnown
+    .filter(ingredient => new RegExp(`(^|[^a-z0-9])${ingredient}($|[^a-z0-9])`, "i").test(normalizedText))
+    .map(i => i.replace(/\\([.*+?^${}()|[\]\\])/g, "$1"))
+
+  const splitByPunctuation = normalizedText
+    .split(/[,\.;:•\n\r\t，；。、|/\\]+/)
+    .map(i => i.trim())
     .filter(i => i.length > 0)
+
+  const fallbackSplit = splitByPunctuation.length > 1
+    ? splitByPunctuation
+    : foundByVocabulary.length
+      ? []
+      : normalizedText
+        .split(/\s+(?:and|und|et|y|e|和|및)\s+|\s{2,}/i)
+        .map(i => i.trim())
+        .filter(i => i.length > 0)
+
+  const unique = []
+  ;[...foundByVocabulary, ...fallbackSplit].forEach(item => {
+    if(!item) return
+    if(!unique.includes(item)) unique.push(item)
+  })
+
+  return unique
 }
 
 
@@ -43,7 +84,7 @@ ingredients.includes("retinol") &&
 ingredients.includes("glycolic acid")
 ){
 warnings.push(
-"Retinol combined with glycolic acid may increase skin irritation."
+t("retinolGlycolic")
 )
 }
 
@@ -52,7 +93,7 @@ ingredients.includes("benzoyl peroxide") &&
 ingredients.includes("retinol")
 ){
 warnings.push(
-"Benzoyl peroxide may deactivate retinol."
+t("peroxideRetinol")
 )
 }
 
@@ -71,7 +112,7 @@ const el = document.getElementById("interactionWarnings")
 if(!el) return
 
 if(!warnings.length){
-el.innerText = "No obvious ingredient conflicts detected."
+el.innerText = t("noConflicts")
 return
 }
 
@@ -118,6 +159,70 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
+const ocrLanguageCodes = {
+  en: "eng",
+  fr: "fra",
+  de: "deu",
+  zh: "chi_sim"
+}
+
+const uiMessages = {
+  en: {
+    noConflicts: "No obvious ingredient conflicts detected.",
+    retinolGlycolic: "Retinol combined with glycolic acid may increase skin irritation.",
+    peroxideRetinol: "Benzoyl peroxide may deactivate retinol.",
+    analyzing: "Analyzing ingredients...",
+    aiUnavailable: "AI analysis unavailable. Please check your Supabase configuration.",
+    noAnalysis: "AI returned no analysis for",
+    noAnalysisTail: "Please try again or check the backend function.",
+    failed: "AI analysis failed. Please check your internet connection and Supabase setup.",
+    ocrFailed: "OCR failed. Try again."
+  },
+  fr: {
+    noConflicts: "Aucun conflit évident entre ingrédients détecté.",
+    retinolGlycolic: "Le rétinol combiné à l'acide glycolique peut augmenter l'irritation cutanée.",
+    peroxideRetinol: "Le peroxyde de benzoyle peut désactiver le rétinol.",
+    analyzing: "Analyse des ingrédients...",
+    aiUnavailable: "Analyse IA indisponible. Vérifiez la configuration Supabase.",
+    noAnalysis: "L'IA n'a renvoyé aucune analyse pour",
+    noAnalysisTail: "Veuillez réessayer ou vérifier la fonction backend.",
+    failed: "Échec de l'analyse IA. Vérifiez votre connexion et Supabase.",
+    ocrFailed: "Échec de l'OCR. Réessayez."
+  },
+  de: {
+    noConflicts: "Keine offensichtlichen Inhaltsstoffkonflikte erkannt.",
+    retinolGlycolic: "Retinol in Kombination mit Glykolsäure kann Hautreizungen verstärken.",
+    peroxideRetinol: "Benzoylperoxid kann Retinol deaktivieren.",
+    analyzing: "Inhaltsstoffe werden analysiert...",
+    aiUnavailable: "KI-Analyse nicht verfügbar. Bitte Supabase-Konfiguration prüfen.",
+    noAnalysis: "Die KI hat keine Analyse für",
+    noAnalysisTail: "Bitte erneut versuchen oder die Backend-Funktion prüfen.",
+    failed: "KI-Analyse fehlgeschlagen. Bitte Internetverbindung und Supabase prüfen.",
+    ocrFailed: "OCR fehlgeschlagen. Bitte erneut versuchen."
+  },
+  zh: {
+    noConflicts: "未检测到明显成分冲突。",
+    retinolGlycolic: "视黄醇与乙醇酸同时使用可能增加皮肤刺激。",
+    peroxideRetinol: "过氧化苯甲酰可能使视黄醇失活。",
+    analyzing: "正在分析成分...",
+    aiUnavailable: "AI 分析不可用。请检查 Supabase 配置。",
+    noAnalysis: "AI 未返回以下语言的分析：",
+    noAnalysisTail: "请重试或检查后端函数。",
+    failed: "AI 分析失败。请检查网络连接和 Supabase 设置。",
+    ocrFailed: "OCR 失败，请重试。"
+  }
+}
+
+function currentLanguage(){
+  const languageSelect = document.getElementById("language")
+  return languageSelect ? languageSelect.value : "en"
+}
+
+function t(key){
+  const lang = currentLanguage()
+  return (uiMessages[lang] && uiMessages[lang][key]) || uiMessages.en[key] || key
+}
+
 function escapeHtml(text) {
   return text
     .replace(/&/g, "&amp;")
@@ -155,10 +260,10 @@ AI ANALYSIS
 ----------------------- */
 
 async function analyzeWithAI(ingredients){
-  displayAIAnalysis("Analyzing ingredients...", [])
+  displayAIAnalysis(t("analyzing"), [])
 
   if(!supabaseClient){
-    displayAIAnalysis("AI analysis unavailable. Please check your Supabase configuration.", [])
+    displayAIAnalysis(t("aiUnavailable"), [])
     return
   }
 
@@ -185,7 +290,7 @@ async function analyzeWithAI(ingredients){
     console.log("AI result:", data)
 
     if(!data || !data.analysis){
-      displayAIAnalysis(`AI returned no analysis for ${langName}. Please try again or check the backend function.`, [])
+      displayAIAnalysis(`${t("noAnalysis")} ${langName}. ${t("noAnalysisTail")}`, [])
       return
     }
 
@@ -194,7 +299,7 @@ async function analyzeWithAI(ingredients){
 
   } catch(err){
     console.error("AI function error:", err)
-    displayAIAnalysis("AI analysis failed. Please check your internet connection and Supabase setup.", [])
+    displayAIAnalysis(t("failed"), [])
   }
 }
 
@@ -271,7 +376,9 @@ OCR TEXT RECOGNITION (Simpler, main thread)
 ----------------------- */
 async function runOCR(canvas) {
   try {
-    const { data } = await Tesseract.recognize(canvas, 'eng');
+    const selectedLang = currentLanguage()
+    const ocrLang = ocrLanguageCodes[selectedLang] || "eng"
+    const { data } = await Tesseract.recognize(canvas, ocrLang);
     const text = data.text;
 
     document.getElementById("ocrResult").innerText = text;
@@ -280,6 +387,6 @@ async function runOCR(canvas) {
     await analyzeIngredients();
   } catch (err) {
     console.error("OCR error:", err);
-    document.getElementById("ocrResult").innerText = "OCR failed. Try again.";
+    document.getElementById("ocrResult").innerText = t("ocrFailed");
   }
 }
