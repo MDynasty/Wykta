@@ -223,6 +223,7 @@ const uiMessages = {
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
+    generalCategory: "General",
     noPublicData: "No clear match was found in public ingredient databases."
   },
   fr: {
@@ -270,6 +271,7 @@ const uiMessages = {
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
+    generalCategory: "Général",
     noPublicData: "Aucune correspondance claire trouvée dans les bases publiques."
   },
   de: {
@@ -317,6 +319,7 @@ const uiMessages = {
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
+    generalCategory: "Allgemein",
     noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden."
   },
   zh: {
@@ -364,6 +367,7 @@ const uiMessages = {
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
+    generalCategory: "通用",
     noPublicData: "在公共数据库中未找到明确匹配。"
   }
 }
@@ -516,7 +520,11 @@ async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetch(url, { signal: controller.signal })
-    if(!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText} (${url})`)
+    if(!response.ok) {
+      const parsedUrl = new URL(url)
+      const endpoint = `${parsedUrl.origin}${parsedUrl.pathname}`
+      throw new Error(`HTTP ${response.status} ${response.statusText} (${endpoint})`)
+    }
     return await response.json()
   } finally {
     clearTimeout(timeout)
@@ -528,10 +536,11 @@ function getBestProductMatch(products = [], ingredient) {
   const normalizedIngredient = sanitizeIngredientTerm(ingredient)
   if(!normalizedIngredient) return null
 
-  return products.find((product) => {
+  for (const product of products) {
     const ingredientsText = sanitizeIngredientTerm(product.ingredients_text || product.ingredients_text_en || "")
-    return ingredientsText.includes(normalizedIngredient)
-  }) || products[0]
+    if(ingredientsText.includes(normalizedIngredient)) return product
+  }
+  return products[0]
 }
 
 async function lookupOpenFoodFacts(ingredient) {
@@ -549,9 +558,9 @@ async function lookupOpenFoodFacts(ingredient) {
   if(!match) return null
 
   const productName = match.product_name || "N/A"
-  const allergenTag = Array.isArray(match.allergens_tags) && match.allergens_tags.length
-    ? stripTagPrefix(match.allergens_tags[0])
-    : null
+  const allergenTags = Array.isArray(match.allergens_tags)
+    ? [...new Set(match.allergens_tags.map(stripTagPrefix).filter(Boolean))].slice(0, 3)
+    : []
   const processingTag = Array.isArray(match.ingredients_analysis_tags) && match.ingredients_analysis_tags.length
     ? stripTagPrefix(match.ingredients_analysis_tags[0])
     : null
@@ -560,7 +569,7 @@ async function lookupOpenFoodFacts(ingredient) {
     `Source: Open Food Facts`,
     `Seen in: ${productName}`
   ]
-  if(allergenTag) notes.push(`Allergen indicator: ${allergenTag}`)
+  if(allergenTags.length) notes.push(`Allergen indicators: ${allergenTags.join(", ")}`)
   if(processingTag) notes.push(`Ingredient analysis tag: ${processingTag}`)
 
   return {
@@ -620,7 +629,7 @@ async function analyzeWithFreeDatabases(ingredients) {
 
     const detail = firstHit
       ? firstHit
-      : { category: t("foodCategory"), detail: t("noPublicData") }
+      : { category: t("generalCategory"), detail: t("noPublicData") }
 
     return `${ingredient}: [${detail.category}] ${detail.detail}`
   }))
