@@ -6,81 +6,169 @@
 <meta charset="UTF-8">
 
 <style>
+:root{
+  --bg:#050816;
+  --panel:#10162f;
+  --panel-soft:#151f3f;
+  --text:#eef2ff;
+  --muted:#9eaad4;
+  --brand:#7c83ff;
+  --brand-2:#55d6ff;
+}
+
+*{box-sizing:border-box}
 
 body{
-font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto;
-background:#f3f4f6;
-margin:0;
-padding:40px;
-display:flex;
-justify-content:center;
+  font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
+  margin:0;
+  background:radial-gradient(circle at 10% 10%, #1f2c63 0%, var(--bg) 48%);
+  color:var(--text);
+  padding:30px 18px;
 }
 
 .app{
-width:650px;
-background:white;
-border-radius:14px;
-padding:30px;
-box-shadow:0 15px 40px rgba(0,0,0,0.08);
+  width:min(1120px,100%);
+  margin:0 auto;
+  display:grid;
+  gap:20px;
 }
 
-h1{
-margin-top:0;
-font-size:28px;
+.hero{
+  background:linear-gradient(135deg,#1c2a5f 0%,#101b3a 56%,#13264f 100%);
+  border:1px solid rgba(124,131,255,.35);
+  border-radius:20px;
+  padding:26px;
 }
 
-.subtitle{
-color:#666;
-margin-bottom:20px;
+.hero h1{margin:0 0 8px;font-size:34px}
+.hero p{margin:0;color:var(--muted)}
+
+.kpis{
+  margin-top:18px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
 }
 
-textarea{
-width:100%;
-height:120px;
-border-radius:10px;
-border:1px solid #ddd;
-padding:12px;
-font-size:14px;
+.chip{
+  padding:10px 14px;
+  border-radius:999px;
+  font-size:13px;
+  font-weight:700;
+  background:rgba(85,214,255,.14);
+  border:1px solid rgba(85,214,255,.4);
 }
 
-button{
-background:#4f46e5;
-color:white;
-border:none;
-padding:12px 18px;
-border-radius:10px;
-cursor:pointer;
-margin-top:10px;
-font-weight:500;
+.grid{
+  display:grid;
+  gap:18px;
+  grid-template-columns:2fr 1fr;
 }
 
-button:hover{
-background:#4338ca;
+.card{
+  background:var(--panel);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:18px;
 }
 
-.section{
-margin-top:25px;
+.value-card{
+  background:linear-gradient(165deg, rgba(34,197,94,.13), rgba(124,131,255,.08));
 }
+
+.label{display:block;margin:10px 0 8px;font-size:13px;color:var(--muted);font-weight:600}
+
+textarea,select{
+  width:100%;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.15);
+  background:#0d1430;
+  color:var(--text);
+  padding:12px;
+  font-size:14px;
+}
+
+textarea{min-height:130px;resize:vertical}
+
+.btn{
+  border:none;
+  border-radius:12px;
+  padding:12px 16px;
+  cursor:pointer;
+  font-weight:700;
+}
+
+.btn-primary{
+  background:linear-gradient(90deg,var(--brand),var(--brand-2));
+  color:#061021;
+}
+
+.btn-secondary{
+  background:var(--panel-soft);
+  color:var(--text);
+  border:1px solid rgba(255,255,255,.14);
+}
+
+.btn-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+
+h2{margin:0 0 8px;font-size:18px}
 
 .result-card{
-background:#f9fafb;
-border-radius:10px;
-padding:12px;
-margin-top:8px;
+  background:#0c1431;
+  border:1px solid rgba(124,131,255,.2);
+  border-radius:10px;
+  padding:11px;
+  margin-top:8px;
 }
 
 .warning{
-background:#fff3cd;
-padding:12px;
-border-radius:10px;
-margin-top:8px;
+  background:rgba(245,158,11,.15);
+  border:1px solid rgba(245,158,11,.45);
+  color:#fde8bc;
+  border-radius:10px;
+  padding:12px;
 }
 
 video{
-margin-top:10px;
-border-radius:10px;
+  width:100%;
+  max-width:340px;
+  border-radius:12px;
+  background:#000;
 }
 
+.pricing{
+  display:grid;
+  gap:10px;
+}
+
+.plan{
+  border-radius:12px;
+  padding:12px;
+  background:#0c1431;
+  border:1px solid rgba(255,255,255,.09);
+}
+
+.plan strong{display:block}
+
+.plan.pro{
+  border-color:rgba(34,197,94,.45);
+  background:rgba(34,197,94,.09);
+}
+
+.footnote{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:10px;
+}
+
+@media (max-width:860px){
+  .grid{grid-template-columns:1fr}
+}
 </style>
 
 </head>
@@ -89,76 +177,73 @@ border-radius:10px;
 
 <div class="app">
 
-<h1>Wykta Ingredient Analyzer</h1>
+  <section class="hero">
+    <h1>Wykta Premium Ingredient Intelligence</h1>
+    <p>Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.</p>
+    <div class="kpis">
+      <span class="chip">✅ Food + Skincare Coverage</span>
+      <span class="chip">🌐 4-Language Support</span>
+      <span class="chip">⚡ OCR-to-Analysis in Seconds</span>
+      <span class="chip">💎 Upgrade-ready UX</span>
+    </div>
+  </section>
 
-<p>Paste a product ingredient list to understand what each ingredient means.</p>
+  <section class="grid">
+    <div class="card">
+      <label class="label" for="language">Analysis Language</label>
+      <select id="language">
+        <option value="en">English</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+        <option value="zh">中文</option>
+      </select>
 
-<div class="section">
+      <label class="label" for="ingredients">Ingredient List</label>
+      <textarea
+        id="ingredients"
+        rows="6"
+        cols="60"
+        placeholder="Paste ingredients from food or skincare labels"></textarea>
 
-<label for="language">Language</label>
-<select id="language">
-  <option value="en">English</option>
-  <option value="fr">Français</option>
-  <option value="de">Deutsch</option>
-  <option value="zh">中文</option>
-</select>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="analyzeIngredients()">Analyze Ingredients</button>
+        <button class="btn btn-secondary" onclick="startScan()">Open Camera</button>
+        <button class="btn btn-secondary" onclick="capture()">Capture Label</button>
+      </div>
+    </div>
+
+    <aside class="card value-card">
+      <h2>Why users pay for Wykta</h2>
+      <div class="pricing">
+        <div class="plan"><strong>Starter (Free)</strong>Quick scans, basic warnings, multilingual output.</div>
+        <div class="plan pro"><strong>Pro (Recommended)</strong>Priority analysis, richer ingredient insights, premium trust reports.</div>
+      </div>
+      <p class="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
+    </aside>
+  </section>
+
+  <section class="card">
+    <h2>AI Ingredient Analysis</h2>
+    <div id="ingredientResult">AI analysis will appear here</div>
+  </section>
+
+  <section class="card">
+    <h2>Interaction Warnings</h2>
+    <div id="interactionWarnings">Ingredient conflicts will appear here</div>
+  </section>
+
+  <section class="card">
+    <h2>Scan Ingredient Label</h2>
+    <video id="camera" width="300" autoplay></video>
+    <canvas id="snapshot" style="display:none;"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>Detected Text</h2>
+    <div id="ocrResult"></div>
+  </section>
 
 </div>
-
-<label for="ingredients">Ingredients</label>
-<textarea
-  id="ingredients"
-  rows="6"
-  cols="60"
-  placeholder="Example: Water, Glycerin, Niacinamide, Phenoxyethanol">
-</textarea>
-<br><br>
-
-<button onclick="analyzeIngredients()">
-Analyze Ingredients
-</button>
-
-<hr>
-
-<h2>AI Ingredient Analysis</h2>
-
-<div id="ingredientResult">
-AI analysis will appear here
-</div>
-
-<hr>
-
-<h2>Interaction Warnings</h2>
-
-<div id="interactionWarnings">
-Ingredient conflicts will appear here
-</div>
-
-<hr>
-
-<h2>Scan Ingredient Label</h2>
-
-<button onclick="startScan()">
-Open Camera
-</button>
-
-<br><br>
-
-<video id="camera" width="300" autoplay></video>
-
-<br><br>
-
-<button onclick="capture()">
-Capture
-</button>
-
-<canvas id="snapshot" style="display:none;"></canvas>
-
-<hr>
-
-<h2>Detected Text</h2>
-
-<div id="ocrResult"></div>
 
 <!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
