@@ -117,16 +117,17 @@ DISPLAY WARNINGS
 
 function displayInteractions(warnings){
 
-const el = document.getElementById("interactionWarnings")
+  const el = document.getElementById("interactionWarnings")
+  if(!el) return
 
-if(!el) return
+  if(!warnings.length){
+    el.innerHTML = `<div class="no-conflict"><span>✅</span> <span>${escapeHtml(t("noConflicts"))}</span></div>`
+    return
+  }
 
-if(!warnings.length){
-el.innerText = t("noConflicts")
-return
-}
-
-el.innerText = warnings.join("\n")
+  el.innerHTML = warnings
+    .map(w => `<div class="warning-card"><span class="warning-icon">⚠️</span><span>${escapeHtml(w)}</span></div>`)
+    .join("")
 
 }
 
@@ -382,20 +383,67 @@ function displayAIAnalysis(message, rawLines) {
   el.innerHTML = ""
 
   if(message){
+    const isLoading = message === t("analyzing")
+    const cls = isLoading ? "info" : "error"
+    const icon = isLoading
+      ? `<span class="spinner"></span>`
+      : `<span>⚠️</span>`
     el.insertAdjacentHTML(
       "beforeend",
-      `<div class="warning">${message}</div>`
+      `<div class="message-card ${cls}">${icon} ${escapeHtml(message)}</div>`
     )
+    return
   }
 
-  if(Array.isArray(rawLines) && rawLines.length){
+  if(!Array.isArray(rawLines) || !rawLines.length) return
+
+  const filteredLines = rawLines.filter(l => l.trim())
+  let startIdx = 0
+
+  // First line is the section title ("Ingredient Analysis:")
+  if(filteredLines[0] && filteredLines[0].trim().endsWith(":") && !filteredLines[0].includes("[")){
     el.insertAdjacentHTML(
       "beforeend",
-      rawLines.map(line =>
-        `<div class="result-card">${line}</div>`
-      ).join("")
+      `<p class="analysis-heading">${escapeHtml(filteredLines[0])}</p>`
     )
+    startIdx = 1
   }
+
+  const dangerWords  = ["allergen", "allergène", "allergen", "allergy", "avoid"]
+  const cautionWords = ["irritat", "sensitiv", "caution", "monitor", "deactivat", "increase skin", "may affect", "peut augmenter", "kann"]
+
+  filteredLines.slice(startIdx).forEach(line => {
+    // Expected format: "name: [Category] detail text"
+    const match = line.match(/^(.+?):\s*\[([^\]]+)\]\s*(.*)$/)
+    if(match){
+      const [, name, category, detail] = match
+      const catLower  = category.toLowerCase()
+      const detLower  = detail.toLowerCase()
+      const nameLower = name.toLowerCase()
+
+      let riskClass = "safe"
+      if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k))){
+        riskClass = "danger"
+      } else if(cautionWords.some(k => detLower.includes(k))){
+        riskClass = "caution"
+      }
+
+      let catClass = "general"
+      if(/food|aliment|lebensmittel|食品/i.test(catLower)) catClass = "food"
+      else if(/skin|soin|haut|护肤/i.test(catLower))       catClass = "skincare"
+
+      el.insertAdjacentHTML("beforeend", `
+        <div class="ingredient-card ${riskClass}">
+          <span class="ingredient-name">${escapeHtml(name)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
+          <span class="ingredient-detail">${escapeHtml(detail)}</span>
+        </div>
+      `)
+    } else if(line.trim()){
+      el.insertAdjacentHTML("beforeend",
+        `<div class="ingredient-card neutral"><span class="ingredient-detail">${escapeHtml(line)}</span></div>`
+      )
+    }
+  })
 }
 
 /* -----------------------
@@ -447,10 +495,41 @@ async function analyzeWithAI(ingredients){
 }
 
 /* -----------------------
+ANALYZE BUTTON LOADING STATE
+----------------------- */
+
+function setAnalyzeBtnLoading(isLoading){
+  const btn = document.getElementById("analyzeBtn")
+  if(!btn) return
+
+  const icon    = btn.querySelector(".btn-icon")
+  const btnText = btn.querySelector("[data-i18n='analyzeButton']")
+
+  if(isLoading){
+    btn.disabled = true
+    if(icon) icon.textContent = ""
+    if(!btn.querySelector(".spinner")){
+      btn.insertAdjacentHTML("afterbegin", '<span class="spinner" id="analyzeBtnSpinner"></span>')
+    }
+  } else {
+    btn.disabled = false
+    const spinner = document.getElementById("analyzeBtnSpinner")
+    if(spinner) spinner.remove()
+    if(icon) icon.textContent = "🔬"
+    if(btnText) btnText.textContent = t("analyzeButton")
+  }
+}
+
+/* -----------------------
 MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
+  const resultsSection = document.getElementById("resultsSection")
+  if(resultsSection) resultsSection.style.display = ""
+
+  setAnalyzeBtnLoading(true)
+
   const text = document.getElementById("ingredients").value
   const ingredients = extractIngredients(text)
   const warnings = checkInteractions(ingredients)
@@ -459,6 +538,8 @@ async function analyzeIngredients(){
 
   await saveResult(text, warnings.join("; "))
   await analyzeWithAI(ingredients)
+
+  setAnalyzeBtnLoading(false)
 }
 
 /* -----------------------
@@ -478,6 +559,9 @@ video: true
 const video = document.getElementById("camera")
 
 video.srcObject = stream
+
+const placeholder = document.getElementById("cameraPlaceholder")
+if(placeholder) placeholder.style.display = "none"
 
 }catch(err){
 
@@ -524,7 +608,11 @@ async function runOCR(canvas) {
     const { data } = await Tesseract.recognize(canvas, ocrLang);
     const text = data.text;
 
-    document.getElementById("ocrResult").innerText = text;
+    const ocrEl = document.getElementById("ocrResult")
+    if(ocrEl){
+      ocrEl.innerText = text;
+      ocrEl.classList.add("visible")
+    }
     document.getElementById("ingredients").value = text;
 
     await analyzeIngredients();

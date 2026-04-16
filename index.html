@@ -1,186 +1,46 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 <title>Wykta – Ingredient Analyzer</title>
 <meta charset="UTF-8">
-
-<style>
-:root{
-  --bg:#050816;
-  --panel:#10162f;
-  --panel-soft:#151f3f;
-  --text:#eef2ff;
-  --muted:#9eaad4;
-  --brand:#7c83ff;
-  --brand-2:#55d6ff;
-}
-
-*{box-sizing:border-box}
-
-body{
-  font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;
-  margin:0;
-  background:radial-gradient(circle at 10% 10%, #1f2c63 0%, var(--bg) 48%);
-  color:var(--text);
-  padding:30px 18px;
-}
-
-.app{
-  width:min(1120px,100%);
-  margin:0 auto;
-  display:grid;
-  gap:20px;
-}
-
-.hero{
-  background:linear-gradient(135deg,#1c2a5f 0%,#101b3a 56%,#13264f 100%);
-  border:1px solid rgba(124,131,255,.35);
-  border-radius:20px;
-  padding:26px;
-}
-
-.hero h1{margin:0 0 8px;font-size:34px}
-.hero p{margin:0;color:var(--muted)}
-
-.kpis{
-  margin-top:18px;
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-}
-
-.chip{
-  padding:10px 14px;
-  border-radius:999px;
-  font-size:13px;
-  font-weight:700;
-  background:rgba(85,214,255,.14);
-  border:1px solid rgba(85,214,255,.4);
-}
-
-.grid{
-  display:grid;
-  gap:18px;
-  grid-template-columns:2fr 1fr;
-}
-
-.card{
-  background:var(--panel);
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:16px;
-  padding:18px;
-}
-
-.value-card{
-  background:linear-gradient(165deg, rgba(34,197,94,.13), rgba(124,131,255,.08));
-}
-
-.label{display:block;margin:10px 0 8px;font-size:13px;color:var(--muted);font-weight:600}
-
-textarea,select{
-  width:100%;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.15);
-  background:#0d1430;
-  color:var(--text);
-  padding:12px;
-  font-size:14px;
-}
-
-textarea{min-height:130px;resize:vertical}
-
-.btn{
-  border:none;
-  border-radius:12px;
-  padding:12px 16px;
-  cursor:pointer;
-  font-weight:700;
-}
-
-.btn-primary{
-  background:linear-gradient(90deg,var(--brand),var(--brand-2));
-  color:#061021;
-}
-
-.btn-secondary{
-  background:var(--panel-soft);
-  color:var(--text);
-  border:1px solid rgba(255,255,255,.14);
-}
-
-.btn-row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:12px;
-}
-
-h2{margin:0 0 8px;font-size:18px}
-
-.result-card{
-  background:#0c1431;
-  border:1px solid rgba(124,131,255,.2);
-  border-radius:10px;
-  padding:11px;
-  margin-top:8px;
-}
-
-.warning{
-  background:rgba(245,158,11,.15);
-  border:1px solid rgba(245,158,11,.45);
-  color:#fde8bc;
-  border-radius:10px;
-  padding:12px;
-}
-
-video{
-  width:100%;
-  max-width:340px;
-  border-radius:12px;
-  background:#000;
-}
-
-.pricing{
-  display:grid;
-  gap:10px;
-}
-
-.plan{
-  border-radius:12px;
-  padding:12px;
-  background:#0c1431;
-  border:1px solid rgba(255,255,255,.09);
-}
-
-.plan strong{display:block}
-
-.plan.pro{
-  border-color:rgba(34,197,94,.45);
-  background:rgba(34,197,94,.09);
-}
-
-.footnote{
-  color:var(--muted);
-  font-size:12px;
-  margin-top:10px;
-}
-
-@media (max-width:860px){
-  .grid{grid-template-columns:1fr}
-}
-</style>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.">
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<div class="app">
+<!-- ── NAVIGATION ───────────────────────────────────────── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#">
+      <div class="brand-mark">⚗</div>
+      <span>Wykta</span>
+    </a>
+    <div class="nav-right">
+      <select id="language" class="lang-select" aria-label="Language">
+        <option value="en">🌐 English</option>
+        <option value="fr">🌐 Français</option>
+        <option value="de">🌐 Deutsch</option>
+        <option value="zh">🌐 中文</option>
+      </select>
+    </div>
+  </div>
+</nav>
 
+<main class="main">
+
+  <!-- ── HERO ─────────────────────────────────────────────── -->
   <section class="hero">
-    <h1 id="heroTitle" data-i18n="heroTitle">Wykta Premium Ingredient Intelligence</h1>
-    <p id="heroSubtitle" data-i18n="heroSubtitle">Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.</p>
-    <div class="kpis">
+    <div class="hero-badge">✨ AI-Powered Ingredient Intelligence</div>
+    <h1 class="hero-title" id="heroTitle" data-i18n="heroTitle">
+      Know exactly what's <span class="gradient-text">in your products</span>
+    </h1>
+    <p class="hero-sub" id="heroSubtitle" data-i18n="heroSubtitle">
+      Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.
+    </p>
+    <div class="chips">
       <span class="chip" data-i18n="chipCoverage">✅ Food + Skincare Coverage</span>
       <span class="chip" data-i18n="chipLanguage">🌐 4-Language Support</span>
       <span class="chip" data-i18n="chipSpeed">⚡ OCR-to-Analysis in Seconds</span>
@@ -188,63 +48,139 @@ video{
     </div>
   </section>
 
-  <section class="grid">
-    <div class="card">
-      <label class="label" for="language" data-i18n="analysisLanguage">Analysis Language</label>
-      <select id="language">
-        <option value="en">English</option>
-        <option value="fr">Français</option>
-        <option value="de">Deutsch</option>
-        <option value="zh">中文</option>
-      </select>
+  <!-- ── TOOL GRID ─────────────────────────────────────────── -->
+  <section class="tool-grid">
 
-      <label class="label" for="ingredients" data-i18n="ingredientList">Ingredient List</label>
+    <!-- Input card -->
+    <div class="card">
+      <h2 class="card-title">🔬 <span data-i18n="analysisTitle">AI Ingredient Analysis</span></h2>
+
+      <label class="field-label" for="ingredients" data-i18n="ingredientList">Ingredient List</label>
       <textarea
         id="ingredients"
-        rows="6"
-        cols="60"
+        class="input-area"
         data-i18n-placeholder="ingredientsPlaceholder"
         placeholder="Paste ingredients from food or skincare labels"></textarea>
 
       <div class="btn-row">
-        <button class="btn btn-primary" onclick="analyzeIngredients()" data-i18n="analyzeButton">Analyze Ingredients</button>
-        <button class="btn btn-secondary" onclick="startScan()" data-i18n="openCameraButton">Open Camera</button>
-        <button class="btn btn-secondary" onclick="capture()" data-i18n="captureButton">Capture Label</button>
+        <button class="btn btn-primary" id="analyzeBtn" onclick="analyzeIngredients()">
+          <span class="btn-icon">🔬</span>
+          <span data-i18n="analyzeButton">Analyze Ingredients</span>
+        </button>
+        <button class="btn btn-secondary" onclick="startScan()">
+          <span class="btn-icon">📷</span>
+          <span data-i18n="openCameraButton">Open Camera</span>
+        </button>
+        <button class="btn btn-secondary" onclick="capture()">
+          <span class="btn-icon">⚡</span>
+          <span data-i18n="captureButton">Capture Label</span>
+        </button>
       </div>
     </div>
 
-    <aside class="card value-card">
-      <h2 data-i18n="valueTitle">Why users pay for Wykta</h2>
-      <div class="pricing">
-        <div class="plan"><strong data-i18n="starterTitle">Starter (Free)</strong><span data-i18n="starterBody">Quick scans, basic warnings, multilingual output.</span></div>
-        <div class="plan pro"><strong data-i18n="proTitle">Pro (Recommended)</strong><span data-i18n="proBody">Priority analysis, richer ingredient insights, premium trust reports.</span></div>
+    <!-- Camera card -->
+    <div class="card camera-card">
+      <h2 class="card-title">📷 <span data-i18n="scanTitle">Scan Ingredient Label</span></h2>
+
+      <div class="camera-wrapper">
+        <video id="camera" autoplay></video>
+        <div class="camera-placeholder" id="cameraPlaceholder">
+          <span class="cam-icon">📷</span>
+          <span>Click "Open Camera" to start scanning</span>
+        </div>
       </div>
-      <p class="footnote" data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
-    </aside>
+      <canvas id="snapshot" style="display:none;"></canvas>
+
+      <label class="field-label" data-i18n="detectedTitle">Detected Text</label>
+      <div id="ocrResult" class="ocr-result"></div>
+    </div>
+
   </section>
 
-  <section class="card">
-    <h2 data-i18n="analysisTitle">AI Ingredient Analysis</h2>
-    <div id="ingredientResult">AI analysis will appear here</div>
+  <!-- ── RESULTS (hidden until analysis runs) ──────────────── -->
+  <section class="results-section" id="resultsSection" style="display:none;">
+    <div class="results-grid">
+
+      <div class="card">
+        <h2 class="card-title">🧪 <span data-i18n="analysisTitle">AI Ingredient Analysis</span></h2>
+        <div id="ingredientResult">
+          <div class="empty-state">
+            <span class="empty-icon">🧪</span>
+            <span data-i18n="analysisPlaceholder">AI analysis will appear here</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">⚠️ <span data-i18n="warningTitle">Interaction Warnings</span></h2>
+        <div id="interactionWarnings">
+          <div class="empty-state">
+            <span class="empty-icon">🛡️</span>
+            <span data-i18n="warningPlaceholder">Ingredient conflicts will appear here</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </section>
 
-  <section class="card">
-    <h2 data-i18n="warningTitle">Interaction Warnings</h2>
-    <div id="interactionWarnings">Ingredient conflicts will appear here</div>
+  <!-- ── PRICING / VALUE ───────────────────────────────────── -->
+  <section>
+    <div class="value-header">
+      <h2 data-i18n="valueTitle">Why users pay for Wykta</h2>
+      <p data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
+    </div>
+
+    <div class="pricing-grid">
+
+      <div class="plan-card">
+        <div class="plan-name" data-i18n="starterTitle">Starter (Free)</div>
+        <div class="plan-price">$0</div>
+        <div class="plan-period">forever free</div>
+        <ul class="plan-features">
+          <li data-i18n="starterBody">Quick scans, basic warnings, multilingual output.</li>
+          <li>Paste or camera input</li>
+          <li>4-language support</li>
+          <li class="muted">Priority analysis</li>
+          <li class="muted">Export reports</li>
+        </ul>
+      </div>
+
+      <div class="plan-card featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-name" data-i18n="proTitle">Pro (Recommended)</div>
+        <div class="plan-price">$9<small style="font-size:16px;font-weight:500">/mo</small></div>
+        <div class="plan-period">billed monthly</div>
+        <ul class="plan-features">
+          <li>Everything in Starter</li>
+          <li data-i18n="proBody">Priority analysis, richer ingredient insights, premium trust reports.</li>
+          <li>Unlimited scans</li>
+          <li>Export PDF reports</li>
+        </ul>
+      </div>
+
+      <div class="plan-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price">Custom</div>
+        <div class="plan-period">contact us</div>
+        <ul class="plan-features">
+          <li>Everything in Pro</li>
+          <li>REST API access</li>
+          <li>White-label option</li>
+          <li>SLA guarantee</li>
+          <li>Dedicated support</li>
+        </ul>
+      </div>
+
+    </div>
   </section>
 
-  <section class="card">
-    <h2 data-i18n="scanTitle">Scan Ingredient Label</h2>
-    <video id="camera" width="300" autoplay></video>
-    <canvas id="snapshot" style="display:none;"></canvas>
-  </section>
+  <!-- ── FOOTER ────────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <p>Wykta &copy; 2025 &mdash; <span data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</span></p>
+  </footer>
 
-  <section class="card">
-    <h2 data-i18n="detectedTitle">Detected Text</h2>
-    <div id="ocrResult"></div>
-  </section>
-
-</div>
+</main>
 
 <!-- Supabase library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
