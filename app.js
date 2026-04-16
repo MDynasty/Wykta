@@ -45,7 +45,7 @@ function getKnownIngredientMatchers(){
       const escapedIngredient = ingredient.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
       return {
         ingredient,
-        regex: new RegExp(`(^|[^a-z0-9])${escapedIngredient}($|[^a-z0-9])`, "i")
+        regex: new RegExp(`(^|[^\\p{L}\\p{N}])${escapedIngredient}($|[^\\p{L}\\p{N}])`, "iu")
       }
     })
 

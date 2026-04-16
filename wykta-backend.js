@@ -229,8 +229,9 @@ serve(async (req) => {
     const inputIngredients = Array.isArray(ingredients) ? ingredients : []
     const analysisLines = inputIngredients.map((rawIngredient) => {
       const name = String(rawIngredient || '').trim().toLowerCase()
+      const displayName = name || String(rawIngredient || '').trim()
       const result = analyzeIngredient(name, normalizedLanguage)
-      return `${rawIngredient}: [${result.category}] ${result.detail}`
+      return `${displayName}: [${result.category}] ${result.detail}`
     })
 
     const analysis = `${languagePack.title}:\n${analysisLines.join('\n')}`
