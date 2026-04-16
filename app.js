@@ -516,7 +516,7 @@ async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetch(url, { signal: controller.signal })
-    if(!response.ok) throw new Error(`HTTP ${response.status}`)
+    if(!response.ok) throw new Error(`HTTP ${response.status} ${response.statusText} (${url})`)
     return await response.json()
   } finally {
     clearTimeout(timeout)
@@ -526,7 +526,7 @@ async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
 function getBestProductMatch(products = [], ingredient) {
   if(!products.length) return null
   const normalizedIngredient = sanitizeIngredientTerm(ingredient)
-  if(!normalizedIngredient) return products[0]
+  if(!normalizedIngredient) return null
 
   return products.find((product) => {
     const ingredientsText = sanitizeIngredientTerm(product.ingredients_text || product.ingredients_text_en || "")
@@ -607,7 +607,7 @@ async function lookupOpenBeautyFacts(ingredient) {
 async function analyzeWithFreeDatabases(ingredients) {
   const lines = [`${t("fallbackHeader")}:`]
 
-  await Promise.all(ingredients.map(async (ingredient) => {
+  const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
     const [foodResult, beautyResult] = await Promise.allSettled([
       lookupOpenFoodFacts(ingredient),
       lookupOpenBeautyFacts(ingredient)
@@ -622,8 +622,9 @@ async function analyzeWithFreeDatabases(ingredients) {
       ? firstHit
       : { category: t("foodCategory"), detail: t("noPublicData") }
 
-    lines.push(`${ingredient}: [${detail.category}] ${detail.detail}`)
+    return `${ingredient}: [${detail.category}] ${detail.detail}`
   }))
+  lines.push(...analysisLines)
 
   return lines.join("\n")
 }
@@ -633,12 +634,12 @@ AI ANALYSIS
 ----------------------- */
 
 async function analyzeWithAI(ingredients){
-  displayAIAnalysis(t("analyzing"), [])
-
   if(!Array.isArray(ingredients) || !ingredients.length){
     displayAIAnalysis(t("analysisPlaceholder"), [])
     return
   }
+
+  displayAIAnalysis(t("analyzing"), [])
 
   if(supabaseClient){
     try{
