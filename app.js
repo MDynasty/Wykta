@@ -57,7 +57,7 @@ function extractIngredients(text){
     : foundByVocabulary.length
       ? []
       : normalizedText
-        .split(/\s+(?:and|und|et|y|e|和|및)\s+|\s{2,}/i)
+        .split(/\s+(?:and|und|et|y|e|和)\s+|\s{2,}/i)
         .map(i => i.trim())
         .filter(i => i.length > 0)
 

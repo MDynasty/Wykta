@@ -220,11 +220,11 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, lang, targetLanguage, promptLanguage } = await req.json()
+    const { ingredients, lang } = await req.json()
     const normalizedLanguage = normalizeLanguage(lang)
     const languagePack = languageContent[normalizedLanguage] || languageContent.en
 
-    console.log('Request:', { ingredients, lang, targetLanguage, promptLanguage })
+    console.log('Request:', { ingredients, lang })
 
     const inputIngredients = Array.isArray(ingredients) ? ingredients : []
     const analysisLines = inputIngredients.map((rawIngredient) => {
