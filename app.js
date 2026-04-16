@@ -33,23 +33,31 @@ const knownIngredients = [
   "monosodium glutamate", "msg", "artificial flavor"
 ]
 
-const knownIngredientMatchers = knownIngredients
-  .slice()
-  .sort((a, b) => b.length - a.length)
-  .map(ingredient => {
-    const escapedIngredient = ingredient.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-    return {
-      ingredient,
-      regex: new RegExp(`(^|[^a-z0-9])${escapedIngredient}($|[^a-z0-9])`, "i")
-    }
-  })
+let cachedKnownIngredientMatchers = null
+
+function getKnownIngredientMatchers(){
+  if(cachedKnownIngredientMatchers) return cachedKnownIngredientMatchers
+
+  cachedKnownIngredientMatchers = knownIngredients
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map(ingredient => {
+      const escapedIngredient = ingredient.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      return {
+        ingredient,
+        regex: new RegExp(`(^|[^a-z0-9])${escapedIngredient}($|[^a-z0-9])`, "i")
+      }
+    })
+
+  return cachedKnownIngredientMatchers
+}
 
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
   if(!normalizedText) return []
 
-  const foundByVocabulary = knownIngredientMatchers
+  const foundByVocabulary = getKnownIngredientMatchers()
     .filter(({ regex }) => regex.test(normalizedText))
     .map(({ ingredient }) => ingredient)
 
@@ -67,7 +75,9 @@ function extractIngredients(text){
         .map(i => i.trim())
         .filter(i => i.length > 0)
 
-  return [...new Set([...foundByVocabulary, ...fallbackSplit].filter(Boolean))]
+  const normalizedVocabularyMatches = foundByVocabulary.filter(Boolean)
+  const normalizedFallbackMatches = fallbackSplit.filter(Boolean)
+  return [...new Set([...normalizedVocabularyMatches, ...normalizedFallbackMatches])]
 }
 
 
@@ -173,8 +183,7 @@ const uiMessages = {
     peroxideRetinol: "Benzoyl peroxide may deactivate retinol.",
     analyzing: "Analyzing ingredients...",
     aiUnavailable: "AI analysis unavailable. Please check your Supabase configuration.",
-    noAnalysis: "AI returned no analysis for",
-    noAnalysisTail: "Please try again or check the backend function.",
+    noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Please try again or check the backend function.`,
     failed: "AI analysis failed. Please check your internet connection and Supabase setup.",
     ocrFailed: "OCR failed. Try again."
   },
@@ -184,8 +193,7 @@ const uiMessages = {
     peroxideRetinol: "Le peroxyde de benzoyle peut désactiver le rétinol.",
     analyzing: "Analyse des ingrédients...",
     aiUnavailable: "Analyse IA indisponible. Vérifiez la configuration Supabase.",
-    noAnalysis: "L'IA n'a renvoyé aucune analyse pour",
-    noAnalysisTail: "Veuillez réessayer ou vérifier la fonction backend.",
+    noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Veuillez réessayer ou vérifier la fonction backend.`,
     failed: "Échec de l'analyse IA. Vérifiez votre connexion et Supabase.",
     ocrFailed: "Échec de l'OCR. Réessayez."
   },
@@ -195,8 +203,7 @@ const uiMessages = {
     peroxideRetinol: "Benzoylperoxid kann Retinol deaktivieren.",
     analyzing: "Inhaltsstoffe werden analysiert...",
     aiUnavailable: "KI-Analyse nicht verfügbar. Bitte Supabase-Konfiguration prüfen.",
-    noAnalysis: "Die KI hat keine Analyse für",
-    noAnalysisTail: "Bitte erneut versuchen oder die Backend-Funktion prüfen.",
+    noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Bitte erneut versuchen oder die Backend-Funktion prüfen.`,
     failed: "KI-Analyse fehlgeschlagen. Bitte Internetverbindung und Supabase prüfen.",
     ocrFailed: "OCR fehlgeschlagen. Bitte erneut versuchen."
   },
@@ -206,8 +213,7 @@ const uiMessages = {
     peroxideRetinol: "过氧化苯甲酰可能使视黄醇失活。",
     analyzing: "正在分析成分...",
     aiUnavailable: "AI 分析不可用。请检查 Supabase 配置。",
-    noAnalysis: "AI 未返回以下语言的分析：",
-    noAnalysisTail: "请重试或检查后端函数。",
+    noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果。请重试或检查后端函数。`,
     failed: "AI 分析失败。请检查网络连接和 Supabase 设置。",
     ocrFailed: "OCR 失败，请重试。"
   }
@@ -221,6 +227,11 @@ function currentLanguage(){
 function t(key){
   const lang = currentLanguage()
   return (uiMessages[lang] && uiMessages[lang][key]) || uiMessages.en[key] || key
+}
+
+function tf(key, ...args){
+  const template = t(key)
+  return typeof template === "function" ? template(...args) : template
 }
 
 function escapeHtml(text) {
@@ -290,7 +301,7 @@ async function analyzeWithAI(ingredients){
     console.log("AI result:", data)
 
     if(!data || !data.analysis){
-      displayAIAnalysis(`${t("noAnalysis")} ${langName}. ${t("noAnalysisTail")}`, [])
+      displayAIAnalysis(tf("noAnalysisFor", langName), [])
       return
     }
 
