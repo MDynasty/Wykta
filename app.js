@@ -111,6 +111,7 @@ const ingredientAliases = {
 
 // 135 keeps high-contrast label text readable while reducing colorful package noise.
 const OCR_BINARIZATION_THRESHOLD = 135
+// Slightly lower than generic network timeout so Wikidata fallback does not block overall analysis responsiveness.
 const WIKIDATA_TIMEOUT_MS = 6500
 const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
 const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
@@ -327,6 +328,7 @@ function extractIngredients(text){
 
   // Insert delimiters between CJK and Latin/number runs so mixed-script OCR like "水retinol" can split correctly.
   const scriptBoundarySplitText = normalizedText
+    // \u4e00-\u9fa5: CJK ideographs, \u00C0-\u024F: Latin extended letters.
     .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
     .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
 
@@ -996,7 +998,7 @@ async function lookupWikidataIngredient(ingredient) {
   if(!firstHit) return null
 
   const label = firstHit.label || normalizedIngredient
-  const description = firstHit.description || "Open knowledge graph entry available."
+  const description = firstHit.description || "No description available from Wikidata."
   const notes = [
     "Source: Wikidata",
     `Entity: ${label}`,

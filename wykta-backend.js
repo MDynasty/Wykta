@@ -450,7 +450,7 @@ function normalizeLanguage(lang) {
   return 'en'
 }
 
-function normalizeIngredientKey(rawName) {
+function normalizeAndResolveIngredient(rawName) {
   const normalized = String(rawName || "")
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
@@ -462,7 +462,7 @@ function normalizeIngredientKey(rawName) {
 
 function inferUnknownIngredientDetail(ingredientName, languageKey) {
   const content = languageContent[languageKey] || languageContent.en
-  const normalized = normalizeIngredientKey(ingredientName)
+  const normalized = normalizeAndResolveIngredient(ingredientName)
   const matchedRule = inferredIngredientRules.find((rule) => rule.pattern.test(normalized))
 
   if (matchedRule) {
@@ -484,11 +484,12 @@ function formatDisplayIngredientName(originalName, normalizedName) {
   if (normalizedName && normalizedName !== originalName.toLowerCase()) {
     return `${originalName} (${normalizedName})`
   }
-  return originalName || normalizedName
+  if (originalName) return originalName
+  return normalizedName || ""
 }
 
 function analyzeIngredient(ingredientName, languageKey) {
-  const normalizedName = normalizeIngredientKey(ingredientName)
+  const normalizedName = normalizeAndResolveIngredient(ingredientName)
   const item = ingredientDatabase[normalizedName]
   const content = languageContent[languageKey] || languageContent.en
 
@@ -519,7 +520,7 @@ serve(async (req) => {
     const inputIngredients = Array.isArray(ingredients) ? ingredients : []
     const analysisLines = inputIngredients.map((rawIngredient) => {
       const originalName = String(rawIngredient || '').trim()
-      const normalizedName = normalizeIngredientKey(originalName)
+      const normalizedName = normalizeAndResolveIngredient(originalName)
       const displayName = formatDisplayIngredientName(originalName, normalizedName)
       const result = analyzeIngredient(normalizedName, normalizedLanguage)
       return `${displayName}: [${result.category}] ${result.detail}`

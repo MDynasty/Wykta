@@ -518,7 +518,7 @@ function normalizeLanguage(lang) {
   return 'en'
 }
 
-function normalizeIngredientKey(rawName: string) {
+function normalizeAndResolveIngredient(rawName: string) {
   const normalized = String(rawName || "")
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
@@ -530,7 +530,7 @@ function normalizeIngredientKey(rawName: string) {
 
 function inferUnknownIngredientDetail(ingredientName: string, languageKey: string) {
   const content = languageContent[languageKey] || languageContent.en
-  const normalized = normalizeIngredientKey(ingredientName)
+  const normalized = normalizeAndResolveIngredient(ingredientName)
   const matchedRule = inferredIngredientRules.find((rule) => rule.pattern.test(normalized))
 
   if (matchedRule) {
@@ -552,11 +552,12 @@ function formatDisplayIngredientName(originalName: string, normalizedName: strin
   if (normalizedName && normalizedName !== originalName.toLowerCase()) {
     return `${originalName} (${normalizedName})`
   }
-  return originalName || normalizedName
+  if (originalName) return originalName
+  return normalizedName || ""
 }
 
-function analyzeIngredient(ingredientName, languageKey) {
-  const normalizedName = normalizeIngredientKey(ingredientName)
+function analyzeIngredient(ingredientName: string, languageKey: string) {
+  const normalizedName = normalizeAndResolveIngredient(ingredientName)
   const item = ingredientDatabase[normalizedName]
   const content = languageContent[languageKey] || languageContent.en
 
@@ -614,7 +615,7 @@ serve(async (req) => {
     console.log('Using local ingredient database')
     const analysisLines = inputIngredients.map((rawDisplayName) => {
       const originalName = String(rawDisplayName || '').trim()
-      const normalizedName = normalizeIngredientKey(originalName)
+      const normalizedName = normalizeAndResolveIngredient(originalName)
       const displayName = formatDisplayIngredientName(originalName, normalizedName)
       const result = analyzeIngredient(normalizedName, normalizedLanguage)
       return `${displayName}: [${result.category}] ${result.detail}`
