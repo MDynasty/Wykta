@@ -14,6 +14,13 @@ const ingredientDatabase = {
     de: "Lösungsmittelbasis zum Lösen und Mischen von Inhaltsstoffen.",
     zh: "作为溶剂基础，用于溶解和混合其他成分。"
   },
+  "aloe vera": {
+    category: "skincare",
+    en: "Botanical soothing and hydrating ingredient commonly used to calm irritation.",
+    fr: "Ingrédient végétal apaisant et hydratant, souvent utilisé pour calmer les irritations.",
+    de: "Pflanzlicher beruhigender und feuchtigkeitsspendender Inhaltsstoff, oft zur Reizlinderung eingesetzt.",
+    zh: "植物来源的舒缓保湿成分，常用于缓解刺激不适。"
+  },
   glycerin: {
     category: "skincare",
     en: "Humectant that helps skin retain moisture.",
@@ -350,7 +357,7 @@ const ingredientDatabase = {
 const languageContent = {
   en: {
     title: "Ingredient Analysis",
-    unknown: "No exact local-db hit; generated an inferred profile from ingredient naming patterns and open-data references.",
+    unknown: "No exact local-db hit in sourced references.",
     categories: {
       skincare: "Skincare",
       food: "Food",
@@ -359,7 +366,7 @@ const languageContent = {
   },
   fr: {
     title: "Analyse des ingrédients",
-    unknown: "Aucune correspondance exacte en base locale ; profil inféré à partir du nom de l’ingrédient et de références open-data.",
+    unknown: "Aucune correspondance exacte dans les références sourcées.",
     categories: {
       skincare: "Soin de la peau",
       food: "Alimentaire",
@@ -368,7 +375,7 @@ const languageContent = {
   },
   de: {
     title: "Inhaltsstoffanalyse",
-    unknown: "Kein exakter Treffer in der lokalen Datenbank; Profil wurde aus Namensmustern und Open-Data-Hinweisen abgeleitet.",
+    unknown: "Kein exakter Treffer in den quellenbasierten Referenzen.",
     categories: {
       skincare: "Hautpflege",
       food: "Lebensmittel",
@@ -377,7 +384,7 @@ const languageContent = {
   },
   zh: {
     title: "成分分析",
-    unknown: "本地数据库未命中精确条目；已基于成分命名模式与开放数据线索生成推断说明。",
+    unknown: "在已标注来源的参考数据中未命中精确条目。",
     categories: {
       skincare: "护肤",
       food: "食品",
@@ -387,6 +394,7 @@ const languageContent = {
 }
 
 const ingredientAliases = {
+  "aqua": "water",
   "水": "water",
   "eau": "water",
   "wasser": "water",
@@ -398,49 +406,6 @@ const ingredientAliases = {
   "芦荟": "aloe vera",
   "库拉索芦荟": "aloe vera"
 }
-
-const inferredIngredientRules = [
-  {
-    pattern: /(acid|acide|säure|酸)\b/i,
-    category: "general",
-    detail: {
-      en: "Likely an acidity regulator or exfoliating acid depending on concentration and usage context.",
-      fr: "Probablement un régulateur d'acidité ou un acide exfoliant selon la concentration et le contexte d’usage.",
-      de: "Wahrscheinlich ein Säureregulator oder ein peelender Wirkstoff – abhängig von Konzentration und Anwendung.",
-      zh: "通常属于酸度调节剂或去角质酸类，具体作用取决于浓度与配方场景。"
-    }
-  },
-  {
-    pattern: /(oil|öl|huile|aceite|油)\b/i,
-    category: "general",
-    detail: {
-      en: "Likely an oil-phase ingredient used for emollience, texture, or lipid nutrition support.",
-      fr: "Probablement un ingrédient huileux utilisé pour l’émollience, la texture ou l’apport lipidique.",
-      de: "Vermutlich eine ölbasierte Komponente für Geschmeidigkeit, Textur oder Lipidversorgung.",
-      zh: "通常属于油相成分，用于柔润肤感、质构调节或脂质营养支持。"
-    }
-  },
-  {
-    pattern: /(extract|extrait|extrakt|提取物)\b/i,
-    category: "general",
-    detail: {
-      en: "Likely a botanical extract that contributes antioxidant, soothing, or flavor-support properties.",
-      fr: "Probablement un extrait végétal apportant des propriétés antioxydantes, apaisantes ou aromatiques.",
-      de: "Wahrscheinlich ein Pflanzenextrakt mit antioxidativen, beruhigenden oder geschmacksunterstützenden Eigenschaften.",
-      zh: "通常属于植物提取物，可能提供抗氧化、舒缓或风味支持作用。"
-    }
-  },
-  {
-    pattern: /(fragrance|parfum|duft|香精|香料)\b/i,
-    category: "skincare",
-    detail: {
-      en: "Fragrance component; improves sensory experience but may irritate sensitive users.",
-      fr: "Composant parfumant ; améliore l'expérience sensorielle mais peut irriter les peaux sensibles.",
-      de: "Duftkomponente; verbessert die sensorische Wirkung, kann empfindliche Haut jedoch reizen.",
-      zh: "香氛成分，可提升感官体验，但敏感人群可能出现刺激反应。"
-    }
-  }
-]
 
 function normalizeLanguage(lang) {
   if (!lang) return 'en'
@@ -462,21 +427,9 @@ function normalizeAndResolveIngredient(rawName) {
 
 function inferUnknownIngredientDetail(ingredientName, languageKey) {
   const content = languageContent[languageKey] || languageContent.en
-  const normalized = normalizeAndResolveIngredient(ingredientName)
-  const matchedRule = inferredIngredientRules.find((rule) => rule.pattern.test(normalized))
-
-  if (matchedRule) {
-    const localizedCategory = content.categories[matchedRule.category] || content.categories.general
-    const detail = matchedRule.detail[languageKey] || matchedRule.detail.en
-    return {
-      category: localizedCategory,
-      detail: `${detail} Source: Wykta inferred classifier + open-data references.`
-    }
-  }
-
   return {
     category: content.categories.general,
-    detail: `${content.unknown} Source: Wykta inferred classifier + open-data references.`
+    detail: `${content.unknown} Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts / Wikidata.`
   }
 }
 
@@ -501,7 +454,7 @@ function analyzeIngredient(ingredientName, languageKey) {
 
   return {
     category: localizedCategory,
-    detail: item[languageKey] || item.en
+    detail: `${item[languageKey] || item.en} Source: Wykta local ingredient database.`
   }
 }
 
