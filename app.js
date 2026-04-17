@@ -246,7 +246,7 @@ const localIngredientDb = {
 let cachedKnownIngredientMatchers = null
 // Common ingredient conjunctions seen across supported UI languages.
 const multilingualIngredientJoiners = ["and", "und", "et", "和", "及", "与", "以及"]
-const multilingualIngredientJoinerPattern = new RegExp(`\\s(?:${multilingualIngredientJoiners.join("|")})\\s`, "giu")
+const multilingualIngredientJoinerPattern = new RegExp(`\\s(?:${multilingualIngredientJoiners.join("|")})\\s`, "iu")
 
 function getKnownIngredientMatchers(){
   if(cachedKnownIngredientMatchers) return cachedKnownIngredientMatchers
@@ -260,7 +260,7 @@ function getKnownIngredientMatchers(){
   cachedKnownIngredientMatchers = [...new Set(searchableVocabulary)]
     .map((value) => sanitizeIngredientTerm(value))
     .filter(Boolean)
-  // Second dedupe is intentional: different raw variants can sanitize to the same token.
+  // Second deduplication is intentional: different raw variants can sanitize to the same token.
   cachedKnownIngredientMatchers = [...new Set(cachedKnownIngredientMatchers)]
     .sort((a, b) => b.length - a.length)
     .map(ingredient => {
@@ -440,6 +440,18 @@ const ocrLanguageCodes = {
   fr: "fra",
   de: "deu",
   zh: "chi_sim"
+}
+const ocrPrimaryLanguagePack = {
+  en: "eng",
+  fr: "fra+eng",
+  de: "deu+eng",
+  zh: "chi_sim+eng"
+}
+const ocrBackupLanguagePack = {
+  en: "eng+chi_sim+fra+deu",
+  fr: "eng+chi_sim+deu",
+  de: "eng+chi_sim+fra",
+  zh: "eng+fra+deu"
 }
 
 const uiMessages = {
@@ -1175,20 +1187,8 @@ async function runOCR(canvas) {
     }
 
     const selectedLang = currentLanguage()
-    const primaryOcrLang = selectedLang === "zh"
-      ? "chi_sim+eng"
-      : selectedLang === "fr"
-        ? "fra+eng"
-        : selectedLang === "de"
-          ? "deu+eng"
-          : (ocrLanguageCodes[selectedLang] || "eng")
-    const backupLangBySelection = {
-      en: "eng+chi_sim+fra+deu",
-      fr: "eng+chi_sim+deu",
-      de: "eng+chi_sim+fra",
-      zh: "eng+fra+deu"
-    }
-    const backupOcrLang = backupLangBySelection[selectedLang] || "eng+chi_sim+fra+deu"
+    const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
+    const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
     const { data } = await Tesseract.recognize(processedCanvas, primaryOcrLang)
     let text = data.text || ""
 
