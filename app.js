@@ -260,6 +260,7 @@ function getKnownIngredientMatchers(){
   cachedKnownIngredientMatchers = [...new Set(searchableVocabulary)]
     .map((value) => sanitizeIngredientTerm(value))
     .filter(Boolean)
+  // Second dedupe is intentional: different raw variants can sanitize to the same token.
   cachedKnownIngredientMatchers = [...new Set(cachedKnownIngredientMatchers)]
     .sort((a, b) => b.length - a.length)
     .map(ingredient => {
@@ -1181,12 +1182,19 @@ async function runOCR(canvas) {
         : selectedLang === "de"
           ? "deu+eng"
           : (ocrLanguageCodes[selectedLang] || "eng")
+    const backupLangBySelection = {
+      en: "eng+chi_sim+fra+deu",
+      fr: "eng+chi_sim+deu",
+      de: "eng+chi_sim+fra",
+      zh: "eng+fra+deu"
+    }
+    const backupOcrLang = backupLangBySelection[selectedLang] || "eng+chi_sim+fra+deu"
     const { data } = await Tesseract.recognize(processedCanvas, primaryOcrLang)
     let text = data.text || ""
 
     const primaryIngredientCount = extractIngredients(text).length
-    if(primaryIngredientCount < 2){
-      const { data: backupData } = await Tesseract.recognize(processedCanvas, "eng+chi_sim+fra+deu")
+    if(primaryIngredientCount < 2 && backupOcrLang !== primaryOcrLang){
+      const { data: backupData } = await Tesseract.recognize(processedCanvas, backupOcrLang)
       const backupText = backupData.text || ""
       const backupIngredientCount = extractIngredients(backupText).length
       if(
