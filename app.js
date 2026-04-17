@@ -114,6 +114,7 @@ const OCR_BINARIZATION_THRESHOLD = 135
 // Slightly lower than generic network timeout so Wikidata fallback does not block overall analysis responsiveness.
 const WIKIDATA_TIMEOUT_MS = 6500
 const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
+// Split on Latin/CJK punctuation, quotes, brackets, operators, and OCR noise separators.
 const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
 
 /* -----------------------
