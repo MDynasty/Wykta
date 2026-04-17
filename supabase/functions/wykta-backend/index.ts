@@ -3,6 +3,56 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+
+// ---------------------------------------------------------------------------
+// OpenAI AI analysis
+// Set the OPENAI_API_KEY Supabase secret to enable AI-powered analysis:
+//   supabase secrets set OPENAI_API_KEY=sk-...
+// When the secret is absent the function falls back to the local database.
+// ---------------------------------------------------------------------------
+
+async function analyzeWithOpenAI(
+  ingredients: string[],
+  targetLanguage: string,
+): Promise<string | null> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY")
+  if (!apiKey) return null
+
+  const ingredientList = ingredients.join(", ")
+  const prompt =
+    `You are an expert ingredient analyst for food and skincare products. ` +
+    `Analyze each of the following ingredients and provide a concise description ` +
+    `covering its purpose, category (Food / Skincare / General), and any notable ` +
+    `safety or health considerations. ` +
+    `Respond in ${targetLanguage}. ` +
+    `Format your answer as a plain list, one ingredient per line, like:\n` +
+    `<ingredient name>: [<Category>] <description>\n\n` +
+    `Ingredients: ${ingredientList}`
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 1024,
+      temperature: 0.3,
+    }),
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`OpenAI API error ${response.status}: ${errText}`)
+  }
+
+  const json = await response.json()
+  const content: string | undefined = json?.choices?.[0]?.message?.content
+  return content ?? null
 }
 
 const ingredientDatabase = {
@@ -349,6 +399,7 @@ const ingredientDatabase = {
 const languageContent = {
   en: {
     title: "Ingredient Analysis",
+    aiLanguage: "English",
     unknown: "No detailed database entry yet; flagged for future enrichment.",
     categories: {
       skincare: "Skincare",
@@ -358,6 +409,7 @@ const languageContent = {
   },
   fr: {
     title: "Analyse des ingrédients",
+    aiLanguage: "French",
     unknown: "Aucune fiche détaillée en base pour l'instant ; élément signalé pour enrichissement.",
     categories: {
       skincare: "Soin de la peau",
@@ -367,6 +419,7 @@ const languageContent = {
   },
   de: {
     title: "Inhaltsstoffanalyse",
+    aiLanguage: "German",
     unknown: "Noch kein detaillierter Datenbankeintrag vorhanden; zur Erweiterung markiert.",
     categories: {
       skincare: "Hautpflege",
@@ -376,6 +429,7 @@ const languageContent = {
   },
   zh: {
     title: "成分分析",
+    aiLanguage: "Chinese",
     unknown: "数据库暂无详细条目，已标记用于后续补充。",
     categories: {
       skincare: "护肤",
@@ -418,15 +472,41 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, lang } = await req.json()
+    const { ingredients, lang, targetLanguage } = await req.json()
     const normalizedLanguage = normalizeLanguage(lang)
     const languagePack = languageContent[normalizedLanguage] || languageContent.en
+    const aiLanguage = targetLanguage || languagePack.aiLanguage || 'English'
 
-    console.log('Request:', { ingredients, lang })
+    console.log('Request:', { ingredients, lang, targetLanguage })
 
-    const inputIngredients = Array.isArray(ingredients) ? ingredients : []
-    const analysisLines = inputIngredients.map((rawIngredient) => {
-      const displayName = String(rawIngredient || '').trim()
+    const inputIngredients: string[] = Array.isArray(ingredients)
+      ? ingredients.map((i) => String(i || '').trim()).filter(Boolean)
+      : []
+
+    if (!inputIngredients.length) {
+      return new Response(
+        JSON.stringify({ analysis: '' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+      )
+    }
+
+    // 1. Try AI analysis (requires OPENAI_API_KEY secret)
+    try {
+      const aiAnalysis = await analyzeWithOpenAI(inputIngredients, aiLanguage)
+      if (aiAnalysis) {
+        console.log('Using AI analysis')
+        return new Response(
+          JSON.stringify({ analysis: `${languagePack.title}:\n${aiAnalysis}` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+        )
+      }
+    } catch (aiErr) {
+      console.warn('AI analysis failed, falling back to local database:', aiErr)
+    }
+
+    // 2. Fallback: local ingredient database
+    console.log('Using local ingredient database')
+    const analysisLines = inputIngredients.map((displayName) => {
       const name = displayName.toLowerCase()
       const result = analyzeIngredient(name, normalizedLanguage)
       return `${displayName}: [${result.category}] ${result.detail}`
