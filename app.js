@@ -9,16 +9,23 @@ const hasSupabaseConfig =
   typeof supabaseKey !== "undefined" &&
   supabaseKey.trim().length > 0
 
-const { createClient } = supabase
+const createClient =
+  typeof supabase !== "undefined" && typeof supabase.createClient === "function"
+    ? supabase.createClient
+    : null
 
-const supabaseClient = hasSupabaseConfig
+const supabaseClient = hasSupabaseConfig && createClient
   ? createClient(supabaseUrl, supabaseKey)
   : null
 
 if (supabaseClient) {
   console.log("Supabase connected")
 } else {
-  console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
+  if (!createClient) {
+    console.warn("Supabase SDK failed to load. Falling back to open-data analysis.")
+  } else {
+    console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
+  }
 }
 
 const knownIngredients = [
@@ -935,7 +942,7 @@ function lookupLocalIngredientDb(ingredient) {
   }
   return {
     category: catMap[entry.category] || t("generalCategory"),
-    detail:   `[${entry.fn}] ${entry.note}`
+    detail:   `${entry.fn}: ${entry.note}`
   }
 }
 
@@ -1070,23 +1077,34 @@ async function analyzeWithAI(ingredients){
   displayAIAnalysis(t("analyzing"), [])
 
   if(supabaseClient){
+    let invokeTimeoutId = null
     try{
       const lang = document.getElementById("language").value
       const langName = languageNames[lang] || lang
       const langLocale = languageLocales[lang] || lang
 
-      const { data, error } =
-        await supabaseClient.functions.invoke(
-          "wykta-backend",
-          {
-            body: {
-              ingredients,
-              lang: langLocale,
-              targetLanguage: langName,
-              promptLanguage: langName
-            }
+      // Race the invoke against a 12-second timeout so a cold-start or paused
+      // Supabase project doesn't leave the UI stuck at "Analyzing..." indefinitely.
+      const invokePromise = supabaseClient.functions.invoke(
+        "wykta-backend",
+        {
+          body: {
+            ingredients,
+            lang: langLocale,
+            targetLanguage: langName,
+            promptLanguage: langName
           }
+        }
+      )
+      const timeoutPromise = new Promise((_, reject) => {
+        invokeTimeoutId = setTimeout(
+          () => reject(new Error("Edge function timed out after 12 seconds")),
+          12000
         )
+      })
+
+      const { data, error } = await Promise.race([invokePromise, timeoutPromise])
+      clearTimeout(invokeTimeoutId)
 
       if(error) throw error
 
@@ -1100,6 +1118,7 @@ async function analyzeWithAI(ingredients){
 
       console.warn(tf("noAnalysisFor", langName))
     } catch(err){
+      clearTimeout(invokeTimeoutId)
       console.error("AI function error, using open databases fallback:", err)
     }
   }
@@ -1153,16 +1172,21 @@ async function analyzeIngredients(){
 
   setAnalyzeBtnLoading(true)
 
-  const text = document.getElementById("ingredients").value
-  const ingredients = extractIngredients(text)
-  const warnings = checkInteractions(ingredients)
+  try {
+    const text = document.getElementById("ingredients").value
+    const ingredients = extractIngredients(text)
+    const warnings = checkInteractions(ingredients)
 
-  displayInteractions(warnings)
+    displayInteractions(warnings)
 
-  await saveResult(text, warnings.join("; "))
-  await analyzeWithAI(ingredients)
-
-  setAnalyzeBtnLoading(false)
+    await saveResult(text, warnings.join("; "))
+    await analyzeWithAI(ingredients)
+  } catch (err) {
+    console.error("Analyze flow error:", err)
+    displayAIAnalysis(t("failed"), [])
+  } finally {
+    setAnalyzeBtnLoading(false)
+  }
 }
 
 /* -----------------------
