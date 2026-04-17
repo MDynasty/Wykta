@@ -22,7 +22,7 @@ if (supabaseClient) {
   console.log("Supabase connected")
 } else {
   if (!createClient) {
-    console.warn("Supabase SDK failed to load. Falling back to open-database analysis.")
+    console.warn("Supabase SDK failed to load. Falling back to open-data analysis.")
   } else {
     console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
   }
