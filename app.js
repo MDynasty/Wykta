@@ -1077,7 +1077,7 @@ async function analyzeWithAI(ingredients){
   displayAIAnalysis(t("analyzing"), [])
 
   if(supabaseClient){
-    let invokeTimeoutId
+    let invokeTimeoutId = null
     try{
       const lang = document.getElementById("language").value
       const langName = languageNames[lang] || lang
@@ -1098,7 +1098,7 @@ async function analyzeWithAI(ingredients){
       )
       const timeoutPromise = new Promise((_, reject) => {
         invokeTimeoutId = setTimeout(
-          () => reject(new Error("Edge function timed out after 12 s")),
+          () => reject(new Error("Edge function timed out after 12 seconds")),
           12000
         )
       })
