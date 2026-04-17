@@ -46,6 +46,7 @@ const ingredientAliases = {
   "透明质酸钠": "sodium hyaluronate",
   "玻尿酸": "hyaluronic acid",
   "库拉索芦荟": "aloe vera",
+  "芦荟": "aloe vera",
   "视黄醇": "retinol",
   "乙醇酸": "glycolic acid",
   "水杨酸": "salicylic acid",
@@ -81,6 +82,9 @@ const ingredientAliases = {
   "小苏打": "sodium bicarbonate",
   "食用香精": "artificial flavor",
   "eau": "water",
+  "eau purifiée": "water",
+  "agua": "water",
+  "acqua": "water",
   "glycérine": "glycerin",
   "beurre de karité": "shea butter",
   "parfum (fragrance)": "fragrance",
@@ -97,6 +101,9 @@ const ingredientAliases = {
   "glykolsäure": "glycolic acid",
   "salicylsäure": "salicylic acid",
   "niacinamid": "niacinamide",
+  "aloe": "aloe vera",
+  "aloe barbadensis leaf juice": "aloe vera",
+  "aloe barbadensis": "aloe vera",
   "sonnenblumenöl": "sunflower oil",
   "zitronensäure": "citric acid",
   "duftstoff": "fragrance"
@@ -104,7 +111,11 @@ const ingredientAliases = {
 
 // 135 keeps high-contrast label text readable while reducing colorful package noise.
 const OCR_BINARIZATION_THRESHOLD = 135
+// Keep slightly lower than fetchJsonWithTimeout default (7000ms) so this fallback cannot block overall analysis.
+const WIKIDATA_TIMEOUT_MS = 6500
 const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
+// Split on Latin/CJK punctuation, quotes, brackets, operators, and OCR noise separators.
+const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
 
 /* -----------------------
 LOCAL INGREDIENT DATABASE
@@ -316,10 +327,16 @@ function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
   if(!normalizedText) return []
 
+  // Insert delimiters between CJK and Latin/number runs so mixed-script OCR like "水retinol" can split correctly.
+  const scriptBoundarySplitText = normalizedText
+    // \u4e00-\u9fa5: CJK ideographs, \u00C0-\u024F: Latin extended letters.
+    .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
+    .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
+
   const foundByVocabulary = extractVocabularyMatches(normalizedText)
 
-  const splitByPunctuation = normalizedText
-    .split(/[,\.;:•\n\r\t，；。、|/\\]+/gu)
+  const splitByPunctuation = scriptBoundarySplitText
+    .split(ingredientSplitPunctuationPattern)
     .flatMap((segment) => segment.split(multilingualIngredientJoinerPattern))
     .map(i => i.trim())
     .filter(i => i.length > 0)
@@ -504,7 +521,8 @@ const uiMessages = {
     foodCategory: "Food",
     skincareCategory: "Skincare",
     generalCategory: "General",
-    noPublicData: "No clear match was found in public ingredient databases."
+    noPublicData: "No clear match was found in public ingredient databases.",
+    wikidataNoDescription: "No description available from Wikidata."
   },
   fr: {
     heroTitle: "Wykta Intelligence Premium des Ingrédients",
@@ -555,7 +573,8 @@ const uiMessages = {
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
     generalCategory: "Général",
-    noPublicData: "Aucune correspondance claire trouvée dans les bases publiques."
+    noPublicData: "Aucune correspondance claire trouvée dans les bases publiques.",
+    wikidataNoDescription: "Aucune description disponible depuis Wikidata."
   },
   de: {
     heroTitle: "Wykta Premium-Inhaltsstoff-Intelligenz",
@@ -606,7 +625,8 @@ const uiMessages = {
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
     generalCategory: "Allgemein",
-    noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden."
+    noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden.",
+    wikidataNoDescription: "Keine Beschreibung von Wikidata verfügbar."
   },
   zh: {
     heroTitle: "Wykta 高级成分智能分析",
@@ -657,7 +677,8 @@ const uiMessages = {
     foodCategory: "食品",
     skincareCategory: "护肤",
     generalCategory: "通用",
-    noPublicData: "在公共数据库中未找到明确匹配。"
+    noPublicData: "在公共数据库中未找到明确匹配。",
+    wikidataNoDescription: "Wikidata 未提供可用描述。"
   }
 }
 
@@ -936,6 +957,66 @@ async function lookupOFFIngredientTaxonomy(ingredient) {
   }
 }
 
+function getWikidataLanguageCode(lang = "en") {
+  const map = {
+    en: "en",
+    fr: "fr",
+    de: "de",
+    zh: "zh"
+  }
+  return map[lang] || "en"
+}
+
+async function lookupWikidataIngredient(ingredient) {
+  const normalizedIngredient = normalizeIngredientName(ingredient)
+  if(!normalizedIngredient) return null
+
+  const selectedLanguage = getWikidataLanguageCode(currentLanguage())
+  const languagePriority = [...new Set([selectedLanguage, "en", "fr", "de", "zh"])]
+  const wikimediaNoisePattern = /\b(wikimedia|disambiguation|template)\b/i
+
+  const results = await Promise.allSettled(languagePriority.map(async (languageCode) => {
+    const params = new URLSearchParams({
+      action: "wbsearchentities",
+      search: normalizedIngredient,
+      language: languageCode,
+      format: "json",
+      limit: "5",
+      origin: "*"
+    })
+    const url = `https://www.wikidata.org/w/api.php?${params.toString()}`
+    const data = await fetchJsonWithTimeout(url, WIKIDATA_TIMEOUT_MS)
+    if(!data || !Array.isArray(data.search) || !data.search.length) return null
+
+    const preferredMatch = data.search.find((candidate) => {
+      const description = String(candidate.description || "").trim()
+      return description && !wikimediaNoisePattern.test(description)
+    })
+
+    return preferredMatch || data.search[0]
+  }))
+
+  const firstHit = results
+    .filter((result) => result.status === "fulfilled" && result.value)
+    .map((result) => result.value)[0]
+
+  if(!firstHit) return null
+
+  const label = firstHit.label || normalizedIngredient
+  const description = firstHit.description || t("wikidataNoDescription")
+  const notes = [
+    "Source: Wikidata",
+    `Entity: ${label}`,
+    `Description: ${description}`
+  ]
+  if(firstHit.id) notes.push(`Wikidata: ${firstHit.id}`)
+
+  return {
+    category: t("generalCategory"),
+    detail: notes.join(" · ")
+  }
+}
+
 async function analyzeWithFreeDatabases(ingredients) {
   const lines = [`${t("fallbackHeader")}:`]
 
@@ -946,18 +1027,19 @@ async function analyzeWithFreeDatabases(ingredients) {
       return `${ingredient}: [${localResult.category}] ${localResult.detail}`
     }
 
-    // 2. Try OFF ingredient taxonomy (direct per-ingredient lookup),
-    //    OFF product search, and OBF product search in parallel
-    const [offTaxResult, foodResult, beautyResult] = await Promise.allSettled([
+    // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
+    const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
       lookupOFFIngredientTaxonomy(ingredient),
       lookupOpenFoodFacts(ingredient),
-      lookupOpenBeautyFacts(ingredient)
+      lookupOpenBeautyFacts(ingredient),
+      lookupWikidataIngredient(ingredient)
     ])
 
     const firstHit = [
       offTaxResult.status  === "fulfilled" ? offTaxResult.value  : null,
       foodResult.status    === "fulfilled" ? foodResult.value    : null,
-      beautyResult.status  === "fulfilled" ? beautyResult.value  : null
+      beautyResult.status  === "fulfilled" ? beautyResult.value  : null,
+      wikidataResult.status === "fulfilled" ? wikidataResult.value : null
     ].find(Boolean)
 
     const detail = firstHit
