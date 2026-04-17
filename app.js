@@ -83,6 +83,10 @@ const ingredientAliases = {
   "duftstoff": "fragrance"
 }
 
+// 135 keeps high-contrast label text readable while reducing colorful package noise.
+const OCR_BINARIZATION_THRESHOLD = 135
+const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
+
 /* -----------------------
 LOCAL INGREDIENT DATABASE
 Sources: CosIng (EU Cosmetic Ingredients Database), EU food-additive list,
@@ -247,6 +251,7 @@ function normalizeIngredientName(value = ""){
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+    .toLowerCase()
 
   if(!normalized) return ""
   return ingredientAliases[normalized] || normalized
@@ -891,7 +896,7 @@ async function analyzeWithFreeDatabases(ingredients) {
       ? firstHit
       : {
           category: t("generalCategory"),
-          detail: `${t("noPublicData")} Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts`
+          detail: `${t("noPublicData")} ${PUBLIC_DB_SOURCE_NOTE}`
         }
 
     return `${ingredient}: [${detail.category}] ${detail.detail}`
@@ -1101,7 +1106,7 @@ async function runOCR(canvas) {
       const pixels = imgData.data
       for(let i = 0; i < pixels.length; i += 4){
         const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]
-        const boosted = gray > 135 ? 255 : 0
+        const boosted = gray > OCR_BINARIZATION_THRESHOLD ? 255 : 0
         pixels[i] = boosted
         pixels[i + 1] = boosted
         pixels[i + 2] = boosted

@@ -58,11 +58,14 @@ async function analyzeWithOpenAI(
   const content: string | undefined = json?.choices?.[0]?.message?.content
   if (!content) return null
 
+  const ensureSourceAttribution = (line: string) =>
+    /source\s*:/i.test(line) ? line : `${line} | Source: AI model synthesis`
+
   const normalizedLines = content
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => line.includes("Source:") ? line : `${line} | Source: AI model synthesis`)
+    .map((line) => ensureSourceAttribution(line))
 
   return normalizedLines.join("\n")
 }
