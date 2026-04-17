@@ -111,7 +111,7 @@ const ingredientAliases = {
 
 // 135 keeps high-contrast label text readable while reducing colorful package noise.
 const OCR_BINARIZATION_THRESHOLD = 135
-// Slightly lower than generic network timeout so Wikidata fallback does not block overall analysis responsiveness.
+// Keep slightly lower than fetchJsonWithTimeout default (7000ms) so this fallback cannot block overall analysis.
 const WIKIDATA_TIMEOUT_MS = 6500
 const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
 // Split on Latin/CJK punctuation, quotes, brackets, operators, and OCR noise separators.
@@ -521,7 +521,8 @@ const uiMessages = {
     foodCategory: "Food",
     skincareCategory: "Skincare",
     generalCategory: "General",
-    noPublicData: "No clear match was found in public ingredient databases."
+    noPublicData: "No clear match was found in public ingredient databases.",
+    wikidataNoDescription: "No description available from Wikidata."
   },
   fr: {
     heroTitle: "Wykta Intelligence Premium des Ingrédients",
@@ -572,7 +573,8 @@ const uiMessages = {
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
     generalCategory: "Général",
-    noPublicData: "Aucune correspondance claire trouvée dans les bases publiques."
+    noPublicData: "Aucune correspondance claire trouvée dans les bases publiques.",
+    wikidataNoDescription: "Aucune description disponible depuis Wikidata."
   },
   de: {
     heroTitle: "Wykta Premium-Inhaltsstoff-Intelligenz",
@@ -623,7 +625,8 @@ const uiMessages = {
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
     generalCategory: "Allgemein",
-    noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden."
+    noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden.",
+    wikidataNoDescription: "Keine Beschreibung von Wikidata verfügbar."
   },
   zh: {
     heroTitle: "Wykta 高级成分智能分析",
@@ -674,7 +677,8 @@ const uiMessages = {
     foodCategory: "食品",
     skincareCategory: "护肤",
     generalCategory: "通用",
-    noPublicData: "在公共数据库中未找到明确匹配。"
+    noPublicData: "在公共数据库中未找到明确匹配。",
+    wikidataNoDescription: "Wikidata 未提供可用描述。"
   }
 }
 
@@ -999,7 +1003,7 @@ async function lookupWikidataIngredient(ingredient) {
   if(!firstHit) return null
 
   const label = firstHit.label || normalizedIngredient
-  const description = firstHit.description || "No description available from Wikidata."
+  const description = firstHit.description || t("wikidataNoDescription")
   const notes = [
     "Source: Wikidata",
     `Entity: ${label}`,
