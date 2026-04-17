@@ -19,7 +19,18 @@ The repo includes `.github/workflows/deploy-edge-function.yml` which deploys on 
 2. Name: `SUPABASE_ACCESS_TOKEN`
 3. Value: your Supabase personal access token → get it at https://supabase.com/dashboard/account/tokens
 
+**Required for AI API connection (recommended):**
+
+4. Name: `OPENAI_API_KEY`
+5. Value: your OpenAI API key (`sk-...`)
+
+**Optional:**
+
+6. Name: `OPENAI_MODEL`
+7. Value: model name like `gpt-4o-mini` (defaults to `gpt-4o-mini` if omitted)
+
 Once the secret is added, push any change to `supabase/functions/` (or trigger the workflow manually) and the function will deploy automatically.
+The deploy workflow now syncs these secrets to Supabase Edge Function runtime so AI calls can execute server-side.
 
 ### Manual (Supabase CLI)
 
@@ -32,6 +43,12 @@ supabase login
 
 # Deploy
 supabase functions deploy wykta-backend --project-ref rryuicpnjxxzsmkotgrj --no-verify-jwt
+
+# Set AI secrets in Supabase runtime (required for OpenAI-powered analysis)
+supabase secrets set OPENAI_API_KEY=sk-... --project-ref rryuicpnjxxzsmkotgrj
+
+# Optional model override
+supabase secrets set OPENAI_MODEL=gpt-4o-mini --project-ref rryuicpnjxxzsmkotgrj
 ```
 
 ---
@@ -210,4 +227,3 @@ Popular ingredients to add:
 - **Can I use local-only?** Yes! Current setup works offline.
 - **How to add more ingredients?** Edit the `ingredientDatabase` object in app.js
 - **How many ingredients?** Local DB can handle 1000+ without issues
-

@@ -13,12 +13,30 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+
+      - name: Sync AI secrets to Supabase
+        run: |
+          if [ -n "${OPENAI_API_KEY}" ]; then
+            supabase secrets set OPENAI_API_KEY="${OPENAI_API_KEY}" --project-ref rryuicpnjxxzsmkotgrj
+          else
+            echo "OPENAI_API_KEY not set; AI API analysis disabled."
+          fi
+
+          if [ -n "${OPENAI_MODEL}" ]; then
+            supabase secrets set OPENAI_MODEL="${OPENAI_MODEL}" --project-ref rryuicpnjxxzsmkotgrj
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ secrets.OPENAI_MODEL }}
 
       - name: Deploy wykta-backend Edge Function
         run: |
