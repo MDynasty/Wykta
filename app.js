@@ -840,7 +840,7 @@ async function analyzeWithAI(ingredients){
 
       const { data, error } =
         await supabaseClient.functions.invoke(
-          "Wykta-backend",
+          "wykta-backend",
           {
             body: {
               ingredients,

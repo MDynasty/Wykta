@@ -2,52 +2,51 @@
 
 ## Current Status
 
-Your app now has a **built-in fallback database** with 40+ common ingredients. When ingredients aren't found:
-- ✅ Safe ingredients are marked and analyzed
-- ⚠️ Harmful ingredients show warnings
-- ❓ Unknown ingredients are listed
+- ✅ **Supabase credentials** configured in `config.js`
+- ✅ **Edge Function code** lives in `supabase/functions/wykta-backend/index.ts`
+- ✅ **Fallback chain**: local DB → Open Food Facts taxonomy → Open Food Facts search → Open Beauty Facts
+- ⚠️ **Edge Function must be deployed** to the Supabase project (one-time step below)
 
-## Why Ingredients Show "Not in Database"
+## Deploy the Edge Function (One-Time Setup)
 
-The error occurred because:
+### Automatic (GitHub Actions)
 
-1. **Supabase Edge Function not deployed** - The "Wykta-backend" function doesn't exist
-2. **No AI backend configured** - The app tries to call an API that isn't set up
-3. **Limited local database** - Only 40 ingredients are pre-loaded
+The repo includes `.github/workflows/deploy-edge-function.yml` which deploys on every push to `main` that touches `supabase/functions/`.
 
-## Solutions (Choose One)
+**Required GitHub secret:**
 
-### Option 1: Use Built-in Local Database (Free, No Setup)
+1. Go to your repo → **Settings → Secrets and variables → Actions → New repository secret**
+2. Name: `SUPABASE_ACCESS_TOKEN`
+3. Value: your Supabase personal access token → get it at https://supabase.com/dashboard/account/tokens
 
-**What you get:**
-- Works offline
-- Instant analysis for 100+ common ingredients
-- No backend required
-- ✅ Currently implemented!
+Once the secret is added, push any change to `supabase/functions/` (or trigger the workflow manually) and the function will deploy automatically.
 
-**To expand the database:**
-Edit the `ingredientDatabase` object in `app.js` and add more ingredients:
+### Manual (Supabase CLI)
 
-```javascript
-const ingredientDatabase = {
-  'ingredient-name': { 
-    en: 'English Name', 
-    fr: 'French Name',
-    de: 'German Name', 
-    zh: '中文名称',
-    type: 'category', 
-    safe: true,
-    warning: 'Optional warning message'
-  },
-  // ... more ingredients
-}
+```bash
+# Install CLI
+npm install -g supabase
+
+# Log in
+supabase login
+
+# Deploy
+supabase functions deploy wykta-backend --project-ref rryuicpnjxxzsmkotgrj --no-verify-jwt
 ```
-
-**Supported types:** solvent, sweetener, fat, protein, flavoring, preservative, colorant, thickener, emulsifier, leavening, seasoning, dairy, exfoliant, humectant, flavor enhancer
 
 ---
 
-### Option 2: Set Up Supabase AI Backend (Recommended)
+## Why ingredients might still fall back to open databases
+
+If the Edge Function is deployed but analysis still uses the free-DB path, check:
+
+1. **Browser console** — look for `"Supabase connected"` and any `"AI function error"` messages
+2. **Supabase dashboard → Edge Functions → wykta-backend → Logs** — confirm requests arrive and succeed
+3. **CORS** — the function already returns `Access-Control-Allow-Origin: *`
+
+---
+
+### Option 2: Extend the Built-in Local Database (Free, No Setup)
 
 **What you get:**
 - ✅ Unlimited ingredient analysis
