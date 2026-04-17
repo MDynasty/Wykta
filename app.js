@@ -33,6 +33,60 @@ const knownIngredients = [
   "monosodium glutamate", "msg", "artificial flavor"
 ]
 
+const ingredientAliases = {
+  "水": "water",
+  "纯净水": "water",
+  "矿泉水": "water",
+  "甘油": "glycerin",
+  "丙二醇": "propylene glycol",
+  "烟酰胺": "niacinamide",
+  "透明质酸": "hyaluronic acid",
+  "透明质酸钠": "sodium hyaluronate",
+  "视黄醇": "retinol",
+  "乙醇酸": "glycolic acid",
+  "水杨酸": "salicylic acid",
+  "过氧化苯甲酰": "benzoyl peroxide",
+  "香精": "fragrance",
+  "香料": "fragrance",
+  "苯氧乙醇": "phenoxyethanol",
+  "抗坏血酸": "ascorbic acid",
+  "维生素c": "vitamin c",
+  "柠檬酸": "citric acid",
+  "苯甲酸钠": "sodium benzoate",
+  "山梨酸钾": "potassium sorbate",
+  "味精": "monosodium glutamate",
+  "食盐": "salt",
+  "盐": "salt",
+  "白砂糖": "sugar",
+  "糖": "sugar",
+  "小麦": "wheat",
+  "牛奶": "milk",
+  "鸡蛋": "egg",
+  "大豆": "soy",
+  "花生": "peanut",
+  "芝麻": "sesame",
+  "鱼": "fish",
+  "虾": "shrimp",
+  "eau": "water",
+  "glycérine": "glycerin",
+  "acide hyaluronique": "hyaluronic acid",
+  "acide glycolique": "glycolic acid",
+  "acide salicylique": "salicylic acid",
+  "rétinol": "retinol",
+  "acide citrique": "citric acid",
+  "wasser": "water",
+  "glyzerin": "glycerin",
+  "hyaluronsäure": "hyaluronic acid",
+  "glykolsäure": "glycolic acid",
+  "salicylsäure": "salicylic acid",
+  "zitronensäure": "citric acid",
+  "duftstoff": "fragrance"
+}
+
+// 135 keeps high-contrast label text readable while reducing colorful package noise.
+const OCR_BINARIZATION_THRESHOLD = 135
+const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
+
 /* -----------------------
 LOCAL INGREDIENT DATABASE
 Sources: CosIng (EU Cosmetic Ingredients Database), EU food-additive list,
@@ -189,6 +243,20 @@ function getKnownIngredientMatchers(){
   return cachedKnownIngredientMatchers
 }
 
+function normalizeIngredientName(value = ""){
+  if(!value) return ""
+
+  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|成分|配料)[:：\s-]*/i, "")
+  const normalized = sanitizeIngredientTerm(withoutHeader)
+    .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+
+  if(!normalized) return ""
+  return ingredientAliases[normalized] || normalized
+}
+
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
@@ -208,12 +276,16 @@ function extractIngredients(text){
     : foundByVocabulary.length
       ? []
       : normalizedText
-        .split(/\s+(?:and|und|et|和)\s+|\s{2,}/i)
+        .split(/\s+(?:and|und|et|和|及|与)\s+|\s{2,}/i)
         .map(i => i.trim())
         .filter(i => i.length > 0)
 
-  const normalizedVocabularyMatches = foundByVocabulary.filter(Boolean)
-  const normalizedFallbackMatches = fallbackSplit.filter(Boolean)
+  const normalizedVocabularyMatches = foundByVocabulary
+    .map(normalizeIngredientName)
+    .filter(Boolean)
+  const normalizedFallbackMatches = fallbackSplit
+    .map(normalizeIngredientName)
+    .filter(Boolean)
   return [...new Set([...normalizedVocabularyMatches, ...normalizedFallbackMatches])]
 }
 
@@ -258,12 +330,12 @@ function displayInteractions(warnings){
   if(!el) return
 
   if(!warnings.length){
-    el.innerHTML = `<div class="no-conflict"><span>✅</span> <span>${escapeHtml(t("noConflicts"))}</span></div>`
+    el.innerHTML = `<div class="no-conflict"><span>${escapeHtml(t("noConflicts"))}</span></div>`
     return
   }
 
   el.innerHTML = warnings
-    .map(w => `<div class="warning-card"><span class="warning-icon">⚠️</span><span>${escapeHtml(w)}</span></div>`)
+    .map(w => `<div class="warning-card"><span class="warning-icon">Alert</span><span>${escapeHtml(w)}</span></div>`)
     .join("")
 
 }
@@ -318,10 +390,10 @@ const uiMessages = {
   en: {
     heroTitle: "Wykta Premium Ingredient Intelligence",
     heroSubtitle: "Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.",
-    chipCoverage: "✅ Food + Skincare Coverage",
-    chipLanguage: "🌐 4-Language Support",
-    chipSpeed: "⚡ OCR-to-Analysis in Seconds",
-    chipUpgrade: "💎 Upgrade-ready UX",
+    chipCoverage: "Food + Skincare Coverage",
+    chipLanguage: "4-Language Support",
+    chipSpeed: "OCR-to-Analysis in Seconds",
+    chipUpgrade: "Upgrade-ready UX",
     proofData: "Data Sources",
     proofTrust: "Trust Signal",
     proofTrustValue: "Community-maintained open databases",
@@ -347,12 +419,15 @@ const uiMessages = {
     warningTitle: "Interaction Warnings",
     scanTitle: "Scan Ingredient Label",
     detectedTitle: "Detected Text",
+    cameraHint: "Click \"Open Camera\" to start scanning",
     analysisPlaceholder: "AI analysis will appear here",
     warningPlaceholder: "Ingredient conflicts will appear here",
     noConflicts: "No obvious ingredient conflicts detected.",
     retinolGlycolic: "Retinol combined with glycolic acid may increase skin irritation.",
     peroxideRetinol: "Benzoyl peroxide may deactivate retinol.",
     analyzing: "Analyzing ingredients...",
+    ocrProcessing: "Processing image and running OCR...",
+    cameraAccessFailed: "Unable to access camera. Please allow camera permission and try again.",
     aiUnavailable: "AI analysis unavailable. Please check your Supabase configuration.",
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Please try again or check the backend function.`,
     failed: "AI analysis failed. Please check your internet connection and Supabase setup.",
@@ -366,10 +441,10 @@ const uiMessages = {
   fr: {
     heroTitle: "Wykta Intelligence Premium des Ingrédients",
     heroSubtitle: "Scannez les étiquettes alimentaires ou skincare instantanément, réduisez les risques d'ingrédients et augmentez la confiance.",
-    chipCoverage: "✅ Couverture alimentaire + skincare",
-    chipLanguage: "🌐 Support 4 langues",
-    chipSpeed: "⚡ OCR vers analyse en quelques secondes",
-    chipUpgrade: "💎 UX prête pour l'abonnement",
+    chipCoverage: "Couverture alimentaire + skincare",
+    chipLanguage: "Support 4 langues",
+    chipSpeed: "OCR vers analyse en quelques secondes",
+    chipUpgrade: "UX prête pour l'abonnement",
     proofData: "Sources de données",
     proofTrust: "Signal de confiance",
     proofTrustValue: "Bases ouvertes maintenues par la communauté",
@@ -395,12 +470,15 @@ const uiMessages = {
     warningTitle: "Avertissements d'interaction",
     scanTitle: "Scanner l'étiquette d'ingrédients",
     detectedTitle: "Texte détecté",
+    cameraHint: "Cliquez sur \"Ouvrir la caméra\" pour commencer le scan",
     analysisPlaceholder: "L'analyse IA apparaîtra ici",
     warningPlaceholder: "Les conflits d'ingrédients apparaîtront ici",
     noConflicts: "Aucun conflit évident entre ingrédients détecté.",
     retinolGlycolic: "Le rétinol combiné à l'acide glycolique peut augmenter l'irritation cutanée.",
     peroxideRetinol: "Le peroxyde de benzoyle peut désactiver le rétinol.",
     analyzing: "Analyse des ingrédients...",
+    ocrProcessing: "Traitement de l'image et OCR en cours...",
+    cameraAccessFailed: "Impossible d'accéder à la caméra. Autorisez l'accès puis réessayez.",
     aiUnavailable: "Analyse IA indisponible. Vérifiez la configuration Supabase.",
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Veuillez réessayer ou vérifier la fonction backend.`,
     failed: "Échec de l'analyse IA. Vérifiez votre connexion et Supabase.",
@@ -414,10 +492,10 @@ const uiMessages = {
   de: {
     heroTitle: "Wykta Premium-Inhaltsstoff-Intelligenz",
     heroSubtitle: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort, reduzieren Sie Risiken und steigern Sie Vertrauen.",
-    chipCoverage: "✅ Lebensmittel + Hautpflege",
-    chipLanguage: "🌐 Unterstützung für 4 Sprachen",
-    chipSpeed: "⚡ OCR-zu-Analyse in Sekunden",
-    chipUpgrade: "💎 Upgrade-fähige UX",
+    chipCoverage: "Lebensmittel + Hautpflege",
+    chipLanguage: "Unterstützung für 4 Sprachen",
+    chipSpeed: "OCR-zu-Analyse in Sekunden",
+    chipUpgrade: "Upgrade-fähige UX",
     proofData: "Datenquellen",
     proofTrust: "Vertrauenssignal",
     proofTrustValue: "Community-gepflegte offene Datenbanken",
@@ -443,12 +521,15 @@ const uiMessages = {
     warningTitle: "Interaktionswarnungen",
     scanTitle: "Inhaltsstoffetikett scannen",
     detectedTitle: "Erkannter Text",
+    cameraHint: "Klicken Sie auf \"Kamera öffnen\", um den Scan zu starten",
     analysisPlaceholder: "KI-Analyse erscheint hier",
     warningPlaceholder: "Inhaltsstoffkonflikte erscheinen hier",
     noConflicts: "Keine offensichtlichen Inhaltsstoffkonflikte erkannt.",
     retinolGlycolic: "Retinol in Kombination mit Glykolsäure kann Hautreizungen verstärken.",
     peroxideRetinol: "Benzoylperoxid kann Retinol deaktivieren.",
     analyzing: "Inhaltsstoffe werden analysiert...",
+    ocrProcessing: "Bild wird verarbeitet und OCR läuft...",
+    cameraAccessFailed: "Kein Kamerazugriff möglich. Bitte Berechtigung erteilen und erneut versuchen.",
     aiUnavailable: "KI-Analyse nicht verfügbar. Bitte Supabase-Konfiguration prüfen.",
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Bitte erneut versuchen oder die Backend-Funktion prüfen.`,
     failed: "KI-Analyse fehlgeschlagen. Bitte Internetverbindung und Supabase prüfen.",
@@ -462,10 +543,10 @@ const uiMessages = {
   zh: {
     heroTitle: "Wykta 高级成分智能分析",
     heroSubtitle: "即时扫描食品或护肤标签，降低成分风险，提升用户付费信心。",
-    chipCoverage: "✅ 食品 + 护肤双场景覆盖",
-    chipLanguage: "🌐 支持 4 种语言",
-    chipSpeed: "⚡ OCR 到分析仅需数秒",
-    chipUpgrade: "💎 可升级的高端体验",
+    chipCoverage: "食品 + 护肤双场景覆盖",
+    chipLanguage: "支持 4 种语言",
+    chipSpeed: "OCR 到分析仅需数秒",
+    chipUpgrade: "可升级的高端体验",
     proofData: "数据来源",
     proofTrust: "信任信号",
     proofTrustValue: "社区维护的开放数据库",
@@ -491,12 +572,15 @@ const uiMessages = {
     warningTitle: "成分相互作用预警",
     scanTitle: "扫描成分标签",
     detectedTitle: "识别文本",
+    cameraHint: "点击“打开相机”开始扫描",
     analysisPlaceholder: "AI 分析结果将显示在这里",
     warningPlaceholder: "成分冲突将显示在这里",
     noConflicts: "未检测到明显成分冲突。",
     retinolGlycolic: "视黄醇与乙醇酸同时使用可能增加皮肤刺激。",
     peroxideRetinol: "过氧化苯甲酰可能使视黄醇失活。",
     analyzing: "正在分析成分...",
+    ocrProcessing: "正在处理图像并执行 OCR...",
+    cameraAccessFailed: "无法访问相机。请允许相机权限后重试。",
     aiUnavailable: "AI 分析不可用。请检查 Supabase 配置。",
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果。请重试或检查后端函数。`,
     failed: "AI 分析失败。请检查网络连接和 Supabase 设置。",
@@ -580,7 +664,7 @@ function displayAIAnalysis(message, rawLines) {
     const cls = isLoading ? "info" : "error"
     const icon = isLoading
       ? `<span class="spinner"></span>`
-      : `<span>⚠️</span>`
+      : `<span class="warning-icon">Alert</span>`
     el.insertAdjacentHTML(
       "beforeend",
       `<div class="message-card ${cls}">${icon} ${escapeHtml(message)}</div>`
@@ -810,7 +894,10 @@ async function analyzeWithFreeDatabases(ingredients) {
 
     const detail = firstHit
       ? firstHit
-      : { category: t("generalCategory"), detail: t("noPublicData") }
+      : {
+          category: t("generalCategory"),
+          detail: `${t("noPublicData")} ${PUBLIC_DB_SOURCE_NOTE}`
+        }
 
     return `${ingredient}: [${detail.category}] ${detail.detail}`
   }))
@@ -897,7 +984,7 @@ function setAnalyzeBtnLoading(isLoading){
     btn.disabled = false
     const spinner = document.getElementById("analyzeBtnSpinner")
     if(spinner) spinner.remove()
-    if(icon) icon.textContent = "🔬"
+    if(icon) icon.textContent = "AI"
     if(btnText) btnText.textContent = t("analyzeButton")
   }
 }
@@ -935,12 +1022,17 @@ async function startScan(){
 try{
 
 stream = await navigator.mediaDevices.getUserMedia({
-video: true
+video: {
+  facingMode: { ideal: "environment" },
+  width: { ideal: 1920 },
+  height: { ideal: 1080 }
+}
 })
 
 const video = document.getElementById("camera")
 
 video.srcObject = stream
+await video.play()
 
 const placeholder = document.getElementById("cameraPlaceholder")
 if(placeholder) placeholder.style.display = "none"
@@ -948,6 +1040,11 @@ if(placeholder) placeholder.style.display = "none"
 }catch(err){
 
 console.error("Camera error:", err)
+const ocrEl = document.getElementById("ocrResult")
+if(ocrEl){
+  ocrEl.innerText = t("cameraAccessFailed")
+  ocrEl.classList.add("visible")
+}
 
 }
 
@@ -961,6 +1058,15 @@ async function capture(){
 
 const video = document.getElementById("camera")
 const canvas = document.getElementById("snapshot")
+const ocrEl = document.getElementById("ocrResult")
+
+if(!video || !canvas || !video.videoWidth || !video.videoHeight){
+  if(ocrEl){
+    ocrEl.innerText = t("cameraAccessFailed")
+    ocrEl.classList.add("visible")
+  }
+  return
+}
 
 const ctx = canvas.getContext("2d")
 
@@ -971,6 +1077,11 @@ ctx.drawImage(video, 0, 0)
 
 if(stream){
 stream.getTracks().forEach(track => track.stop())
+}
+
+if(ocrEl){
+  ocrEl.innerText = t("ocrProcessing")
+  ocrEl.classList.add("visible")
 }
 
 runOCR(canvas)
@@ -985,9 +1096,27 @@ OCR TEXT RECOGNITION (Simpler, main thread)
 ----------------------- */
 async function runOCR(canvas) {
   try {
+    const processedCanvas = document.createElement("canvas")
+    processedCanvas.width = canvas.width
+    processedCanvas.height = canvas.height
+    const processedCtx = processedCanvas.getContext("2d")
+    if(processedCtx){
+      processedCtx.drawImage(canvas, 0, 0)
+      const imgData = processedCtx.getImageData(0, 0, processedCanvas.width, processedCanvas.height)
+      const pixels = imgData.data
+      for(let i = 0; i < pixels.length; i += 4){
+        const gray = 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]
+        const boosted = gray > OCR_BINARIZATION_THRESHOLD ? 255 : 0
+        pixels[i] = boosted
+        pixels[i + 1] = boosted
+        pixels[i + 2] = boosted
+      }
+      processedCtx.putImageData(imgData, 0, 0)
+    }
+
     const selectedLang = currentLanguage()
     const ocrLang = ocrLanguageCodes[selectedLang] || "eng"
-    const { data } = await Tesseract.recognize(canvas, ocrLang);
+    const { data } = await Tesseract.recognize(processedCanvas, ocrLang);
     const text = data.text;
 
     const ocrEl = document.getElementById("ocrResult")

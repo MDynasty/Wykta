@@ -29,9 +29,10 @@ async function analyzeWithOpenAI(
     `Analyze each of the following ingredients and provide a concise description ` +
     `covering its purpose, category (Food / Skincare / General), and any notable ` +
     `safety or health considerations. ` +
+    `Include one reliable source reference per ingredient. ` +
     `Respond in ${targetLanguage}. ` +
     `Format your answer as a plain list, one ingredient per line, like:\n` +
-    `<ingredient name>: [<Category>] <description>\n\n` +
+    `<ingredient name>: [<Category>] <description> | Source: <source>\n\n` +
     `Ingredients: ${ingredientList}`
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -55,7 +56,18 @@ async function analyzeWithOpenAI(
 
   const json = await response.json()
   const content: string | undefined = json?.choices?.[0]?.message?.content
-  return content ?? null
+  if (!content) return null
+
+  const ensureSourceAttribution = (line: string) =>
+    /source\s*:/i.test(line) ? line : `${line} | Source: AI model synthesis`
+
+  const normalizedLines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => ensureSourceAttribution(line))
+
+  return normalizedLines.join("\n")
 }
 
 const ingredientDatabase = {
@@ -403,7 +415,7 @@ const languageContent = {
   en: {
     title: "Ingredient Analysis",
     aiLanguage: "English",
-    unknown: "No detailed database entry yet; flagged for future enrichment.",
+    unknown: "No detailed database entry yet; flagged for future enrichment. Source: Wykta local ingredient database fallback.",
     categories: {
       skincare: "Skincare",
       food: "Food",
@@ -413,7 +425,7 @@ const languageContent = {
   fr: {
     title: "Analyse des ingrédients",
     aiLanguage: "French",
-    unknown: "Aucune fiche détaillée en base pour l'instant ; élément signalé pour enrichissement.",
+    unknown: "Aucune fiche détaillée en base pour l'instant ; élément signalé pour enrichissement. Source : base locale Wykta (fallback).",
     categories: {
       skincare: "Soin de la peau",
       food: "Alimentaire",
@@ -423,7 +435,7 @@ const languageContent = {
   de: {
     title: "Inhaltsstoffanalyse",
     aiLanguage: "German",
-    unknown: "Noch kein detaillierter Datenbankeintrag vorhanden; zur Erweiterung markiert.",
+    unknown: "Noch kein detaillierter Datenbankeintrag vorhanden; zur Erweiterung markiert. Quelle: lokale Wykta-Datenbank (Fallback).",
     categories: {
       skincare: "Hautpflege",
       food: "Lebensmittel",
@@ -433,7 +445,7 @@ const languageContent = {
   zh: {
     title: "成分分析",
     aiLanguage: "Chinese",
-    unknown: "数据库暂无详细条目，已标记用于后续补充。",
+    unknown: "数据库暂无详细条目，已标记用于后续补充。来源：Wykta 本地数据库兜底。",
     categories: {
       skincare: "护肤",
       food: "食品",
