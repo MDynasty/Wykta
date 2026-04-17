@@ -466,23 +466,24 @@ serve(async (req) => {
   try {
     const { ingredients, lang } = await req.json()
     const normalizedLanguage = normalizeLanguage(lang)
-    const languagePack = languageContent[normalizedLanguage] || languageContent.en
 
     console.log('Request:', { ingredients, lang })
 
     const inputIngredients = Array.isArray(ingredients) ? ingredients : []
-    const analysisLines = inputIngredients.map((rawIngredient) => {
-      const originalName = String(rawIngredient || '').trim()
-      const normalizedName = normalizeAndResolveIngredient(originalName)
-      const displayName = formatDisplayIngredientName(originalName, normalizedName)
-      const result = analyzeIngredient(normalizedName, normalizedLanguage)
-      return `${displayName}: [${result.category}] ${result.detail}`
-    })
 
-    const analysis = `${languagePack.title}:\n${analysisLines.join('\n')}`
+    if (!inputIngredients.length) {
+      return new Response(
+        JSON.stringify({ analysis: '' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+      )
+    }
 
+    // No AI key available in this build — return empty analysis so the client
+    // falls through to its own open-data fallback chain (Open Food Facts,
+    // Open Beauty Facts, Wikidata) which can resolve any ingredient.
+    console.log('No AI configured; deferring to frontend open-data fallback.')
     return new Response(
-      JSON.stringify({ analysis }),
+      JSON.stringify({ analysis: '' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

@@ -561,23 +561,15 @@ serve(async (req) => {
         )
       }
     } catch (aiErr) {
-      console.warn('AI analysis failed, falling back to local database:', aiErr)
+      console.warn('AI analysis failed:', aiErr)
     }
 
-    // 2. Fallback: local ingredient database
-    console.log('Using local ingredient database')
-    const analysisLines = inputIngredients.map((rawDisplayName) => {
-      const originalName = String(rawDisplayName || '').trim()
-      const normalizedName = normalizeAndResolveIngredient(originalName)
-      const displayName = formatDisplayIngredientName(originalName, normalizedName)
-      const result = analyzeIngredient(normalizedName, normalizedLanguage)
-      return `${displayName}: [${result.category}] ${result.detail}`
-    })
-
-    const analysis = `${languagePack.title}:\n${analysisLines.join('\n')}`
-
+    // 2. No AI key configured — return empty analysis so the frontend falls through
+    // to its own rich open-data fallback chain (Open Food Facts, Open Beauty Facts,
+    // Wikidata) which can resolve virtually any ingredient.
+    console.log('OPENAI_API_KEY not set; deferring to frontend open-data fallback.')
     return new Response(
-      JSON.stringify({ analysis }),
+      JSON.stringify({ analysis: '' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
