@@ -18,6 +18,7 @@ async function analyzeWithOpenAI(
   targetLanguage: string,
 ): Promise<string | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")
+  const model = Deno.env.get("OPENAI_MODEL") || "gpt-4o-mini"
   if (!apiKey) return null
 
   const ingredientList = ingredients.join(", ")
@@ -38,7 +39,7 @@ async function analyzeWithOpenAI(
       "Authorization": `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4o-mini",
+      model,
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1024,
       temperature: 0.3,
