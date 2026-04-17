@@ -244,6 +244,7 @@ const localIngredientDb = {
 }
 
 let cachedKnownIngredientMatchers = null
+// Common ingredient conjunctions seen across supported UI languages.
 const multilingualIngredientJoiners = ["and", "und", "et", "和", "及", "与", "以及"]
 const multilingualIngredientJoinerPattern = new RegExp(`\\s(?:${multilingualIngredientJoiners.join("|")})\\s`, "giu")
 
@@ -317,7 +318,7 @@ function extractIngredients(text){
   const foundByVocabulary = extractVocabularyMatches(normalizedText)
 
   const splitByPunctuation = normalizedText
-    .split(/[,\.;:•\n\r\t，；。、|/\\]+|/gu)
+    .split(/[,\.;:•\n\r\t，；。、|/\\]+/gu)
     .flatMap((segment) => segment.split(multilingualIngredientJoinerPattern))
     .map(i => i.trim())
     .filter(i => i.length > 0)
