@@ -25,7 +25,7 @@ jobs:
           if [ -n "${OPENAI_API_KEY}" ]; then
             supabase secrets set OPENAI_API_KEY="${OPENAI_API_KEY}" --project-ref rryuicpnjxxzsmkotgrj
           else
-            echo "OPENAI_API_KEY is not set in GitHub Actions secrets; AI API fallback will use local DB."
+            echo "OPENAI_API_KEY is not set in GitHub Actions secrets; Edge Function runtime will skip OpenAI calls and use its local ingredient database fallback."
           fi
 
           if [ -n "${OPENAI_MODEL}" ]; then

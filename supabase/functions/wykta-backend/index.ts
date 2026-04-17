@@ -6,6 +6,8 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const DEFAULT_OPENAI_MODEL = "gpt-4o-mini"
+
 // ---------------------------------------------------------------------------
 // OpenAI AI analysis
 // Set the OPENAI_API_KEY Supabase secret to enable AI-powered analysis:
@@ -18,7 +20,7 @@ async function analyzeWithOpenAI(
   targetLanguage: string,
 ): Promise<string | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")
-  const model = Deno.env.get("OPENAI_MODEL") || "gpt-4o-mini"
+  const model = Deno.env.get("OPENAI_MODEL") || DEFAULT_OPENAI_MODEL
   if (!apiKey) return null
 
   const ingredientList = ingredients.join(", ")
