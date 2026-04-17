@@ -9,16 +9,23 @@ const hasSupabaseConfig =
   typeof supabaseKey !== "undefined" &&
   supabaseKey.trim().length > 0
 
-const { createClient } = supabase
+const createClient =
+  typeof supabase !== "undefined" && typeof supabase.createClient === "function"
+    ? supabase.createClient
+    : null
 
-const supabaseClient = hasSupabaseConfig
+const supabaseClient = hasSupabaseConfig && createClient
   ? createClient(supabaseUrl, supabaseKey)
   : null
 
 if (supabaseClient) {
   console.log("Supabase connected")
 } else {
-  console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
+  if (!createClient) {
+    console.warn("Supabase SDK failed to load. Falling back to open-database analysis.")
+  } else {
+    console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
+  }
 }
 
 const knownIngredients = [
@@ -1153,16 +1160,21 @@ async function analyzeIngredients(){
 
   setAnalyzeBtnLoading(true)
 
-  const text = document.getElementById("ingredients").value
-  const ingredients = extractIngredients(text)
-  const warnings = checkInteractions(ingredients)
+  try {
+    const text = document.getElementById("ingredients").value
+    const ingredients = extractIngredients(text)
+    const warnings = checkInteractions(ingredients)
 
-  displayInteractions(warnings)
+    displayInteractions(warnings)
 
-  await saveResult(text, warnings.join("; "))
-  await analyzeWithAI(ingredients)
-
-  setAnalyzeBtnLoading(false)
+    await saveResult(text, warnings.join("; "))
+    await analyzeWithAI(ingredients)
+  } catch (err) {
+    console.error("Analyze flow error:", err)
+    displayAIAnalysis(t("failed"), [])
+  } finally {
+    setAnalyzeBtnLoading(false)
+  }
 }
 
 /* -----------------------
