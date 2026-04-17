@@ -38,13 +38,19 @@ const ingredientAliases = {
   "纯净水": "water",
   "矿泉水": "water",
   "甘油": "glycerin",
+  "丙三醇": "glycerin",
   "丙二醇": "propylene glycol",
+  "丁二醇": "butylene glycol",
   "烟酰胺": "niacinamide",
   "透明质酸": "hyaluronic acid",
   "透明质酸钠": "sodium hyaluronate",
+  "玻尿酸": "hyaluronic acid",
+  "库拉索芦荟": "aloe vera",
   "视黄醇": "retinol",
   "乙醇酸": "glycolic acid",
   "水杨酸": "salicylic acid",
+  "神经酰胺": "ceramide",
+  "泛醇": "panthenol",
   "过氧化苯甲酰": "benzoyl peroxide",
   "香精": "fragrance",
   "香料": "fragrance",
@@ -67,18 +73,31 @@ const ingredientAliases = {
   "芝麻": "sesame",
   "鱼": "fish",
   "虾": "shrimp",
+  "酵母提取物": "yeast extract",
+  "棕榈油": "palm oil",
+  "椰子油": "coconut oil",
+  "橄榄油": "olive oil",
+  "向日葵籽油": "sunflower oil",
+  "小苏打": "sodium bicarbonate",
+  "食用香精": "artificial flavor",
   "eau": "water",
   "glycérine": "glycerin",
+  "beurre de karité": "shea butter",
+  "parfum (fragrance)": "fragrance",
+  "acide ascorbique": "ascorbic acid",
   "acide hyaluronique": "hyaluronic acid",
   "acide glycolique": "glycolic acid",
   "acide salicylique": "salicylic acid",
   "rétinol": "retinol",
   "acide citrique": "citric acid",
   "wasser": "water",
+  "sheabutter": "shea butter",
   "glyzerin": "glycerin",
   "hyaluronsäure": "hyaluronic acid",
   "glykolsäure": "glycolic acid",
   "salicylsäure": "salicylic acid",
+  "niacinamid": "niacinamide",
+  "sonnenblumenöl": "sunflower oil",
   "zitronensäure": "citric acid",
   "duftstoff": "fragrance"
 }
@@ -229,14 +248,24 @@ let cachedKnownIngredientMatchers = null
 function getKnownIngredientMatchers(){
   if(cachedKnownIngredientMatchers) return cachedKnownIngredientMatchers
 
-  cachedKnownIngredientMatchers = knownIngredients
-    .slice()
+  const searchableVocabulary = [
+    ...knownIngredients,
+    ...Object.keys(localIngredientDb),
+    ...Object.keys(ingredientAliases)
+  ]
+
+  cachedKnownIngredientMatchers = [...new Set(searchableVocabulary
+    .map((value) => sanitizeIngredientTerm(value))
+    .filter(Boolean))]
     .sort((a, b) => b.length - a.length)
     .map(ingredient => {
       const escapedIngredient = ingredient.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      const usesWordBoundary = /[a-z0-9\u00C0-\u024F]/i.test(ingredient)
       return {
-        ingredient,
-        regex: new RegExp(`(^|[^\\p{L}\\p{N}])${escapedIngredient}($|[^\\p{L}\\p{N}])`, "iu")
+        ingredient: ingredientAliases[ingredient] || ingredient,
+        regex: usesWordBoundary
+          ? new RegExp(`(^|[^\\p{L}\\p{N}])${escapedIngredient}($|[^\\p{L}\\p{N}])`, "iu")
+          : new RegExp(escapedIngredient, "iu")
       }
     })
 
@@ -257,17 +286,35 @@ function normalizeIngredientName(value = ""){
   return ingredientAliases[normalized] || normalized
 }
 
+function extractVocabularyMatches(text = ""){
+  const normalizedText = sanitizeIngredientTerm(text)
+  if(!normalizedText) return []
+
+  const matches = getKnownIngredientMatchers()
+    .filter(({ regex }) => regex.test(normalizedText))
+    .map(({ ingredient }) => normalizeIngredientName(ingredient))
+    .filter(Boolean)
+
+  return [...new Set(matches)]
+}
+
+function isLikelyIngredientToken(token = ""){
+  const normalized = sanitizeIngredientTerm(token)
+  if(!normalized || normalized.length < 2) return false
+  if(/^\d+([.,]\d+)?$/.test(normalized)) return false
+  if(normalized.split(" ").length > 8) return false
+  return true
+}
+
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
   if(!normalizedText) return []
 
-  const foundByVocabulary = getKnownIngredientMatchers()
-    .filter(({ regex }) => regex.test(normalizedText))
-    .map(({ ingredient }) => ingredient)
+  const foundByVocabulary = extractVocabularyMatches(normalizedText)
 
   const splitByPunctuation = normalizedText
-    .split(/[,\.;:•\n\r\t，；。、|/\\]+/)
+    .split(/[,\.;:•\n\r\t，；。、|/\\]+|\s(?:and|und|et|和|及|与|以及)\s/giu)
     .map(i => i.trim())
     .filter(i => i.length > 0)
 
@@ -280,13 +327,16 @@ function extractIngredients(text){
         .map(i => i.trim())
         .filter(i => i.length > 0)
 
-  const normalizedVocabularyMatches = foundByVocabulary
-    .map(normalizeIngredientName)
-    .filter(Boolean)
   const normalizedFallbackMatches = fallbackSplit
     .map(normalizeIngredientName)
+    .filter(isLikelyIngredientToken)
     .filter(Boolean)
-  return [...new Set([...normalizedVocabularyMatches, ...normalizedFallbackMatches])]
+
+  const granularVocabularyMatches = splitByPunctuation
+    .flatMap(extractVocabularyMatches)
+    .filter(Boolean)
+
+  return [...new Set([...foundByVocabulary, ...granularVocabularyMatches, ...normalizedFallbackMatches])]
 }
 
 
@@ -973,10 +1023,11 @@ function setAnalyzeBtnLoading(isLoading){
 
   const icon    = btn.querySelector(".btn-icon")
   const btnText = btn.querySelector("[data-i18n='analyzeButton']")
+  if(icon && !icon.dataset.defaultHtml) icon.dataset.defaultHtml = icon.innerHTML
 
   if(isLoading){
     btn.disabled = true
-    if(icon) icon.textContent = ""
+    if(icon) icon.style.display = "none"
     if(!btn.querySelector(".spinner")){
       btn.insertAdjacentHTML("afterbegin", '<span class="spinner" id="analyzeBtnSpinner"></span>')
     }
@@ -984,7 +1035,10 @@ function setAnalyzeBtnLoading(isLoading){
     btn.disabled = false
     const spinner = document.getElementById("analyzeBtnSpinner")
     if(spinner) spinner.remove()
-    if(icon) icon.textContent = "AI"
+    if(icon){
+      icon.style.display = ""
+      if(icon.dataset.defaultHtml) icon.innerHTML = icon.dataset.defaultHtml
+    }
     if(btnText) btnText.textContent = t("analyzeButton")
   }
 }
@@ -1115,21 +1169,40 @@ async function runOCR(canvas) {
     }
 
     const selectedLang = currentLanguage()
-    const ocrLang = ocrLanguageCodes[selectedLang] || "eng"
-    const { data } = await Tesseract.recognize(processedCanvas, ocrLang);
-    const text = data.text;
+    const primaryOcrLang = selectedLang === "zh"
+      ? "chi_sim+eng"
+      : selectedLang === "fr"
+        ? "fra+eng"
+        : selectedLang === "de"
+          ? "deu+eng"
+          : (ocrLanguageCodes[selectedLang] || "eng")
+    const { data } = await Tesseract.recognize(processedCanvas, primaryOcrLang)
+    let text = data.text || ""
+
+    const primaryIngredientCount = extractIngredients(text).length
+    if(primaryIngredientCount < 2){
+      const { data: backupData } = await Tesseract.recognize(processedCanvas, "eng+chi_sim+fra+deu")
+      const backupText = backupData.text || ""
+      const backupIngredientCount = extractIngredients(backupText).length
+      if(
+        backupIngredientCount > primaryIngredientCount ||
+        (backupIngredientCount === primaryIngredientCount && backupText.length > text.length)
+      ){
+        text = backupText
+      }
+    }
 
     const ocrEl = document.getElementById("ocrResult")
     if(ocrEl){
-      ocrEl.innerText = text;
+      ocrEl.innerText = text
       ocrEl.classList.add("visible")
     }
-    document.getElementById("ingredients").value = text;
+    document.getElementById("ingredients").value = text
 
-    await analyzeIngredients();
+    await analyzeIngredients()
   } catch (err) {
-    console.error("OCR error:", err);
-    document.getElementById("ocrResult").innerText = t("ocrFailed");
+    console.error("OCR error:", err)
+    document.getElementById("ocrResult").innerText = t("ocrFailed")
   }
 }
 
