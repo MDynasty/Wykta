@@ -46,6 +46,7 @@ const ingredientAliases = {
   "透明质酸钠": "sodium hyaluronate",
   "玻尿酸": "hyaluronic acid",
   "库拉索芦荟": "aloe vera",
+  "芦荟": "aloe vera",
   "视黄醇": "retinol",
   "乙醇酸": "glycolic acid",
   "水杨酸": "salicylic acid",
@@ -81,6 +82,9 @@ const ingredientAliases = {
   "小苏打": "sodium bicarbonate",
   "食用香精": "artificial flavor",
   "eau": "water",
+  "eau purifiée": "water",
+  "agua": "water",
+  "acqua": "water",
   "glycérine": "glycerin",
   "beurre de karité": "shea butter",
   "parfum (fragrance)": "fragrance",
@@ -97,6 +101,9 @@ const ingredientAliases = {
   "glykolsäure": "glycolic acid",
   "salicylsäure": "salicylic acid",
   "niacinamid": "niacinamide",
+  "aloe": "aloe vera",
+  "aloe barbadensis leaf juice": "aloe vera",
+  "aloe barbadensis": "aloe vera",
   "sonnenblumenöl": "sunflower oil",
   "zitronensäure": "citric acid",
   "duftstoff": "fragrance"
@@ -316,10 +323,14 @@ function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
   if(!normalizedText) return []
 
+  const scriptBoundarySplitText = normalizedText
+    .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
+    .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
+
   const foundByVocabulary = extractVocabularyMatches(normalizedText)
 
-  const splitByPunctuation = normalizedText
-    .split(/[,\.;:•\n\r\t，；。、|/\\]+/gu)
+  const splitByPunctuation = scriptBoundarySplitText
+    .split(/[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu)
     .flatMap((segment) => segment.split(multilingualIngredientJoinerPattern))
     .map(i => i.trim())
     .filter(i => i.length > 0)
@@ -936,6 +947,66 @@ async function lookupOFFIngredientTaxonomy(ingredient) {
   }
 }
 
+function getWikidataLanguageCode(lang = "en") {
+  const map = {
+    en: "en",
+    fr: "fr",
+    de: "de",
+    zh: "zh"
+  }
+  return map[lang] || "en"
+}
+
+async function lookupWikidataIngredient(ingredient) {
+  const normalizedIngredient = normalizeIngredientName(ingredient)
+  if(!normalizedIngredient) return null
+
+  const selectedLanguage = getWikidataLanguageCode(currentLanguage())
+  const languagePriority = [...new Set([selectedLanguage, "en", "fr", "de", "zh"])]
+  const wikimediaNoisePattern = /\b(wikimedia|disambiguation|template)\b/i
+
+  const results = await Promise.allSettled(languagePriority.map(async (languageCode) => {
+    const params = new URLSearchParams({
+      action: "wbsearchentities",
+      search: normalizedIngredient,
+      language: languageCode,
+      format: "json",
+      limit: "5",
+      origin: "*"
+    })
+    const url = `https://www.wikidata.org/w/api.php?${params.toString()}`
+    const data = await fetchJsonWithTimeout(url, 6500)
+    if(!data || !Array.isArray(data.search) || !data.search.length) return null
+
+    const preferredMatch = data.search.find((candidate) => {
+      const description = String(candidate.description || "").trim()
+      return description && !wikimediaNoisePattern.test(description)
+    })
+
+    return preferredMatch || data.search[0]
+  }))
+
+  const firstHit = results
+    .filter((result) => result.status === "fulfilled" && result.value)
+    .map((result) => result.value)[0]
+
+  if(!firstHit) return null
+
+  const label = firstHit.label || normalizedIngredient
+  const description = firstHit.description || "Open knowledge graph entry available."
+  const notes = [
+    "Source: Wikidata",
+    `Entity: ${label}`,
+    `Description: ${description}`
+  ]
+  if(firstHit.id) notes.push(`Wikidata: ${firstHit.id}`)
+
+  return {
+    category: t("generalCategory"),
+    detail: notes.join(" · ")
+  }
+}
+
 async function analyzeWithFreeDatabases(ingredients) {
   const lines = [`${t("fallbackHeader")}:`]
 
@@ -946,18 +1017,19 @@ async function analyzeWithFreeDatabases(ingredients) {
       return `${ingredient}: [${localResult.category}] ${localResult.detail}`
     }
 
-    // 2. Try OFF ingredient taxonomy (direct per-ingredient lookup),
-    //    OFF product search, and OBF product search in parallel
-    const [offTaxResult, foodResult, beautyResult] = await Promise.allSettled([
+    // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
+    const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
       lookupOFFIngredientTaxonomy(ingredient),
       lookupOpenFoodFacts(ingredient),
-      lookupOpenBeautyFacts(ingredient)
+      lookupOpenBeautyFacts(ingredient),
+      lookupWikidataIngredient(ingredient)
     ])
 
     const firstHit = [
       offTaxResult.status  === "fulfilled" ? offTaxResult.value  : null,
       foodResult.status    === "fulfilled" ? foodResult.value    : null,
-      beautyResult.status  === "fulfilled" ? beautyResult.value  : null
+      beautyResult.status  === "fulfilled" ? beautyResult.value  : null,
+      wikidataResult.status === "fulfilled" ? wikidataResult.value : null
     ].find(Boolean)
 
     const detail = firstHit
