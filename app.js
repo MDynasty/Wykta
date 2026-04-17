@@ -111,7 +111,9 @@ const ingredientAliases = {
 
 // 135 keeps high-contrast label text readable while reducing colorful package noise.
 const OCR_BINARIZATION_THRESHOLD = 135
+const WIKIDATA_TIMEOUT_MS = 6500
 const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
+const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
 
 /* -----------------------
 LOCAL INGREDIENT DATABASE
@@ -323,6 +325,7 @@ function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
   if(!normalizedText) return []
 
+  // Insert delimiters between CJK and Latin/number runs so mixed-script OCR like "水retinol" can split correctly.
   const scriptBoundarySplitText = normalizedText
     .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
     .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
@@ -330,7 +333,7 @@ function extractIngredients(text){
   const foundByVocabulary = extractVocabularyMatches(normalizedText)
 
   const splitByPunctuation = scriptBoundarySplitText
-    .split(/[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu)
+    .split(ingredientSplitPunctuationPattern)
     .flatMap((segment) => segment.split(multilingualIngredientJoinerPattern))
     .map(i => i.trim())
     .filter(i => i.length > 0)
@@ -975,7 +978,7 @@ async function lookupWikidataIngredient(ingredient) {
       origin: "*"
     })
     const url = `https://www.wikidata.org/w/api.php?${params.toString()}`
-    const data = await fetchJsonWithTimeout(url, 6500)
+    const data = await fetchJsonWithTimeout(url, WIKIDATA_TIMEOUT_MS)
     if(!data || !Array.isArray(data.search) || !data.search.length) return null
 
     const preferredMatch = data.search.find((candidate) => {

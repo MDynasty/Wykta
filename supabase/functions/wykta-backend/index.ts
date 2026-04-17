@@ -548,6 +548,13 @@ function inferUnknownIngredientDetail(ingredientName: string, languageKey: strin
   }
 }
 
+function formatDisplayIngredientName(originalName: string, normalizedName: string) {
+  if (normalizedName && normalizedName !== originalName.toLowerCase()) {
+    return `${originalName} (${normalizedName})`
+  }
+  return originalName || normalizedName
+}
+
 function analyzeIngredient(ingredientName, languageKey) {
   const normalizedName = normalizeIngredientKey(ingredientName)
   const item = ingredientDatabase[normalizedName]
@@ -608,9 +615,7 @@ serve(async (req) => {
     const analysisLines = inputIngredients.map((rawDisplayName) => {
       const originalName = String(rawDisplayName || '').trim()
       const normalizedName = normalizeIngredientKey(originalName)
-      const displayName = normalizedName && normalizedName !== originalName.toLowerCase()
-        ? `${originalName} (${normalizedName})`
-        : (originalName || normalizedName)
+      const displayName = formatDisplayIngredientName(originalName, normalizedName)
       const result = analyzeIngredient(normalizedName, normalizedLanguage)
       return `${displayName}: [${result.category}] ${result.detail}`
     })
