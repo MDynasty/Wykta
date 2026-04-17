@@ -244,6 +244,8 @@ const localIngredientDb = {
 }
 
 let cachedKnownIngredientMatchers = null
+const multilingualIngredientJoiners = ["and", "und", "et", "和", "及", "与", "以及"]
+const multilingualIngredientJoinerPattern = new RegExp(`\\s(?:${multilingualIngredientJoiners.join("|")})\\s`, "giu")
 
 function getKnownIngredientMatchers(){
   if(cachedKnownIngredientMatchers) return cachedKnownIngredientMatchers
@@ -254,9 +256,10 @@ function getKnownIngredientMatchers(){
     ...Object.keys(ingredientAliases)
   ]
 
-  cachedKnownIngredientMatchers = [...new Set(searchableVocabulary
+  cachedKnownIngredientMatchers = [...new Set(searchableVocabulary)]
     .map((value) => sanitizeIngredientTerm(value))
-    .filter(Boolean))]
+    .filter(Boolean)
+  cachedKnownIngredientMatchers = [...new Set(cachedKnownIngredientMatchers)]
     .sort((a, b) => b.length - a.length)
     .map(ingredient => {
       const escapedIngredient = ingredient.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
@@ -314,7 +317,8 @@ function extractIngredients(text){
   const foundByVocabulary = extractVocabularyMatches(normalizedText)
 
   const splitByPunctuation = normalizedText
-    .split(/[,\.;:•\n\r\t，；。、|/\\]+|\s(?:and|und|et|和|及|与|以及)\s/giu)
+    .split(/[,\.;:•\n\r\t，；。、|/\\]+|/gu)
+    .flatMap((segment) => segment.split(multilingualIngredientJoinerPattern))
     .map(i => i.trim())
     .filter(i => i.length > 0)
 
