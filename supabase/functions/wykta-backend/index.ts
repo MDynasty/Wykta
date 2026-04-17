@@ -426,8 +426,8 @@ serve(async (req) => {
 
     const inputIngredients = Array.isArray(ingredients) ? ingredients : []
     const analysisLines = inputIngredients.map((rawIngredient) => {
-      const name = String(rawIngredient || '').trim().toLowerCase()
-      const displayName = name || String(rawIngredient || '').trim()
+      const displayName = String(rawIngredient || '').trim()
+      const name = displayName.toLowerCase()
       const result = analyzeIngredient(name, normalizedLanguage)
       return `${displayName}: [${result.category}] ${result.detail}`
     })
