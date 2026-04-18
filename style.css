@@ -90,13 +90,21 @@ body::before {
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  background: linear-gradient(140deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.94));
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(circle at 22% 18%, rgba(129, 140, 248, 0.28), transparent 55%),
+    radial-gradient(circle at 80% 78%, rgba(56, 189, 248, 0.22), transparent 60%),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.92));
+  border: 1px solid rgba(148, 163, 184, 0.28);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 6px 24px rgba(14, 165, 233, 0.22);
+  box-shadow: 0 10px 28px rgba(14, 165, 233, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.brand-mark svg {
+  width: 20px;
+  height: 20px;
 }
 
 .nav-right { display: flex; align-items: center; gap: 12px; }
