@@ -129,6 +129,19 @@ const languageSignalLexicon = {
   de: ["inhaltsstoffe", "wasser", "duftstoff", "säure", "und"],
   zh: ["成分", "配料", "水", "香精", "以及"]
 }
+const LANGUAGE_SCORE_WEIGHTS = {
+  chineseChar: 2,
+  diacriticBonus: 5,
+  longTokenMatch: 2,
+  shortTokenMatch: 1,
+  aliasMatch: 2
+}
+const ingredientAliasLanguageHints = Object.keys(ingredientAliases).reduce((acc, alias) => {
+  if(/[\u4e00-\u9fa5]/.test(alias)) acc.zh.push(alias)
+  else if(/[äöüß]/i.test(alias)) acc.de.push(alias)
+  else if(/[àâçéèêëîïôûùüÿœæ]/i.test(alias)) acc.fr.push(alias)
+  return acc
+}, { fr: [], de: [], zh: [] })
 
 /* -----------------------
 LOCAL INGREDIENT DATABASE
@@ -833,6 +846,8 @@ function currentLanguage(){
 }
 
 function normalizeSupportedLanguage(lang){
+  // We intentionally collapse locale variants (e.g. fr-CA, zh-TW) to base languages
+  // because Wykta currently ships UI/analysis packs for en/fr/de/zh only.
   const normalized = String(lang || "").toLowerCase().slice(0, 2)
   return supportedLanguages.includes(normalized) ? normalized : "en"
 }
@@ -857,21 +872,24 @@ function detectInputLanguage(text = "", ingredients = []){
 
   const scores = { en: 0, fr: 0, de: 0, zh: 0 }
   const chineseMatches = sample.match(/[\u4e00-\u9fa5]/g)
-  if(chineseMatches?.length) scores.zh += chineseMatches.length * 2
-  if(/[äöüß]/i.test(sample)) scores.de += 5
-  if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += 5
+  if(chineseMatches?.length) scores.zh += chineseMatches.length * LANGUAGE_SCORE_WEIGHTS.chineseChar
+  if(/[äöüß]/i.test(sample)) scores.de += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
+  if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
 
   Object.entries(languageSignalLexicon).forEach(([lang, tokens]) => {
     tokens.forEach((token) => {
-      if(sample.includes(token)) scores[lang] += token.length >= 3 ? 2 : 1
+      if(sample.includes(token)) {
+        scores[lang] += token.length >= 3
+          ? LANGUAGE_SCORE_WEIGHTS.longTokenMatch
+          : LANGUAGE_SCORE_WEIGHTS.shortTokenMatch
+      }
     })
   })
 
-  Object.keys(ingredientAliases).forEach((alias) => {
-    if(!sample.includes(alias)) return
-    if(/[\u4e00-\u9fa5]/.test(alias)) scores.zh += 2
-    else if(/[äöüß]/i.test(alias)) scores.de += 2
-    else if(/[àâçéèêëîïôûùüÿœæ]/i.test(alias)) scores.fr += 2
+  Object.entries(ingredientAliasLanguageHints).forEach(([lang, aliases]) => {
+    aliases.forEach((alias) => {
+      if(sample.includes(alias)) scores[lang] += LANGUAGE_SCORE_WEIGHTS.aliasMatch
+    })
   })
 
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1])
