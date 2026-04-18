@@ -953,12 +953,14 @@ function tf(key, ...args){
 }
 
 function detectInputLanguage(text = "", ingredients = []){
-  const sample = `${String(text || "")}\n${Array.isArray(ingredients) ? ingredients.join(" ") : ""}`.toLowerCase()
+  const rawSample = `${String(text || "")}\n${Array.isArray(ingredients) ? ingredients.join(" ") : ""}`
+  const sample = rawSample.toLowerCase()
   if(!sample.trim()) return currentLanguage()
 
   const scores = { en: 0, fr: 0, de: 0, zh: 0 }
-  const chineseMatches = sample.match(/[\u4e00-\u9fa5]/g)
-  if(chineseMatches?.length) scores.zh += chineseMatches.length * LANGUAGE_SCORE_WEIGHTS.chineseChar
+  const chineseCharCount = (sample.match(/[\u4e00-\u9fa5]/g) || []).length
+  const latinCharCount = (sample.match(/[a-z\u00C0-\u024F]/gi) || []).length
+  if(chineseCharCount) scores.zh += chineseCharCount * LANGUAGE_SCORE_WEIGHTS.chineseChar
   if(/[äöüß]/i.test(sample)) scores.de += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
   if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
 
@@ -980,7 +982,14 @@ function detectInputLanguage(text = "", ingredients = []){
 
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1])
   const [bestLang, bestScore] = ranked[0]
-  return bestScore > 0 ? bestLang : currentLanguage()
+  if(bestScore > 0){
+    // Guard against OCR noise where a single stray CJK char appears in otherwise Latin text.
+    if(bestLang === "zh" && latinCharCount >= 4 && chineseCharCount <= 1) return "en"
+    return bestLang
+  }
+  if(chineseCharCount > 0) return "zh"
+  if(latinCharCount > 0) return "en"
+  return currentLanguage()
 }
 
 function localizeStaticUI(){
@@ -1196,6 +1205,7 @@ function showResultsSummary(lang = currentLanguage()) {
           : tf("resultsSummaryCaution", flaggedCount, lang))
       : null
   ].filter(Boolean)
+  parts.push(`${t("languageDetectedLabel", lang)}: ${languageNames[normalizeSupportedLanguage(lang)] || lang}`)
 
   summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}`
   summaryEl.className = `analysis-summary ${dangerCount > 0 ? "has-danger" : flaggedCount > 0 ? "has-caution" : "all-clear"}`
