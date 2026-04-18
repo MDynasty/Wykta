@@ -87,24 +87,31 @@ body::before {
 }
 
 .brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 11px;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
   background:
-    radial-gradient(circle at 22% 18%, rgba(129, 140, 248, 0.28), transparent 55%),
-    radial-gradient(circle at 80% 78%, rgba(56, 189, 248, 0.22), transparent 60%),
-    linear-gradient(145deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.28);
+    radial-gradient(circle at 24% 16%, rgba(129, 140, 248, 0.34), transparent 58%),
+    radial-gradient(circle at 78% 82%, rgba(34, 211, 238, 0.22), transparent 62%),
+    linear-gradient(150deg, rgba(8, 16, 34, 0.98), rgba(21, 32, 56, 0.95));
+  border: 1px solid rgba(148, 163, 184, 0.30);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 10px 28px rgba(14, 165, 233, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .brand-mark svg {
-  width: 20px;
-  height: 20px;
+  width: 21px;
+  height: 21px;
+}
+
+.brand:hover .brand-mark {
+  transform: translateY(-1px) scale(1.02);
+  border-color: rgba(129, 140, 248, 0.45);
+  box-shadow: 0 14px 34px rgba(56, 189, 248, 0.33), inset 0 1px 0 rgba(255, 255, 255, 0.17);
 }
 
 .nav-right { display: flex; align-items: center; gap: 12px; }
