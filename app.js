@@ -959,7 +959,7 @@ function detectInputLanguage(text = "", ingredients = []){
 
   const scores = { en: 0, fr: 0, de: 0, zh: 0 }
   const chineseCharCount = (sample.match(/[\u4e00-\u9fa5]/g) || []).length
-  const latinCharCount = (sample.match(/[a-z\u00C0-\u024F]/gi) || []).length
+  const latinCharCount = (sample.match(/[a-z\u00C0-\u024F]/g) || []).length
   if(chineseCharCount) scores.zh += chineseCharCount * LANGUAGE_SCORE_WEIGHTS.chineseChar
   if(/[äöüß]/i.test(sample)) scores.de += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
   if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
@@ -1205,7 +1205,9 @@ function showResultsSummary(lang = currentLanguage()) {
           : tf("resultsSummaryCaution", flaggedCount, lang))
       : null
   ].filter(Boolean)
-  parts.push(`${t("languageDetectedLabel", lang)}: ${languageNames[normalizeSupportedLanguage(lang)] || lang}`)
+  const normalizedLang = normalizeSupportedLanguage(lang)
+  const detectedLanguageName = Object.hasOwn(languageNames, normalizedLang) ? languageNames[normalizedLang] : normalizedLang
+  parts.push(`${t("languageDetectedLabel", lang)}: ${detectedLanguageName}`)
 
   summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}`
   summaryEl.className = `analysis-summary ${dangerCount > 0 ? "has-danger" : flaggedCount > 0 ? "has-caution" : "all-clear"}`
