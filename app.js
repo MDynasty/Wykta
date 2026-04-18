@@ -532,12 +532,12 @@ const uiMessages = {
     heroBadge: "AI-Powered Ingredient Intelligence",
     heroTitlePrefix: "Know exactly what's",
     heroTitleHighlight: "in your products",
-    heroSubtitle: "Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.",
-    heroCta: "Try it now",
+    heroSubtitle: "Scan food or skincare labels instantly, detect hidden allergens, and make confident choices about what goes in and on your body.",
+    heroCta: "Check your ingredients free →",
     chipCoverage: "Food + Skincare Coverage",
     chipLanguage: "4-Language Support",
     chipSpeed: "OCR-to-Analysis in Seconds",
-    chipUpgrade: "Upgrade-ready UX",
+    chipUpgrade: "Allergen & Safety Alerts",
     proofData: "Data Sources",
     proofDataValue: "2.8M+ ingredients indexed",
     proofTrust: "Trust Signal",
@@ -546,8 +546,8 @@ const uiMessages = {
     proofSpeedValue: "Live lookup + instant warnings",
     analysisSubtitle: "Now enriched with free food and skincare databases for broader ingredient coverage.",
     scanSubtitle: "Use your camera to pull ingredients from labels in seconds.",
-    ctaTitle: "Turn ingredient uncertainty into buying confidence",
-    ctaBody: "Wykta combines fast OCR, interaction checks, and open ingredient intelligence so users can decide what to buy faster.",
+    ctaTitle: "Ready to know what's really in your products?",
+    ctaBody: "Join the community of conscious shoppers. Wykta delivers instant, science-backed ingredient insight — for free.",
     analysisLanguage: "Analysis Language",
     ingredientList: "Ingredient List",
     ingredientsPlaceholder: "Paste ingredients from food or skincare labels",
@@ -555,6 +555,7 @@ const uiMessages = {
     openCameraButton: "Open Camera",
     captureButton: "Capture Label",
     valueTitle: "Why users pay for Wykta",
+    valueSubtitle: "Simple pricing that grows with you. Start free, upgrade when you're ready.",
     billingMonthly: "Monthly",
     billingAnnual: "Annual",
     billingDiscount: "Save 20%",
@@ -564,7 +565,8 @@ const uiMessages = {
     proTitle: "Pro (Recommended)",
     proBody: "Priority analysis, richer ingredient insights, premium trust reports.",
     proCtaButton: "Get Pro",
-    footnote: "Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.",
+    enterpriseCtaButton: "Contact Sales",
+    footerTagline: "Know what goes in and on your body.",
     analysisTitle: "AI Ingredient Analysis",
     warningTitle: "Interaction Warnings",
     scanTitle: "Scan Ingredient Label",
@@ -631,12 +633,12 @@ const uiMessages = {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
     heroTitlePrefix: "Sachez exactement ce qu'il y a",
     heroTitleHighlight: "dans vos produits",
-    heroSubtitle: "Scannez les étiquettes alimentaires ou skincare instantanément, réduisez les risques d'ingrédients et augmentez la confiance.",
-    heroCta: "Essayer maintenant",
+    heroSubtitle: "Scannez les étiquettes alimentaires ou skincare instantanément, détectez les allergènes cachés et faites des choix éclairés sur ce que vous consommez.",
+    heroCta: "Vérifiez vos ingrédients gratuitement →",
     chipCoverage: "Couverture alimentaire + skincare",
     chipLanguage: "Support 4 langues",
     chipSpeed: "OCR vers analyse en quelques secondes",
-    chipUpgrade: "UX prête pour l'abonnement",
+    chipUpgrade: "Alertes allergènes & sécurité",
     proofData: "Sources de données",
     proofDataValue: "2,8 M+ ingrédients indexés",
     proofTrust: "Signal de confiance",
@@ -645,8 +647,8 @@ const uiMessages = {
     proofSpeedValue: "Recherche en direct + alertes instantanées",
     analysisSubtitle: "Désormais enrichi avec des bases alimentaires et skincare gratuites pour élargir la couverture.",
     scanSubtitle: "Utilisez votre caméra pour extraire les ingrédients en quelques secondes.",
-    ctaTitle: "Transformez l'incertitude ingrédients en confiance d'achat",
-    ctaBody: "Wykta combine OCR rapide, vérification des interactions et intelligence ouverte des ingrédients pour accélérer la décision d'achat.",
+    ctaTitle: "Prêt à savoir ce qui se cache vraiment dans vos produits ?",
+    ctaBody: "Rejoignez la communauté des consommateurs avertis. Wykta vous offre une analyse instantanée et scientifique des ingrédients — gratuitement.",
     analysisLanguage: "Langue d'analyse",
     ingredientList: "Liste d'ingrédients",
     ingredientsPlaceholder: "Collez les ingrédients d'étiquettes alimentaires ou skincare",
@@ -654,6 +656,7 @@ const uiMessages = {
     openCameraButton: "Ouvrir la caméra",
     captureButton: "Capturer l'étiquette",
     valueTitle: "Pourquoi les utilisateurs paient Wykta",
+    valueSubtitle: "Des tarifs simples qui évoluent avec vous. Commencez gratuitement, passez Pro quand vous êtes prêt.",
     billingMonthly: "Mensuel",
     billingAnnual: "Annuel",
     billingDiscount: "Économisez 20 %",
@@ -663,7 +666,8 @@ const uiMessages = {
     proTitle: "Pro (Recommandé)",
     proBody: "Analyse prioritaire, insights plus riches, rapports premium.",
     proCtaButton: "Passer Pro",
-    footnote: "Conçu pour la conversion: valeur claire, résultats immédiats, et montée en gamme premium.",
+    enterpriseCtaButton: "Contacter l'équipe commerciale",
+    footerTagline: "Sachez ce que vous consommez et appliquez sur votre peau.",
     analysisTitle: "Analyse IA des ingrédients",
     warningTitle: "Avertissements d'interaction",
     scanTitle: "Scanner l'étiquette d'ingrédients",
@@ -730,12 +734,12 @@ const uiMessages = {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
     heroTitlePrefix: "Wissen Sie genau, was",
     heroTitleHighlight: "in Ihren Produkten steckt",
-    heroSubtitle: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort, reduzieren Sie Risiken und steigern Sie Vertrauen.",
-    heroCta: "Jetzt ausprobieren",
+    heroSubtitle: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort, entdecken Sie versteckte Allergene und treffen Sie sichere Entscheidungen für Körper und Haut.",
+    heroCta: "Jetzt kostenlos prüfen →",
     chipCoverage: "Lebensmittel + Hautpflege",
     chipLanguage: "Unterstützung für 4 Sprachen",
     chipSpeed: "OCR-zu-Analyse in Sekunden",
-    chipUpgrade: "Upgrade-fähige UX",
+    chipUpgrade: "Allergen- & Sicherheitsalarme",
     proofData: "Datenquellen",
     proofDataValue: "2,8 Mio.+ Inhaltsstoffe indexiert",
     proofTrust: "Vertrauenssignal",
@@ -744,8 +748,8 @@ const uiMessages = {
     proofSpeedValue: "Live-Abfrage + sofortige Warnungen",
     analysisSubtitle: "Jetzt mit kostenlosen Lebensmittel- und Hautpflege-Datenbanken für breitere Abdeckung.",
     scanSubtitle: "Nutzen Sie Ihre Kamera, um Inhaltsstoffe in Sekunden zu erfassen.",
-    ctaTitle: "Machen Sie aus Unsicherheit Kaufvertrauen",
-    ctaBody: "Wykta kombiniert schnelles OCR, Interaktionschecks und offene Inhaltsstoffdaten für schnellere Kaufentscheidungen.",
+    ctaTitle: "Bereit zu wissen, was wirklich in Ihren Produkten steckt?",
+    ctaBody: "Schließen Sie sich bewussten Verbrauchern an. Wykta liefert sofortige, wissenschaftlich fundierte Inhaltsstoff-Einblicke — kostenlos.",
     analysisLanguage: "Analysesprache",
     ingredientList: "Inhaltsstoffliste",
     ingredientsPlaceholder: "Inhaltsstoffe von Lebensmittel- oder Hautpflegeetiketten einfügen",
@@ -753,6 +757,7 @@ const uiMessages = {
     openCameraButton: "Kamera öffnen",
     captureButton: "Etikett erfassen",
     valueTitle: "Warum Nutzer für Wykta zahlen",
+    valueSubtitle: "Einfache Preisgestaltung, die mit Ihnen wächst. Kostenlos starten, jederzeit upgraden.",
     billingMonthly: "Monatlich",
     billingAnnual: "Jährlich",
     billingDiscount: "20 % sparen",
@@ -762,7 +767,8 @@ const uiMessages = {
     proTitle: "Pro (Empfohlen)",
     proBody: "Priorisierte Analyse, tiefere Insights, Premium-Vertrauensberichte.",
     proCtaButton: "Pro holen",
-    footnote: "Für hohe Conversion entwickelt: klarer Nutzen, sofortige Ergebnisse, starkes Upgrade-Design.",
+    enterpriseCtaButton: "Vertrieb kontaktieren",
+    footerTagline: "Wissen, was in und auf Ihren Körper gelangt.",
     analysisTitle: "KI-Inhaltsstoffanalyse",
     warningTitle: "Interaktionswarnungen",
     scanTitle: "Inhaltsstoffetikett scannen",
@@ -829,12 +835,12 @@ const uiMessages = {
     heroBadge: "AI 驱动的成分智能",
     heroTitlePrefix: "精确了解",
     heroTitleHighlight: "您产品的成分",
-    heroSubtitle: "即时扫描食品或护肤标签，降低成分风险，提升用户付费信心。",
-    heroCta: "立即体验",
+    heroSubtitle: "即时扫描食品或护肤标签，发现隐藏过敏原，对进入和涂抹在身体上的每种成分做出明智选择。",
+    heroCta: "免费检查成分 →",
     chipCoverage: "食品 + 护肤双场景覆盖",
     chipLanguage: "支持 4 种语言",
     chipSpeed: "OCR 到分析仅需数秒",
-    chipUpgrade: "可升级的高端体验",
+    chipUpgrade: "过敏原与安全预警",
     proofData: "数据来源",
     proofDataValue: "280 万+ 成分已索引",
     proofTrust: "信任信号",
@@ -843,8 +849,8 @@ const uiMessages = {
     proofSpeedValue: "实时查询 + 即时预警",
     analysisSubtitle: "现已接入免费的食品与护肤数据库，成分覆盖更广。",
     scanSubtitle: "使用相机可在数秒内提取标签成分。",
-    ctaTitle: "把成分不确定性变成购买信心",
-    ctaBody: "Wykta 将 OCR、相互作用检查与开放成分数据结合，帮助用户更快决策。",
+    ctaTitle: "准备好了解您产品里真正含有什么了吗？",
+    ctaBody: "加入注重健康的消费者社区。Wykta 提供即时、有科学依据的成分洞察——完全免费。",
     analysisLanguage: "分析语言",
     ingredientList: "成分列表",
     ingredientsPlaceholder: "粘贴食品或护肤品标签中的成分",
@@ -852,6 +858,7 @@ const uiMessages = {
     openCameraButton: "打开相机",
     captureButton: "拍摄标签",
     valueTitle: "用户愿意为 Wykta 付费的原因",
+    valueSubtitle: "清晰透明的定价，随您需求成长。免费开始，随时升级。",
     billingMonthly: "按月",
     billingAnnual: "按年",
     billingDiscount: "节省 20%",
@@ -861,7 +868,8 @@ const uiMessages = {
     proTitle: "专业版（推荐）",
     proBody: "优先分析、更丰富洞察、高级可信报告。",
     proCtaButton: "升级专业版",
-    footnote: "围绕高转化设计：价值清晰、结果即时、升级路径明确。",
+    enterpriseCtaButton: "联系销售团队",
+    footerTagline: "了解进入和涂抹在身体上的每一种成分。",
     analysisTitle: "AI 成分分析",
     warningTitle: "成分相互作用预警",
     scanTitle: "扫描成分标签",
@@ -953,18 +961,26 @@ function tf(key, ...args){
 }
 
 function detectInputLanguage(text = "", ingredients = []){
-  const sample = `${String(text || "")}\n${Array.isArray(ingredients) ? ingredients.join(" ") : ""}`.toLowerCase()
+  const rawSample = `${String(text || "")}\n${Array.isArray(ingredients) ? ingredients.join(" ") : ""}`
+  const sample = rawSample.toLowerCase()
   if(!sample.trim()) return currentLanguage()
 
   const scores = { en: 0, fr: 0, de: 0, zh: 0 }
-  const chineseMatches = sample.match(/[\u4e00-\u9fa5]/g)
-  if(chineseMatches?.length) scores.zh += chineseMatches.length * LANGUAGE_SCORE_WEIGHTS.chineseChar
+  const chineseCharCount = (sample.match(/[\u4e00-\u9fa5]/g) || []).length
+  const latinCharCount = (sample.match(/[a-z\u00C0-\u024F]/g) || []).length
+  if(chineseCharCount) scores.zh += chineseCharCount * LANGUAGE_SCORE_WEIGHTS.chineseChar
   if(/[äöüß]/i.test(sample)) scores.de += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
   if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
 
   Object.entries(languageSignalLexicon).forEach(([lang, tokens]) => {
     tokens.forEach((token) => {
-      if(sample.includes(token)) {
+      // Use word-boundary matching for Latin tokens to prevent substring false positives
+      // (e.g. "et" inside "retinol" incorrectly scoring French; "und" inside "wound").
+      const isLatinToken = /[a-z\u00C0-\u024F]/i.test(token)
+      const matched = isLatinToken
+        ? new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(sample)
+        : sample.includes(token)
+      if(matched) {
         scores[lang] += token.length >= 3
           ? LANGUAGE_SCORE_WEIGHTS.longTokenMatch
           : LANGUAGE_SCORE_WEIGHTS.shortTokenMatch
@@ -980,7 +996,14 @@ function detectInputLanguage(text = "", ingredients = []){
 
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1])
   const [bestLang, bestScore] = ranked[0]
-  return bestScore > 0 ? bestLang : currentLanguage()
+  if(bestScore > 0){
+    // Guard against OCR noise where a single stray CJK char appears in otherwise Latin text.
+    if(bestLang === "zh" && latinCharCount >= 4 && chineseCharCount <= 1) return "en"
+    return bestLang
+  }
+  if(chineseCharCount > 0) return "zh"
+  if(latinCharCount > 0) return "en"
+  return currentLanguage()
 }
 
 function localizeStaticUI(){
@@ -1006,6 +1029,12 @@ function localizeStaticUI(){
   // Swap <meta name="description"> to the current language
   const metaDesc = document.querySelector('meta[name="description"]')
   if(metaDesc) metaDesc.setAttribute("content", t("metaDescription"))
+
+  // Keep OG and Twitter description in sync with current language
+  const ogDesc = document.querySelector('meta[property="og:description"]')
+  if(ogDesc) ogDesc.setAttribute("content", t("metaDescription"))
+  const twDesc = document.querySelector('meta[name="twitter:description"]')
+  if(twDesc) twDesc.setAttribute("content", t("metaDescription"))
 
   const analysisEl = document.getElementById("ingredientResult")
   const warningEl = document.getElementById("interactionWarnings")
@@ -1196,6 +1225,9 @@ function showResultsSummary(lang = currentLanguage()) {
           : tf("resultsSummaryCaution", flaggedCount, lang))
       : null
   ].filter(Boolean)
+  const normalizedLang = normalizeSupportedLanguage(lang)
+  const detectedLanguageName = Object.hasOwn(languageNames, normalizedLang) ? languageNames[normalizedLang] : normalizedLang
+  parts.push(`${t("languageDetectedLabel", lang)}: ${detectedLanguageName}`)
 
   summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}`
   summaryEl.className = `analysis-summary ${dangerCount > 0 ? "has-danger" : flaggedCount > 0 ? "has-caution" : "all-clear"}`
@@ -1235,9 +1267,15 @@ async function lookupOpenFoodFacts(ingredient, lang = currentLanguage()) {
   const cacheKey = `off|${sanitizeIngredientTerm(ingredient)}`
   const cached = getCachedLookup(cacheKey)
   if (cached !== undefined) {
-    return cached
-      ? { category: t("foodCategory", lang), detail: cached.detail }
-      : null
+    if (!cached) return null
+    // Rebuild localized labels from stored raw values on every retrieval.
+    const notes = [
+      `${t("sourceLabel", lang)}: Open Food Facts`,
+      `${t("seenInLabel", lang)}: ${cached.productName}`
+    ]
+    if(cached.allergenTags && cached.allergenTags.length) notes.push(`${t("allergenIndicatorsLabel", lang)}: ${cached.allergenTags.join(", ")}`)
+    if(cached.processingTag) notes.push(`${t("ingredientAnalysisTagLabel", lang)}: ${cached.processingTag}`)
+    return { category: t("foodCategory", lang), detail: notes.join(" · ") }
   }
 
   const params = new URLSearchParams({
@@ -1264,15 +1302,8 @@ async function lookupOpenFoodFacts(ingredient, lang = currentLanguage()) {
     ? stripTagPrefix(match.ingredients_analysis_tags[0])
     : null
 
-  // Cache raw data without lang-specific labels (labels are applied at retrieval)
-  const rawNotes = [
-    `Source: Open Food Facts`,
-    `Seen in: ${productName}`
-  ]
-  if(allergenTags.length) rawNotes.push(`Allergens: ${allergenTags.join(", ")}`)
-  if(processingTag) rawNotes.push(`Tag: ${processingTag}`)
-  const rawDetail = rawNotes.join(" · ")
-  setCachedLookup(cacheKey, { detail: rawDetail })
+  // Store only raw data values — labels are rebuilt with the correct language on every retrieval.
+  setCachedLookup(cacheKey, { productName, allergenTags, processingTag })
 
   const notes = [
     `${t("sourceLabel", lang)}: Open Food Facts`,
@@ -1291,9 +1322,15 @@ async function lookupOpenBeautyFacts(ingredient, lang = currentLanguage()) {
   const cacheKey = `obf|${sanitizeIngredientTerm(ingredient)}`
   const cached = getCachedLookup(cacheKey)
   if (cached !== undefined) {
-    return cached
-      ? { category: t("skincareCategory", lang), detail: cached.detail }
-      : null
+    if (!cached) return null
+    // Rebuild localized labels from stored raw values on every retrieval.
+    const notes = [
+      `${t("sourceLabel", lang)}: Open Beauty Facts`,
+      `${t("seenInLabel", lang)}: ${cached.productName}`
+    ]
+    if(cached.categoryTag) notes.push(`${t("productTypeLabel", lang)}: ${cached.categoryTag}`)
+    if(cached.ingredientTag) notes.push(`${t("ingredientTagLabel", lang)}: ${cached.ingredientTag}`)
+    return { category: t("skincareCategory", lang), detail: notes.join(" · ") }
   }
 
   const params = new URLSearchParams({
@@ -1320,10 +1357,8 @@ async function lookupOpenBeautyFacts(ingredient, lang = currentLanguage()) {
     ? stripTagPrefix(match.ingredients_analysis_tags[0])
     : null
 
-  const rawNotes = [`Source: Open Beauty Facts`, `Seen in: ${productName}`]
-  if(categoryTag) rawNotes.push(`Type: ${categoryTag}`)
-  if(ingredientTag) rawNotes.push(`Tag: ${ingredientTag}`)
-  setCachedLookup(cacheKey, { detail: rawNotes.join(" · ") })
+  // Store only raw data values — labels are rebuilt with the correct language on every retrieval.
+  setCachedLookup(cacheKey, { productName, categoryTag, ingredientTag })
 
   const notes = [
     `${t("sourceLabel", lang)}: Open Beauty Facts`,
@@ -1389,7 +1424,10 @@ async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
   const normalizedIngredient = normalizeIngredientName(ingredient)
   if(!normalizedIngredient) return null
 
-  const cacheKey = `wikidata|${normalizedIngredient}`
+  const selectedLanguage = getWikidataLanguageCode(lang)
+  // Include language in cache key so English/French/German/Chinese lookups
+  // each receive their own cached label and description.
+  const cacheKey = `wikidata|${normalizedIngredient}|${selectedLanguage}`
   const cachedEntry = getCachedLookup(cacheKey)
   if (cachedEntry !== undefined) {
     if (!cachedEntry) return null
@@ -1404,7 +1442,6 @@ async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
     }
   }
 
-  const selectedLanguage = getWikidataLanguageCode(lang)
   // Query only the detected language first, then fall back to English.
   // Avoids 3 extra parallel requests per ingredient across all supported languages.
   const languagePriority = [...new Set([selectedLanguage, "en"])]
@@ -1604,10 +1641,11 @@ async function analyzeIngredients(){
 
   setAnalyzeBtnLoading(true)
 
+  let analysisLanguage = currentLanguage()
   try {
     const text = document.getElementById("ingredients").value
     const ingredients = extractIngredients(text)
-    const analysisLanguage = detectInputLanguage(text, ingredients)
+    analysisLanguage = detectInputLanguage(text, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
     displayInteractions(warnings, analysisLanguage)
@@ -1617,7 +1655,7 @@ async function analyzeIngredients(){
     showResultsSummary(analysisLanguage)
   } catch (err) {
     console.error("Analyze flow error:", err)
-    displayAIAnalysis(t("failed"), [])
+    displayAIAnalysis(t("failed", analysisLanguage), [])
   } finally {
     setAnalyzeBtnLoading(false)
   }

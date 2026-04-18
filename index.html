@@ -6,7 +6,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='w'%20x1='5'%20y1='4'%20x2='27'%20y2='27'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%2334d399'/%3E%3Cstop%20offset='1'%20stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='p'%20x1='11'%20y1='9'%20x2='20'%20y2='22'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23c4b5fd'/%3E%3Cstop%20offset='1'%20stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='32'%20height='32'%20rx='9'%20fill='%23060d1a'/%3E%3Cpath%20d='M6.6%208.7L9.8%2022.2L15.1%2012.8L20.2%2022.2L23.7%209.4'%20stroke='url%28%23w%29'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Cpath%20d='M18.1%208.6C19.7%207.4%2021.8%207.6%2023.1%209.1C24.3%2010.6%2024.1%2012.8%2022.6%2014C20.6%2015.8%2018.3%2017.5%2016.1%2019.4C15.8%2016.5%2014.4%2013.3%2015.9%2010.7C16.4%209.9%2017.2%209.2%2018.1%208.6Z'%20fill='url%28%23p%29'/%3E%3Ccircle%20cx='24.8'%20cy='7.1'%20r='1.1'%20fill='%23e2e8f0'/%3E%3C/svg%3E" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Wykta – Ingredient Analyzer">
+<meta property="og:description" content="Scan food or skincare labels instantly. Detect allergens, flag risky ingredients, and make confident choices — free.">
+<meta property="og:url" content="https://wykta.app">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Wykta – Ingredient Analyzer">
+<meta name="twitter:description" content="Scan food or skincare labels instantly. Detect allergens, flag risky ingredients, and make confident choices — free.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g1'%20x1='6'%20y1='5'%20x2='26'%20y2='27'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%2334d399'/%3E%3Cstop%20offset='1'%20stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='g2'%20x1='11'%20y1='8'%20x2='22'%20y2='24'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23a78bfa'/%3E%3Cstop%20offset='1'%20stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='1'%20y='1'%20width='30'%20height='30'%20rx='9.5'%20fill='%23060d1a'/%3E%3Cpath%20d='M7%208.9L10.1%2022.5L15.6%2013.3L20.9%2022.5L24.7%209.6'%20stroke='url%28%23g1%29'%20stroke-width='2.15'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Cpath%20d='M17.6%208.5C19.3%207.2%2021.5%207.5%2022.8%209.1C24%2010.6%2023.8%2012.8%2022.3%2014.1C20.2%2015.9%2017.8%2017.8%2015.7%2019.8C15.3%2016.7%2013.9%2013.4%2015.5%2010.7C16%209.8%2016.8%209%2017.6%208.5Z'%20fill='url%28%23g2%29'/%3E%3Ccircle%20cx='24.6'%20cy='7.3'%20r='1.15'%20fill='%23e2e8f0'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -19,18 +26,18 @@
       <div class="brand-mark">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
-            <linearGradient id="brandMarkGradient" x1="2.4" y1="1.9" x2="17.8" y2="18.1" gradientUnits="userSpaceOnUse">
+            <linearGradient id="brandMarkGradient" x1="3" y1="2.1" x2="17.1" y2="17.9" gradientUnits="userSpaceOnUse">
               <stop stop-color="#34d399"/>
               <stop offset="1" stop-color="#38bdf8"/>
             </linearGradient>
-            <linearGradient id="brandMarkPetal" x1="7.5" y1="5.8" x2="13.7" y2="15.6" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#c4b5fd"/>
+            <linearGradient id="brandMarkPetal" x1="7.8" y1="5.7" x2="14.2" y2="15.8" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#a78bfa"/>
               <stop offset="1" stop-color="#22d3ee"/>
             </linearGradient>
           </defs>
-          <path d="M3.8 5.8L6.3 15.9L10.1 8.6L13.8 15.9L16.4 6.5" stroke="url(#brandMarkGradient)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M11.8 6.5C12.8 5.7 14.2 5.9 15 6.8C15.8 7.8 15.7 9.2 14.8 10C13.5 11 12 12 10.3 13.6C10.1 11.6 9.3 9.3 10.3 7.5C10.6 7 11.2 6.7 11.8 6.5Z" fill="url(#brandMarkPetal)"/>
-          <circle cx="16.8" cy="4.8" r="0.8" fill="#e2e8f0"/>
+          <path d="M3.9 5.5L6.2 15.7L10.1 8.8L13.8 15.7L16.5 6.2" stroke="url(#brandMarkGradient)" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11.4 6.2C12.6 5.3 14.2 5.4 15.1 6.6C16 7.7 15.8 9.3 14.7 10.2C13.3 11.3 11.8 12.6 10.2 14.2C10 11.9 9.2 9.3 10.3 7.4C10.6 6.9 10.9 6.6 11.4 6.2Z" fill="url(#brandMarkPetal)"/>
+          <circle cx="16.8" cy="4.6" r="0.85" fill="#e2e8f0"/>
         </svg>
       </div>
       <span>Wykta</span>
@@ -182,7 +189,7 @@
   <section>
     <div class="value-header">
       <h2 data-i18n="valueTitle">Why users pay for Wykta</h2>
-      <p data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
+      <p data-i18n="valueSubtitle">Simple pricing that grows with you. Start free, upgrade when you're ready.</p>
     </div>
 
     <div class="billing-toggle">
@@ -231,6 +238,7 @@
           <li data-i18n="enterpriseFeatureSla">SLA guarantee</li>
           <li data-i18n="enterpriseFeatureSupport">Dedicated support</li>
         </ul>
+        <button class="btn btn-secondary plan-cta" data-i18n="enterpriseCtaButton">Contact Sales</button>
       </div>
 
     </div>
@@ -243,7 +251,7 @@
 
   <!-- ── FOOTER ────────────────────────────────────────────── -->
   <footer class="site-footer">
-    <p>Wykta &copy; 2026 &mdash; <span data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</span></p>
+    <p>Wykta &copy; 2026 &mdash; <span data-i18n="footerTagline">Know what goes in and on your body.</span></p>
   </footer>
 
 </main>
