@@ -634,6 +634,112 @@ body::before {
 .plan-features li.muted::before { background: var(--text-3); }
 .plan-features li.muted { color: var(--text-3); }
 
+/* === HERO CTA === */
+.hero-cta {
+  display: inline-flex;
+  margin-top: 28px;
+  padding: 13px 32px;
+  font-size: 15px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+
+/* === BILLING TOGGLE === */
+.billing-toggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 22px;
+}
+
+.billing-btn {
+  background: var(--surface-2);
+  border: 1px solid var(--border-2);
+  color: var(--text-2);
+  border-radius: var(--radius-sm);
+  padding: 7px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  font-family: inherit;
+}
+.billing-btn.active {
+  background: rgba(52, 211, 153, 0.15);
+  border-color: rgba(52, 211, 153, 0.45);
+  color: var(--brand);
+}
+.billing-btn:hover:not(.active) {
+  border-color: var(--border-2);
+  background: rgba(148, 163, 184, 0.10);
+}
+
+.billing-discount {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.15);
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  color: var(--brand);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+.billing-discount.visible { opacity: 1; }
+
+/* === PLAN CTA BUTTON === */
+.plan-cta {
+  width: 100%;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+/* === ANALYSIS SUMMARY BANNER === */
+.analysis-summary {
+  border-radius: var(--radius-sm);
+  padding: 11px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.analysis-summary.all-clear {
+  background: var(--green-bg);
+  border: 1px solid var(--green-border);
+  color: var(--green);
+}
+.analysis-summary.has-caution {
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-border);
+  color: #fcd34d;
+}
+.analysis-summary.has-danger {
+  background: var(--red-bg);
+  border: 1px solid var(--red-border);
+  color: var(--red);
+}
+.summary-icon { flex-shrink: 0; }
+
+/* === RESULTS EXPORT ROW === */
+.results-export {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 12.5px;
+}
+
 /* === FOOTER === */
 .site-footer {
   text-align: center;

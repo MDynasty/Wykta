@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
 <title>Wykta – Ingredient Analyzer</title>
@@ -51,8 +51,8 @@
   <!-- ── HERO ─────────────────────────────────────────────── -->
   <section class="hero">
     <div class="hero-badge" data-i18n="heroBadge">AI-Powered Ingredient Intelligence</div>
-    <h1 class="hero-title" id="heroTitle" data-i18n="heroTitle">
-      Know exactly what's <span class="gradient-text">in your products</span>
+    <h1 class="hero-title" id="heroTitle">
+      <span data-i18n="heroTitlePrefix">Know exactly what's</span> <span class="gradient-text" data-i18n="heroTitleHighlight">in your products</span>
     </h1>
     <p class="hero-sub" id="heroSubtitle" data-i18n="heroSubtitle">
       Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.
@@ -63,12 +63,13 @@
       <span class="chip" data-i18n="chipSpeed">OCR-to-Analysis in Seconds</span>
       <span class="chip" data-i18n="chipUpgrade">Upgrade-ready UX</span>
     </div>
+    <a class="btn btn-primary hero-cta" href="#ingredients" data-i18n="heroCta">Try it now</a>
   </section>
 
   <section class="proof-strip">
     <div class="proof-item">
       <span class="proof-label" data-i18n="proofData">Data Sources</span>
-      <strong>Open Food Facts + Open Beauty Facts</strong>
+      <strong data-i18n="proofDataValue">2.8M+ ingredients indexed</strong>
     </div>
     <div class="proof-item">
       <span class="proof-label" data-i18n="proofTrust">Trust Signal</span>
@@ -147,6 +148,9 @@
 
   <!-- ── RESULTS (hidden until analysis runs) ──────────────── -->
   <section class="results-section" id="resultsSection" style="display:none;">
+
+    <div class="analysis-summary" id="analysisSummary" style="display:none;"></div>
+
     <div class="results-grid">
 
       <div class="card">
@@ -155,6 +159,10 @@
           <div class="empty-state">
             <span data-i18n="analysisPlaceholder">AI analysis will appear here</span>
           </div>
+        </div>
+        <div class="results-export" id="analysisExport" style="display:none;">
+          <button class="btn btn-secondary btn-sm" disabled title="Pro feature" data-i18n="exportBtn">Export PDF</button>
+          <button class="btn btn-secondary btn-sm" disabled title="Pro feature" data-i18n="shareBtn">Share</button>
         </div>
       </div>
 
@@ -177,6 +185,12 @@
       <p data-i18n="footnote">Designed for high conversion: clear value, instant outcomes, and premium upgrade positioning.</p>
     </div>
 
+    <div class="billing-toggle">
+      <button class="billing-btn active" id="billingMonthlyBtn" data-i18n="billingMonthly">Monthly</button>
+      <button class="billing-btn" id="billingAnnualBtn" data-i18n="billingAnnual">Annual</button>
+      <span class="billing-discount" id="billingDiscountBadge" data-i18n="billingDiscount">Save 20%</span>
+    </div>
+
     <div class="pricing-grid">
 
       <div class="plan-card">
@@ -195,14 +209,15 @@
       <div class="plan-card featured">
         <div class="plan-badge" data-i18n="planMostPopular">Most Popular</div>
         <div class="plan-name" data-i18n="proTitle">Pro (Recommended)</div>
-        <div class="plan-price">$9<small style="font-size:16px;font-weight:500">/mo</small></div>
-        <div class="plan-period" data-i18n="proPeriod">billed monthly</div>
+        <div class="plan-price" id="proPriceDisplay">$9<small style="font-size:16px;font-weight:500">/mo</small></div>
+        <div class="plan-period" id="proPeriodDisplay" data-i18n="proPeriod">billed monthly</div>
         <ul class="plan-features">
           <li data-i18n="proFeatureStarter">Everything in Starter</li>
           <li data-i18n="proBody">Priority analysis, richer ingredient insights, premium trust reports.</li>
           <li data-i18n="proFeatureUnlimited">Unlimited scans</li>
           <li data-i18n="proFeaturePdf">Export PDF reports</li>
         </ul>
+        <button class="btn btn-primary plan-cta" data-i18n="proCtaButton">Get Pro</button>
       </div>
 
       <div class="plan-card">
