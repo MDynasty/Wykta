@@ -32,7 +32,10 @@ async function analyzeWithOpenAI(
     `covering its purpose, category (Food / Skincare / General), and any notable ` +
     `safety or health considerations. ` +
     `Include one reliable source reference per ingredient. ` +
-    `Respond in ${targetLanguage}. ` +
+    `IMPORTANT: For each ingredient, respond in the same language in which the ingredient name is written. ` +
+    `For example, if the ingredient is written in Chinese (e.g. "芦荟"), respond in Chinese for that ingredient. ` +
+    `If the ingredient is written in English or another Latin-script language, respond in that language. ` +
+    `Do not translate ingredient names — use the exact name as given. ` +
     `Format your answer as a plain list, one ingredient per line, like:\n` +
     `<ingredient name>: [<Category>] <description> | Source: <source>\n\n` +
     `Ingredients: ${ingredientList}`

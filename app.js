@@ -1493,22 +1493,27 @@ async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
   }
 }
 
-async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
+async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), displayNameMap = {}) {
   const lines = [`${t("fallbackHeader", lang)}:`]
 
   const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
+    // Use the original user-typed token for display name and per-ingredient language detection.
+    // e.g. normalized "aloe vera" from "芦荟" → displayName="芦荟", ingredientLang="zh"
+    const displayName = displayNameMap[ingredient] || ingredient
+    const ingredientLang = normalizeSupportedLanguage(detectInputLanguage(displayName))
+
     // 1. Check embedded local database first (instant, no network required)
-    const localResult = lookupLocalIngredientDb(ingredient, lang)
+    const localResult = lookupLocalIngredientDb(ingredient, ingredientLang)
     if (localResult) {
-      return `${ingredient}: [${localResult.category}] ${localResult.detail}`
+      return `${displayName}: [${localResult.category}] ${localResult.detail}`
     }
 
     // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
     const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
-      lookupOFFIngredientTaxonomy(ingredient, lang),
-      lookupOpenFoodFacts(ingredient, lang),
-      lookupOpenBeautyFacts(ingredient, lang),
-      lookupWikidataIngredient(ingredient, lang)
+      lookupOFFIngredientTaxonomy(ingredient, ingredientLang),
+      lookupOpenFoodFacts(ingredient, ingredientLang),
+      lookupOpenBeautyFacts(ingredient, ingredientLang),
+      lookupWikidataIngredient(ingredient, ingredientLang)
     ])
 
     const firstHit = [
@@ -1521,11 +1526,11 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
     const detail = firstHit
       ? firstHit
         : {
-          category: t("generalCategory", lang),
-          detail: `${t("noPublicData", lang)} ${t("publicDbSourceNote", lang)}`
+          category: t("generalCategory", ingredientLang),
+          detail: `${t("noPublicData", ingredientLang)} ${t("publicDbSourceNote", ingredientLang)}`
         }
 
-    return `${ingredient}: [${detail.category}] ${detail.detail}`
+    return `${displayName}: [${detail.category}] ${detail.detail}`
   }))
   lines.push(...analysisLines)
 
@@ -1537,7 +1542,7 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
 AI ANALYSIS
 ----------------------- */
 
-async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
+async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), displayNameMap = {}){
   const normalizedAnalysisLang = normalizeSupportedLanguage(analysisLang)
   if(!Array.isArray(ingredients) || !ingredients.length){
     displayAIAnalysis(t("analysisPlaceholder", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
@@ -1545,6 +1550,10 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
   }
 
   displayAIAnalysis(t("analyzing", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang, isLoading: true })
+
+  // Send original user-typed names to the AI so it can respond per-ingredient
+  // in the language the user wrote each ingredient (e.g. "芦荟" → Chinese reply).
+  const ingredientsForAI = ingredients.map(i => displayNameMap[i] || i)
 
   if(supabaseClient){
     let invokeTimeoutId = null
@@ -1558,7 +1567,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
         "wykta-backend",
         {
           body: {
-            ingredients,
+            ingredients: ingredientsForAI,
             lang: langLocale,
             targetLanguage: langName,
             promptLanguage: langName
@@ -1593,7 +1602,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
   }
 
   try{
-    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang)
+    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang, displayNameMap)
     displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang })
   } catch(err){
     console.error("Public database lookup error:", err)
@@ -1648,10 +1657,29 @@ async function analyzeIngredients(){
     analysisLanguage = detectInputLanguage(text, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
+    // Build a map from normalized ingredient key → original user-typed token.
+    // This preserves the input language and display name (e.g. "芦荟" instead of "aloe vera")
+    // for per-ingredient language detection and display in the results.
+    const displayNameMap = {}
+    const scriptBoundarySplit = (text || "")
+      .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
+      .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
+    const rawTokens = scriptBoundarySplit
+      .split(ingredientSplitPunctuationPattern)
+      .flatMap(seg => seg.split(multilingualIngredientJoinerPattern))
+      .map(tok => tok.trim())
+      .filter(Boolean)
+    for (const raw of rawTokens) {
+      const normalized = normalizeIngredientName(raw)
+      if (normalized && !displayNameMap[normalized]) {
+        displayNameMap[normalized] = raw
+      }
+    }
+
     displayInteractions(warnings, analysisLanguage)
 
     await saveResult(text, warnings.join("; "))
-    await analyzeWithAI(ingredients, analysisLanguage)
+    await analyzeWithAI(ingredients, analysisLanguage, displayNameMap)
     showResultsSummary(analysisLanguage)
   } catch (err) {
     console.error("Analyze flow error:", err)
