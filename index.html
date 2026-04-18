@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b1220'/%3E%3Ccircle cx='14' cy='14' r='7' fill='none' stroke='%2338bdf8' stroke-width='2.4'/%3E%3Cpath d='M19.2 19.2L24.8 24.8' stroke='%2338bdf8' stroke-width='2.4' stroke-linecap='round'/%3E%3Cpath d='M13.8 10.2C15.8 11.1 17 13.1 17 15.2C15.7 15.8 14.3 15.8 13 15.2C13 13.1 12.2 11.1 13.8 10.2Z' fill='%23818cf8'/%3E%3C/svg%3E" type="image/svg+xml">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g'%20x1='6'%20y1='4'%20x2='26'%20y2='28'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23818cf8'/%3E%3Cstop%20offset='1'%20stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='32'%20height='32'%20rx='9'%20fill='%230b1220'/%3E%3Cpath%20d='M16%204.2L24.3%207.8V14.7C24.3%2019.8%2021%2024.3%2016%2026.3C11%2024.3%207.7%2019.8%207.7%2014.7V7.8L16%204.2Z'%20fill='none'%20stroke='url%28%23g%29'%20stroke-width='2'/%3E%3Cpath%20d='M11.6%2011L16%209.2L20.4%2011V15.2L16%2017L11.6%2015.2V11Z'%20fill='none'%20stroke='%23e2e8f0'%20stroke-width='1.5'%20stroke-linejoin='round'/%3E%3Ccircle%20cx='16'%20cy='13.1'%20r='1.2'%20fill='%23e2e8f0'/%3E%3Cpath%20d='M12.8%2019.2L15.3%2021.5L20.2%2016.8'%20stroke='url%28%23g%29'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -18,12 +18,16 @@
     <a class="brand" href="#">
       <div class="brand-mark">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <path d="M10 2.6L14.8 5.3V10.7L10 13.4L5.2 10.7V5.3L10 2.6Z" stroke="white" stroke-width="1.5" opacity="0.95"/>
-          <circle cx="10" cy="8" r="1.2" fill="white"/>
-          <circle cx="7" cy="10.6" r="1.05" fill="white" opacity="0.92"/>
-          <circle cx="13" cy="10.6" r="1.05" fill="white" opacity="0.92"/>
-          <path d="M10 8.1L7 10.6H13L10 8.1Z" stroke="white" stroke-width="1.1" stroke-linejoin="round" opacity="0.9"/>
-          <path d="M6.7 15.8L8.6 17.4L13.6 12.6" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs>
+            <linearGradient id="brandMarkGradient" x1="3.8" y1="2.5" x2="16.8" y2="18.2" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#818cf8"/>
+              <stop offset="1" stop-color="#38bdf8"/>
+            </linearGradient>
+          </defs>
+          <path d="M10 2L15.2 4.3V8.7C15.2 11.9 13.1 14.8 10 16.1C6.9 14.8 4.8 11.9 4.8 8.7V4.3L10 2Z" stroke="url(#brandMarkGradient)" stroke-width="1.5"/>
+          <path d="M7.3 6.6L10 5.5L12.7 6.6V9.2L10 10.3L7.3 9.2V6.6Z" stroke="#f8fafc" stroke-width="1.05" stroke-linejoin="round" opacity="0.95"/>
+          <circle cx="10" cy="7.8" r="0.72" fill="#f8fafc"/>
+          <path d="M8 11.9L9.5 13.3L12.3 10.5" stroke="url(#brandMarkGradient)" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
       <span>Wykta</span>
