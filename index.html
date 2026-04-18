@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='orb'%20x1='7'%20y1='6'%20x2='26'%20y2='26'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%2334d399'/%3E%3Cstop%20offset='1'%20stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='leaf'%20x1='13'%20y1='11'%20x2='19'%20y2='18'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%2334d399'/%3E%3Cstop%20offset='1'%20stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='32'%20height='32'%20rx='9'%20fill='%23060d1a'/%3E%3Cpath%20d='M16%206.3C20.8%206.3%2024.7%2010.2%2024.7%2015C24.7%2019.8%2020.8%2023.7%2016%2023.7C11.2%2023.7%207.3%2019.8%207.3%2015C7.3%2010.2%2011.2%206.3%2016%206.3Z'%20stroke='url%28%23orb%29'%20stroke-width='2.1'/%3E%3Cpath%20d='M22.2%2021.2L26.3%2025.3'%20stroke='url%28%23orb%29'%20stroke-width='2.1'%20stroke-linecap='round'/%3E%3Cpath%20d='M16%209L20.1%2010.7V14.3C20.1%2016.8%2018.4%2019.1%2016%2020.2C13.6%2019.1%2011.9%2016.8%2011.9%2014.3V10.7L16%209Z'%20fill='rgba%28248,250,252,0.05%29'%20stroke='%23e2e8f0'%20stroke-width='1.2'/%3E%3Cpath%20d='M13.7%2015.9C13.7%2013.6%2015%2012.2%2016.1%2011.2C17.3%2012.1%2018.4%2013.6%2018.4%2015.2C18.4%2016.7%2017.3%2017.8%2015.8%2017.8C14.5%2017.8%2013.7%2016.9%2013.7%2015.9Z'%20fill='url%28%23leaf%29'/%3E%3Cpath%20d='M15.8%2017.8V13.2'%20stroke='%230a1223'%20stroke-width='1.1'%20stroke-linecap='round'/%3E%3C/svg%3E" type="image/svg+xml">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='w'%20x1='5'%20y1='4'%20x2='27'%20y2='27'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%2334d399'/%3E%3Cstop%20offset='1'%20stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='p'%20x1='11'%20y1='9'%20x2='20'%20y2='22'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23c4b5fd'/%3E%3Cstop%20offset='1'%20stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width='32'%20height='32'%20rx='9'%20fill='%23060d1a'/%3E%3Cpath%20d='M6.6%208.7L9.8%2022.2L15.1%2012.8L20.2%2022.2L23.7%209.4'%20stroke='url%28%23w%29'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Cpath%20d='M18.1%208.6C19.7%207.4%2021.8%207.6%2023.1%209.1C24.3%2010.6%2024.1%2012.8%2022.6%2014C20.6%2015.8%2018.3%2017.5%2016.1%2019.4C15.8%2016.5%2014.4%2013.3%2015.9%2010.7C16.4%209.9%2017.2%209.2%2018.1%208.6Z'%20fill='url%28%23p%29'/%3E%3Ccircle%20cx='24.8'%20cy='7.1'%20r='1.1'%20fill='%23e2e8f0'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -19,20 +19,18 @@
       <div class="brand-mark">
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
-            <linearGradient id="brandMarkGradient" x1="4.2" y1="3.4" x2="16.2" y2="16.8" gradientUnits="userSpaceOnUse">
+            <linearGradient id="brandMarkGradient" x1="2.4" y1="1.9" x2="17.8" y2="18.1" gradientUnits="userSpaceOnUse">
               <stop stop-color="#34d399"/>
               <stop offset="1" stop-color="#38bdf8"/>
             </linearGradient>
-            <linearGradient id="brandMarkLeaf" x1="8.2" y1="7.8" x2="12.6" y2="12.9" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#34d399"/>
+            <linearGradient id="brandMarkPetal" x1="7.5" y1="5.8" x2="13.7" y2="15.6" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#c4b5fd"/>
               <stop offset="1" stop-color="#22d3ee"/>
             </linearGradient>
           </defs>
-          <path d="M10 3.6C13.5 3.6 16.4 6.5 16.4 10C16.4 13.5 13.5 16.4 10 16.4C6.5 16.4 3.6 13.5 3.6 10C3.6 6.5 6.5 3.6 10 3.6Z" stroke="url(#brandMarkGradient)" stroke-width="1.55"/>
-          <path d="M14.4 14.3L16.9 16.8" stroke="url(#brandMarkGradient)" stroke-width="1.6" stroke-linecap="round"/>
-          <path d="M10 5.4L12.7 6.5V8.9C12.7 10.6 11.6 12.1 10 12.8C8.4 12.1 7.3 10.6 7.3 8.9V6.5L10 5.4Z" stroke="#e2e8f0" stroke-width="1.05"/>
-          <path d="M8.5 9.9C8.5 8.4 9.4 7.5 10.1 6.9C10.9 7.5 11.6 8.5 11.6 9.5C11.6 10.5 10.9 11.3 9.9 11.3C9 11.3 8.5 10.8 8.5 9.9Z" fill="url(#brandMarkLeaf)"/>
-          <path d="M9.9 11.3V8.2" stroke="#0b1220" stroke-width="0.72" stroke-linecap="round"/>
+          <path d="M3.8 5.8L6.3 15.9L10.1 8.6L13.8 15.9L16.4 6.5" stroke="url(#brandMarkGradient)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M11.8 6.5C12.8 5.7 14.2 5.9 15 6.8C15.8 7.8 15.7 9.2 14.8 10C13.5 11 12 12 10.3 13.6C10.1 11.6 9.3 9.3 10.3 7.5C10.6 7 11.2 6.7 11.8 6.5Z" fill="url(#brandMarkPetal)"/>
+          <circle cx="16.8" cy="4.8" r="0.8" fill="#e2e8f0"/>
         </svg>
       </div>
       <span>Wykta</span>
@@ -52,7 +50,7 @@
 
   <!-- ── HERO ─────────────────────────────────────────────── -->
   <section class="hero">
-    <div class="hero-badge">AI-Powered Ingredient Intelligence</div>
+    <div class="hero-badge" data-i18n="heroBadge">AI-Powered Ingredient Intelligence</div>
     <h1 class="hero-title" id="heroTitle" data-i18n="heroTitle">
       Know exactly what's <span class="gradient-text">in your products</span>
     </h1>
@@ -135,7 +133,7 @@
       <div class="camera-wrapper">
         <video id="camera" autoplay></video>
         <div class="camera-placeholder" id="cameraPlaceholder">
-          <span class="cam-icon">Camera</span>
+          <span class="cam-icon" data-i18n="cameraTag">Camera</span>
           <span data-i18n="cameraHint">Click "Open Camera" to start scanning</span>
         </div>
       </div>
@@ -184,39 +182,39 @@
       <div class="plan-card">
         <div class="plan-name" data-i18n="starterTitle">Starter (Free)</div>
         <div class="plan-price">$0</div>
-        <div class="plan-period">forever free</div>
+        <div class="plan-period" data-i18n="starterPeriod">forever free</div>
         <ul class="plan-features">
           <li data-i18n="starterBody">Quick scans, basic warnings, multilingual output.</li>
-          <li>Paste or camera input</li>
-          <li>4-language support</li>
-          <li class="muted">Priority analysis</li>
-          <li class="muted">Export reports</li>
+          <li data-i18n="starterFeatureInput">Paste or camera input</li>
+          <li data-i18n="starterFeatureLang">4-language support</li>
+          <li class="muted" data-i18n="starterFeaturePriority">Priority analysis</li>
+          <li class="muted" data-i18n="starterFeatureExport">Export reports</li>
         </ul>
       </div>
 
       <div class="plan-card featured">
-        <div class="plan-badge">Most Popular</div>
+        <div class="plan-badge" data-i18n="planMostPopular">Most Popular</div>
         <div class="plan-name" data-i18n="proTitle">Pro (Recommended)</div>
         <div class="plan-price">$9<small style="font-size:16px;font-weight:500">/mo</small></div>
-        <div class="plan-period">billed monthly</div>
+        <div class="plan-period" data-i18n="proPeriod">billed monthly</div>
         <ul class="plan-features">
-          <li>Everything in Starter</li>
+          <li data-i18n="proFeatureStarter">Everything in Starter</li>
           <li data-i18n="proBody">Priority analysis, richer ingredient insights, premium trust reports.</li>
-          <li>Unlimited scans</li>
-          <li>Export PDF reports</li>
+          <li data-i18n="proFeatureUnlimited">Unlimited scans</li>
+          <li data-i18n="proFeaturePdf">Export PDF reports</li>
         </ul>
       </div>
 
       <div class="plan-card">
-        <div class="plan-name">Enterprise</div>
-        <div class="plan-price">Custom</div>
-        <div class="plan-period">contact us</div>
+        <div class="plan-name" data-i18n="enterpriseTitle">Enterprise</div>
+        <div class="plan-price" data-i18n="enterprisePrice">Custom</div>
+        <div class="plan-period" data-i18n="enterprisePeriod">contact us</div>
         <ul class="plan-features">
-          <li>Everything in Pro</li>
-          <li>REST API access</li>
-          <li>White-label option</li>
-          <li>SLA guarantee</li>
-          <li>Dedicated support</li>
+          <li data-i18n="enterpriseFeaturePro">Everything in Pro</li>
+          <li data-i18n="enterpriseFeatureApi">REST API access</li>
+          <li data-i18n="enterpriseFeatureWhiteLabel">White-label option</li>
+          <li data-i18n="enterpriseFeatureSla">SLA guarantee</li>
+          <li data-i18n="enterpriseFeatureSupport">Dedicated support</li>
         </ul>
       </div>
 

@@ -120,9 +120,15 @@ const ingredientAliases = {
 const OCR_BINARIZATION_THRESHOLD = 135
 // Keep slightly lower than fetchJsonWithTimeout default (7000ms) so this fallback cannot block overall analysis.
 const WIKIDATA_TIMEOUT_MS = 6500
-const PUBLIC_DB_SOURCE_NOTE = "Source: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts"
 // Split on Latin/CJK punctuation, quotes, brackets, operators, and OCR noise separators.
 const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
+const supportedLanguages = ["en", "fr", "de", "zh"]
+const languageSignalLexicon = {
+  en: ["ingredients", "water", "fragrance", "contains", "and"],
+  fr: ["ingrédients", "eau", "parfum", "acide", "et"],
+  de: ["inhaltsstoffe", "wasser", "duftstoff", "säure", "und"],
+  zh: ["成分", "配料", "水", "香精", "以及"]
+}
 
 /* -----------------------
 LOCAL INGREDIENT DATABASE
@@ -374,7 +380,7 @@ function extractIngredients(text){
 INTERACTION CHECKER
 ----------------------- */
 
-function checkInteractions(ingredients){
+function checkInteractions(ingredients, lang = currentLanguage()){
 
 let warnings = []
 
@@ -383,7 +389,7 @@ ingredients.includes("retinol") &&
 ingredients.includes("glycolic acid")
 ){
 warnings.push(
-t("retinolGlycolic")
+ t("retinolGlycolic", lang)
 )
 }
 
@@ -392,7 +398,7 @@ ingredients.includes("benzoyl peroxide") &&
 ingredients.includes("retinol")
 ){
 warnings.push(
-t("peroxideRetinol")
+ t("peroxideRetinol", lang)
 )
 }
 
@@ -404,18 +410,18 @@ return warnings
 DISPLAY WARNINGS
 ----------------------- */
 
-function displayInteractions(warnings){
+function displayInteractions(warnings, lang = currentLanguage()){
 
   const el = document.getElementById("interactionWarnings")
   if(!el) return
 
   if(!warnings.length){
-    el.innerHTML = `<div class="no-conflict"><span>${escapeHtml(t("noConflicts"))}</span></div>`
+    el.innerHTML = `<div class="no-conflict"><span>${escapeHtml(t("noConflicts", lang))}</span></div>`
     return
   }
 
   el.innerHTML = warnings
-    .map(w => `<div class="warning-card"><span class="warning-icon">Alert</span><span>${escapeHtml(w)}</span></div>`)
+    .map(w => `<div class="warning-card"><span class="warning-icon">${escapeHtml(t("alertTag", lang))}</span><span>${escapeHtml(w)}</span></div>`)
     .join("")
 
 }
@@ -480,6 +486,7 @@ const ocrBackupLanguagePack = {
 
 const uiMessages = {
   en: {
+    heroBadge: "AI-Powered Ingredient Intelligence",
     heroTitle: "Wykta Premium Ingredient Intelligence",
     heroSubtitle: "Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.",
     chipCoverage: "Food + Skincare Coverage",
@@ -511,6 +518,7 @@ const uiMessages = {
     warningTitle: "Interaction Warnings",
     scanTitle: "Scan Ingredient Label",
     detectedTitle: "Detected Text",
+    cameraTag: "Camera",
     cameraHint: "Click \"Open Camera\" to start scanning",
     analysisPlaceholder: "AI analysis will appear here",
     warningPlaceholder: "Ingredient conflicts will appear here",
@@ -529,9 +537,41 @@ const uiMessages = {
     skincareCategory: "Skincare",
     generalCategory: "General",
     noPublicData: "No clear match was found in public ingredient databases.",
-    wikidataNoDescription: "No description available from Wikidata."
+    wikidataNoDescription: "No description available from Wikidata.",
+    starterPeriod: "forever free",
+    starterFeatureInput: "Paste or camera input",
+    starterFeatureLang: "4-language support",
+    starterFeaturePriority: "Priority analysis",
+    starterFeatureExport: "Export reports",
+    planMostPopular: "Most Popular",
+    proPeriod: "billed monthly",
+    proFeatureStarter: "Everything in Starter",
+    proFeatureUnlimited: "Unlimited scans",
+    proFeaturePdf: "Export PDF reports",
+    enterpriseTitle: "Enterprise",
+    enterprisePrice: "Custom",
+    enterprisePeriod: "contact us",
+    enterpriseFeaturePro: "Everything in Pro",
+    enterpriseFeatureApi: "REST API access",
+    enterpriseFeatureWhiteLabel: "White-label option",
+    enterpriseFeatureSla: "SLA guarantee",
+    enterpriseFeatureSupport: "Dedicated support",
+    alertTag: "Alert",
+    sourceLabel: "Source",
+    seenInLabel: "Seen in",
+    allergenIndicatorsLabel: "Allergen indicators",
+    ingredientAnalysisTagLabel: "Ingredient analysis tag",
+    productTypeLabel: "Product type",
+    ingredientTagLabel: "Ingredient tag",
+    ingredientLabel: "Ingredient",
+    entityLabel: "Entity",
+    descriptionLabel: "Description",
+    wikidataLabel: "Wikidata",
+    publicDbSourceNote: "Sources: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts",
+    languageDetectedLabel: "Detected analysis language"
   },
   fr: {
+    heroBadge: "Intelligence ingrédients pilotée par l'IA",
     heroTitle: "Wykta Intelligence Premium des Ingrédients",
     heroSubtitle: "Scannez les étiquettes alimentaires ou skincare instantanément, réduisez les risques d'ingrédients et augmentez la confiance.",
     chipCoverage: "Couverture alimentaire + skincare",
@@ -563,6 +603,7 @@ const uiMessages = {
     warningTitle: "Avertissements d'interaction",
     scanTitle: "Scanner l'étiquette d'ingrédients",
     detectedTitle: "Texte détecté",
+    cameraTag: "Caméra",
     cameraHint: "Cliquez sur \"Ouvrir la caméra\" pour commencer le scan",
     analysisPlaceholder: "L'analyse IA apparaîtra ici",
     warningPlaceholder: "Les conflits d'ingrédients apparaîtront ici",
@@ -581,9 +622,41 @@ const uiMessages = {
     skincareCategory: "Soin de la peau",
     generalCategory: "Général",
     noPublicData: "Aucune correspondance claire trouvée dans les bases publiques.",
-    wikidataNoDescription: "Aucune description disponible depuis Wikidata."
+    wikidataNoDescription: "Aucune description disponible depuis Wikidata.",
+    starterPeriod: "gratuit à vie",
+    starterFeatureInput: "Saisie par collage ou caméra",
+    starterFeatureLang: "Support de 4 langues",
+    starterFeaturePriority: "Analyse prioritaire",
+    starterFeatureExport: "Export de rapports",
+    planMostPopular: "Le plus populaire",
+    proPeriod: "facturé mensuellement",
+    proFeatureStarter: "Tout le contenu de Starter",
+    proFeatureUnlimited: "Scans illimités",
+    proFeaturePdf: "Export PDF des rapports",
+    enterpriseTitle: "Entreprise",
+    enterprisePrice: "Sur mesure",
+    enterprisePeriod: "contactez-nous",
+    enterpriseFeaturePro: "Tout le contenu de Pro",
+    enterpriseFeatureApi: "Accès API REST",
+    enterpriseFeatureWhiteLabel: "Option marque blanche",
+    enterpriseFeatureSla: "Garantie SLA",
+    enterpriseFeatureSupport: "Support dédié",
+    alertTag: "Alerte",
+    sourceLabel: "Source",
+    seenInLabel: "Présent dans",
+    allergenIndicatorsLabel: "Indicateurs d'allergènes",
+    ingredientAnalysisTagLabel: "Tag d'analyse d'ingrédient",
+    productTypeLabel: "Type de produit",
+    ingredientTagLabel: "Tag d'ingrédient",
+    ingredientLabel: "Ingrédient",
+    entityLabel: "Entité",
+    descriptionLabel: "Description",
+    wikidataLabel: "Wikidata",
+    publicDbSourceNote: "Sources : taxonomie ingrédients Open Food Facts / Open Food Facts / Open Beauty Facts",
+    languageDetectedLabel: "Langue d'analyse détectée"
   },
   de: {
+    heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
     heroTitle: "Wykta Premium-Inhaltsstoff-Intelligenz",
     heroSubtitle: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort, reduzieren Sie Risiken und steigern Sie Vertrauen.",
     chipCoverage: "Lebensmittel + Hautpflege",
@@ -615,6 +688,7 @@ const uiMessages = {
     warningTitle: "Interaktionswarnungen",
     scanTitle: "Inhaltsstoffetikett scannen",
     detectedTitle: "Erkannter Text",
+    cameraTag: "Kamera",
     cameraHint: "Klicken Sie auf \"Kamera öffnen\", um den Scan zu starten",
     analysisPlaceholder: "KI-Analyse erscheint hier",
     warningPlaceholder: "Inhaltsstoffkonflikte erscheinen hier",
@@ -633,9 +707,41 @@ const uiMessages = {
     skincareCategory: "Hautpflege",
     generalCategory: "Allgemein",
     noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden.",
-    wikidataNoDescription: "Keine Beschreibung von Wikidata verfügbar."
+    wikidataNoDescription: "Keine Beschreibung von Wikidata verfügbar.",
+    starterPeriod: "dauerhaft kostenlos",
+    starterFeatureInput: "Eingabe per Einfügen oder Kamera",
+    starterFeatureLang: "Unterstützung für 4 Sprachen",
+    starterFeaturePriority: "Priorisierte Analyse",
+    starterFeatureExport: "Berichte exportieren",
+    planMostPopular: "Am beliebtesten",
+    proPeriod: "monatliche Abrechnung",
+    proFeatureStarter: "Alles aus Starter",
+    proFeatureUnlimited: "Unbegrenzte Scans",
+    proFeaturePdf: "PDF-Berichte exportieren",
+    enterpriseTitle: "Enterprise",
+    enterprisePrice: "Individuell",
+    enterprisePeriod: "Kontakt aufnehmen",
+    enterpriseFeaturePro: "Alles aus Pro",
+    enterpriseFeatureApi: "REST-API-Zugang",
+    enterpriseFeatureWhiteLabel: "White-Label-Option",
+    enterpriseFeatureSla: "SLA-Garantie",
+    enterpriseFeatureSupport: "Dedizierter Support",
+    alertTag: "Warnung",
+    sourceLabel: "Quelle",
+    seenInLabel: "Gefunden in",
+    allergenIndicatorsLabel: "Allergenhinweise",
+    ingredientAnalysisTagLabel: "Inhaltsstoff-Analysetag",
+    productTypeLabel: "Produkttyp",
+    ingredientTagLabel: "Inhaltsstoff-Tag",
+    ingredientLabel: "Inhaltsstoff",
+    entityLabel: "Entität",
+    descriptionLabel: "Beschreibung",
+    wikidataLabel: "Wikidata",
+    publicDbSourceNote: "Quellen: Open Food Facts Inhaltsstoff-Taxonomie / Open Food Facts / Open Beauty Facts",
+    languageDetectedLabel: "Erkannte Analysesprache"
   },
   zh: {
+    heroBadge: "AI 驱动的成分智能",
     heroTitle: "Wykta 高级成分智能分析",
     heroSubtitle: "即时扫描食品或护肤标签，降低成分风险，提升用户付费信心。",
     chipCoverage: "食品 + 护肤双场景覆盖",
@@ -667,6 +773,7 @@ const uiMessages = {
     warningTitle: "成分相互作用预警",
     scanTitle: "扫描成分标签",
     detectedTitle: "识别文本",
+    cameraTag: "相机",
     cameraHint: "点击“打开相机”开始扫描",
     analysisPlaceholder: "AI 分析结果将显示在这里",
     warningPlaceholder: "成分冲突将显示在这里",
@@ -685,7 +792,38 @@ const uiMessages = {
     skincareCategory: "护肤",
     generalCategory: "通用",
     noPublicData: "在公共数据库中未找到明确匹配。",
-    wikidataNoDescription: "Wikidata 未提供可用描述。"
+    wikidataNoDescription: "Wikidata 未提供可用描述。",
+    starterPeriod: "永久免费",
+    starterFeatureInput: "支持粘贴或相机输入",
+    starterFeatureLang: "支持 4 种语言",
+    starterFeaturePriority: "优先分析",
+    starterFeatureExport: "导出报告",
+    planMostPopular: "最受欢迎",
+    proPeriod: "按月计费",
+    proFeatureStarter: "包含基础版全部功能",
+    proFeatureUnlimited: "不限扫描次数",
+    proFeaturePdf: "导出 PDF 报告",
+    enterpriseTitle: "企业版",
+    enterprisePrice: "定制",
+    enterprisePeriod: "联系我们",
+    enterpriseFeaturePro: "包含专业版全部功能",
+    enterpriseFeatureApi: "REST API 接入",
+    enterpriseFeatureWhiteLabel: "白标方案",
+    enterpriseFeatureSla: "SLA 服务保障",
+    enterpriseFeatureSupport: "专属支持",
+    alertTag: "警示",
+    sourceLabel: "来源",
+    seenInLabel: "出现于",
+    allergenIndicatorsLabel: "过敏原提示",
+    ingredientAnalysisTagLabel: "成分分析标签",
+    productTypeLabel: "产品类型",
+    ingredientTagLabel: "成分标签",
+    ingredientLabel: "成分",
+    entityLabel: "实体",
+    descriptionLabel: "描述",
+    wikidataLabel: "Wikidata",
+    publicDbSourceNote: "来源：Open Food Facts 成分分类 / Open Food Facts / Open Beauty Facts",
+    languageDetectedLabel: "识别到的分析语言"
   }
 }
 
@@ -694,14 +832,51 @@ function currentLanguage(){
   return languageSelect ? languageSelect.value : "en"
 }
 
-function t(key){
-  const lang = currentLanguage()
+function normalizeSupportedLanguage(lang){
+  const normalized = String(lang || "").toLowerCase().slice(0, 2)
+  return supportedLanguages.includes(normalized) ? normalized : "en"
+}
+
+function t(key, langOverride){
+  const lang = normalizeSupportedLanguage(langOverride || currentLanguage())
   return (uiMessages[lang] && uiMessages[lang][key]) || uiMessages.en[key] || key
 }
 
 function tf(key, ...args){
-  const template = t(key)
+  const maybeLang = args.length > 1 ? args[args.length - 1] : undefined
+  const lang = typeof maybeLang === "string" && supportedLanguages.includes(maybeLang)
+    ? args.pop()
+    : undefined
+  const template = t(key, lang)
   return typeof template === "function" ? template(...args) : template
+}
+
+function detectInputLanguage(text = "", ingredients = []){
+  const sample = `${String(text || "")}\n${Array.isArray(ingredients) ? ingredients.join(" ") : ""}`.toLowerCase()
+  if(!sample.trim()) return currentLanguage()
+
+  const scores = { en: 0, fr: 0, de: 0, zh: 0 }
+  const chineseMatches = sample.match(/[\u4e00-\u9fa5]/g)
+  if(chineseMatches?.length) scores.zh += chineseMatches.length * 2
+  if(/[äöüß]/i.test(sample)) scores.de += 5
+  if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += 5
+
+  Object.entries(languageSignalLexicon).forEach(([lang, tokens]) => {
+    tokens.forEach((token) => {
+      if(sample.includes(token)) scores[lang] += token.length >= 3 ? 2 : 1
+    })
+  })
+
+  Object.keys(ingredientAliases).forEach((alias) => {
+    if(!sample.includes(alias)) return
+    if(/[\u4e00-\u9fa5]/.test(alias)) scores.zh += 2
+    else if(/[äöüß]/i.test(alias)) scores.de += 2
+    else if(/[àâçéèêëîïôûùüÿœæ]/i.test(alias)) scores.fr += 2
+  })
+
+  const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1])
+  const [bestLang, bestScore] = ranked[0]
+  return bestScore > 0 ? bestLang : currentLanguage()
 }
 
 function localizeStaticUI(){
@@ -749,18 +924,19 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;")
 }
 
-function displayAIAnalysis(message, rawLines) {
+function displayAIAnalysis(message, rawLines, options = {}) {
   const el = document.getElementById("ingredientResult")
   if(!el) return
+  const lang = normalizeSupportedLanguage(options.lang || currentLanguage())
+  const isLoadingState = Boolean(options.isLoading)
 
   el.innerHTML = ""
 
   if(message){
-    const isLoading = message === t("analyzing")
-    const cls = isLoading ? "info" : "error"
-    const icon = isLoading
+    const cls = isLoadingState ? "info" : "error"
+    const icon = isLoadingState
       ? `<span class="spinner"></span>`
-      : `<span class="warning-icon">Alert</span>`
+      : `<span class="warning-icon">${escapeHtml(t("alertTag", lang))}</span>`
     el.insertAdjacentHTML(
       "beforeend",
       `<div class="message-card ${cls}">${icon} ${escapeHtml(message)}</div>`
@@ -812,7 +988,8 @@ function displayAIAnalysis(message, rawLines) {
         </div>
       `)
     } else if(line.trim()){
-      el.insertAdjacentHTML("beforeend",
+      el.insertAdjacentHTML(
+        "beforeend",
         `<div class="ingredient-card neutral"><span class="ingredient-detail">${escapeHtml(line)}</span></div>`
       )
     }
@@ -860,7 +1037,7 @@ function getBestProductMatch(products = [], ingredient) {
   return products[0]
 }
 
-async function lookupOpenFoodFacts(ingredient) {
+async function lookupOpenFoodFacts(ingredient, lang = currentLanguage()) {
   const params = new URLSearchParams({
     search_terms: ingredient,
     search_simple: "1",
@@ -883,19 +1060,19 @@ async function lookupOpenFoodFacts(ingredient) {
     : null
 
   const notes = [
-    `Source: Open Food Facts`,
-    `Seen in: ${productName}`
+    `${t("sourceLabel", lang)}: Open Food Facts`,
+    `${t("seenInLabel", lang)}: ${productName}`
   ]
-  if(allergenTags.length) notes.push(`Allergen indicators: ${allergenTags.join(", ")}`)
-  if(processingTag) notes.push(`Ingredient analysis tag: ${processingTag}`)
+  if(allergenTags.length) notes.push(`${t("allergenIndicatorsLabel", lang)}: ${allergenTags.join(", ")}`)
+  if(processingTag) notes.push(`${t("ingredientAnalysisTagLabel", lang)}: ${processingTag}`)
 
   return {
-    category: t("foodCategory"),
+    category: t("foodCategory", lang),
     detail: notes.join(" · ")
   }
 }
 
-async function lookupOpenBeautyFacts(ingredient) {
+async function lookupOpenBeautyFacts(ingredient, lang = currentLanguage()) {
   const params = new URLSearchParams({
     search_terms: ingredient,
     search_simple: "1",
@@ -918,35 +1095,35 @@ async function lookupOpenBeautyFacts(ingredient) {
     : null
 
   const notes = [
-    `Source: Open Beauty Facts`,
-    `Seen in: ${productName}`
+    `${t("sourceLabel", lang)}: Open Beauty Facts`,
+    `${t("seenInLabel", lang)}: ${productName}`
   ]
-  if(categoryTag) notes.push(`Product type: ${categoryTag}`)
-  if(ingredientTag) notes.push(`Ingredient tag: ${ingredientTag}`)
+  if(categoryTag) notes.push(`${t("productTypeLabel", lang)}: ${categoryTag}`)
+  if(ingredientTag) notes.push(`${t("ingredientTagLabel", lang)}: ${ingredientTag}`)
 
   return {
-    category: t("skincareCategory"),
+    category: t("skincareCategory", lang),
     detail: notes.join(" · ")
   }
 }
 
-function lookupLocalIngredientDb(ingredient) {
+function lookupLocalIngredientDb(ingredient, lang = currentLanguage()) {
   const key = sanitizeIngredientTerm(ingredient)
   const entry = localIngredientDb[key]
   if (!entry) return null
 
   const catMap = {
-    skincare: t("skincareCategory"),
-    food:     t("foodCategory"),
-    general:  t("generalCategory")
+    skincare: t("skincareCategory", lang),
+    food:     t("foodCategory", lang),
+    general:  t("generalCategory", lang)
   }
   return {
-    category: catMap[entry.category] || t("generalCategory"),
+    category: catMap[entry.category] || t("generalCategory", lang),
     detail:   `${entry.fn}: ${entry.note}`
   }
 }
 
-async function lookupOFFIngredientTaxonomy(ingredient) {
+async function lookupOFFIngredientTaxonomy(ingredient, lang = currentLanguage()) {
   const slug = sanitizeIngredientTerm(ingredient).replace(/\s+/g, "-")
   if (!slug) return null
   const url = `https://world.openfoodfacts.org/ingredient/${encodeURIComponent(slug)}.json`
@@ -955,11 +1132,14 @@ async function lookupOFFIngredientTaxonomy(ingredient) {
   if (!data || (!data.name && !data.wikidata && !data.id)) return null
 
   const ingredientName = data.name || slug
-  const notes = [`Source: Open Food Facts ingredient taxonomy`, `Ingredient: ${ingredientName}`]
-  if (data.wikidata) notes.push(`Wikidata: ${data.wikidata}`)
+  const notes = [
+    `${t("sourceLabel", lang)}: Open Food Facts ingredient taxonomy`,
+    `${t("ingredientLabel", lang)}: ${ingredientName}`
+  ]
+  if (data.wikidata) notes.push(`${t("wikidataLabel", lang)}: ${data.wikidata}`)
 
   return {
-    category: t("foodCategory"),
+    category: t("foodCategory", lang),
     detail:   notes.join(" · ")
   }
 }
@@ -974,11 +1154,11 @@ function getWikidataLanguageCode(lang = "en") {
   return map[lang] || "en"
 }
 
-async function lookupWikidataIngredient(ingredient) {
+async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
   const normalizedIngredient = normalizeIngredientName(ingredient)
   if(!normalizedIngredient) return null
 
-  const selectedLanguage = getWikidataLanguageCode(currentLanguage())
+  const selectedLanguage = getWikidataLanguageCode(lang)
   const languagePriority = [...new Set([selectedLanguage, "en", "fr", "de", "zh"])]
   const wikimediaNoisePattern = /\b(wikimedia|disambiguation|template)\b/i
 
@@ -1010,36 +1190,36 @@ async function lookupWikidataIngredient(ingredient) {
   if(!firstHit) return null
 
   const label = firstHit.label || normalizedIngredient
-  const description = firstHit.description || t("wikidataNoDescription")
+  const description = firstHit.description || t("wikidataNoDescription", lang)
   const notes = [
-    "Source: Wikidata",
-    `Entity: ${label}`,
-    `Description: ${description}`
+    `${t("sourceLabel", lang)}: Wikidata`,
+    `${t("entityLabel", lang)}: ${label}`,
+    `${t("descriptionLabel", lang)}: ${description}`
   ]
-  if(firstHit.id) notes.push(`Wikidata: ${firstHit.id}`)
+  if(firstHit.id) notes.push(`${t("wikidataLabel", lang)}: ${firstHit.id}`)
 
   return {
-    category: t("generalCategory"),
+    category: t("generalCategory", lang),
     detail: notes.join(" · ")
   }
 }
 
-async function analyzeWithFreeDatabases(ingredients) {
-  const lines = [`${t("fallbackHeader")}:`]
+async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
+  const lines = [`${t("fallbackHeader", lang)}:`]
 
   const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
     // 1. Check embedded local database first (instant, no network required)
-    const localResult = lookupLocalIngredientDb(ingredient)
+    const localResult = lookupLocalIngredientDb(ingredient, lang)
     if (localResult) {
       return `${ingredient}: [${localResult.category}] ${localResult.detail}`
     }
 
     // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
     const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
-      lookupOFFIngredientTaxonomy(ingredient),
-      lookupOpenFoodFacts(ingredient),
-      lookupOpenBeautyFacts(ingredient),
-      lookupWikidataIngredient(ingredient)
+      lookupOFFIngredientTaxonomy(ingredient, lang),
+      lookupOpenFoodFacts(ingredient, lang),
+      lookupOpenBeautyFacts(ingredient, lang),
+      lookupWikidataIngredient(ingredient, lang)
     ])
 
     const firstHit = [
@@ -1051,9 +1231,9 @@ async function analyzeWithFreeDatabases(ingredients) {
 
     const detail = firstHit
       ? firstHit
-      : {
-          category: t("generalCategory"),
-          detail: `${t("noPublicData")} ${PUBLIC_DB_SOURCE_NOTE}`
+        : {
+          category: t("generalCategory", lang),
+          detail: `${t("noPublicData", lang)} ${t("publicDbSourceNote", lang)}`
         }
 
     return `${ingredient}: [${detail.category}] ${detail.detail}`
@@ -1068,20 +1248,20 @@ async function analyzeWithFreeDatabases(ingredients) {
 AI ANALYSIS
 ----------------------- */
 
-async function analyzeWithAI(ingredients){
+async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
+  const normalizedAnalysisLang = normalizeSupportedLanguage(analysisLang)
   if(!Array.isArray(ingredients) || !ingredients.length){
-    displayAIAnalysis(t("analysisPlaceholder"), [])
+    displayAIAnalysis(t("analysisPlaceholder", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
     return
   }
 
-  displayAIAnalysis(t("analyzing"), [])
+  displayAIAnalysis(t("analyzing", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang, isLoading: true })
 
   if(supabaseClient){
     let invokeTimeoutId = null
     try{
-      const lang = document.getElementById("language").value
-      const langName = languageNames[lang] || lang
-      const langLocale = languageLocales[lang] || lang
+      const langName = languageNames[normalizedAnalysisLang] || normalizedAnalysisLang
+      const langLocale = languageLocales[normalizedAnalysisLang] || normalizedAnalysisLang
 
       // Race the invoke against a 12-second timeout so a cold-start or paused
       // Supabase project doesn't leave the UI stuck at "Analyzing..." indefinitely.
@@ -1112,11 +1292,11 @@ async function analyzeWithAI(ingredients){
 
       if(data && data.analysis){
         const lines = data.analysis.split("\n")
-        displayAIAnalysis("", lines)
+        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
         return
       }
 
-      console.warn(tf("noAnalysisFor", langName))
+      console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
     } catch(err){
       clearTimeout(invokeTimeoutId)
       console.error("AI function error, using open databases fallback:", err)
@@ -1124,11 +1304,11 @@ async function analyzeWithAI(ingredients){
   }
 
   try{
-    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients)
-    displayAIAnalysis("", fallbackAnalysis.split("\n"))
+    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang)
+    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang })
   } catch(err){
     console.error("Public database lookup error:", err)
-    displayAIAnalysis(t("failed"), [])
+    displayAIAnalysis(t("failed", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
   }
 }
 
@@ -1175,12 +1355,13 @@ async function analyzeIngredients(){
   try {
     const text = document.getElementById("ingredients").value
     const ingredients = extractIngredients(text)
-    const warnings = checkInteractions(ingredients)
+    const analysisLanguage = detectInputLanguage(text, ingredients)
+    const warnings = checkInteractions(ingredients, analysisLanguage)
 
-    displayInteractions(warnings)
+    displayInteractions(warnings, analysisLanguage)
 
     await saveResult(text, warnings.join("; "))
-    await analyzeWithAI(ingredients)
+    await analyzeWithAI(ingredients, analysisLanguage)
   } catch (err) {
     console.error("Analyze flow error:", err)
     displayAIAnalysis(t("failed"), [])
@@ -1198,6 +1379,9 @@ let stream
 async function startScan(){
 
 try{
+if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+  throw new Error("mediaDevices API unavailable")
+}
 
 stream = await navigator.mediaDevices.getUserMedia({
 video: {
@@ -1321,7 +1505,11 @@ async function runOCR(canvas) {
     await analyzeIngredients()
   } catch (err) {
     console.error("OCR error:", err)
-    document.getElementById("ocrResult").innerText = t("ocrFailed")
+    const ocrEl = document.getElementById("ocrResult")
+    if(ocrEl){
+      ocrEl.innerText = t("ocrFailed")
+      ocrEl.classList.add("visible")
+    }
   }
 }
 
