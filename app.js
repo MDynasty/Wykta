@@ -1102,8 +1102,15 @@ function displayAIAnalysis(message, rawLines, options = {}) {
     startIdx = 1
   }
 
-  const dangerWords  = ["allergen", "allergène", "allergy", "avoid"]
-  const cautionWords = ["irritat", "sensitiv", "caution", "monitor", "deactivat", "increase skin", "may affect", "peut augmenter", "kann"]
+  // Risk keywords across all supported languages.
+  // EN: allergen/allergy/avoid/anaphylaxis | FR: allergène | ZH: 过敏原/过敏/避免/禁用 | DE: vermeiden/nicht verwenden
+  const dangerWords  = ["allergen", "allergène", "allergy", "avoid", "anaphylax",
+                        "过敏原", "过敏", "避免", "禁用", "vermeiden", "nicht verwenden"]
+  // EN: irritat/sensitiv/caution/monitor | FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用 | DE: vorsicht/reizung/kann
+  const cautionWords = ["irritat", "sensitiv", "caution", "monitor", "deactivat", "increase skin",
+                        "may affect", "peut augmenter", "kann",
+                        "刺激", "敏感", "注意", "谨慎", "失活", "慎用",
+                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen"]
 
   filteredLines.slice(startIdx).forEach(line => {
     // Expected format: "name: [Category] detail text"
@@ -1392,17 +1399,38 @@ function lookupLocalIngredientDb(ingredient, lang = currentLanguage()) {
 async function lookupOFFIngredientTaxonomy(ingredient, lang = currentLanguage()) {
   const slug = sanitizeIngredientTerm(ingredient).replace(/\s+/g, "-")
   if (!slug) return null
+
+  const cacheKey = `offtax|${slug}`
+  const cached = getCachedLookup(cacheKey)
+  if (cached !== undefined) {
+    if (!cached) return null
+    // Rebuild localized labels from stored raw values on every retrieval.
+    const notes = [
+      `${t("sourceLabel", lang)}: Open Food Facts ingredient taxonomy`,
+      `${t("ingredientLabel", lang)}: ${cached.ingredientName}`
+    ]
+    if (cached.wikidata) notes.push(`${t("wikidataLabel", lang)}: ${cached.wikidata}`)
+    return { category: t("foodCategory", lang), detail: notes.join(" · ") }
+  }
+
   const url = `https://world.openfoodfacts.org/ingredient/${encodeURIComponent(slug)}.json`
   const data = await fetchJsonWithTimeout(url, 6000)
   // OFF ingredient taxonomy response includes fields like name, wikidata, parents, children
-  if (!data || (!data.name && !data.wikidata && !data.id)) return null
+  if (!data || (!data.name && !data.wikidata && !data.id)) {
+    setCachedLookup(cacheKey, null)
+    return null
+  }
 
   const ingredientName = data.name || slug
+  const wikidata = data.wikidata || null
+  // Store only raw data values — labels are rebuilt with the correct language on every retrieval.
+  setCachedLookup(cacheKey, { ingredientName, wikidata })
+
   const notes = [
     `${t("sourceLabel", lang)}: Open Food Facts ingredient taxonomy`,
     `${t("ingredientLabel", lang)}: ${ingredientName}`
   ]
-  if (data.wikidata) notes.push(`${t("wikidataLabel", lang)}: ${data.wikidata}`)
+  if (wikidata) notes.push(`${t("wikidataLabel", lang)}: ${wikidata}`)
 
   return {
     category: t("foodCategory", lang),
@@ -1493,22 +1521,27 @@ async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
   }
 }
 
-async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
+async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), displayNameMap = {}) {
   const lines = [`${t("fallbackHeader", lang)}:`]
 
   const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
+    // Use the original user-typed token for display name and per-ingredient language detection.
+    // e.g. normalized "aloe vera" from "芦荟" → displayName="芦荟", ingredientLang="zh"
+    const displayName = displayNameMap[ingredient] || ingredient
+    const ingredientLang = normalizeSupportedLanguage(detectInputLanguage(displayName))
+
     // 1. Check embedded local database first (instant, no network required)
-    const localResult = lookupLocalIngredientDb(ingredient, lang)
+    const localResult = lookupLocalIngredientDb(ingredient, ingredientLang)
     if (localResult) {
-      return `${ingredient}: [${localResult.category}] ${localResult.detail}`
+      return `${displayName}: [${localResult.category}] ${localResult.detail}`
     }
 
     // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
     const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
-      lookupOFFIngredientTaxonomy(ingredient, lang),
-      lookupOpenFoodFacts(ingredient, lang),
-      lookupOpenBeautyFacts(ingredient, lang),
-      lookupWikidataIngredient(ingredient, lang)
+      lookupOFFIngredientTaxonomy(ingredient, ingredientLang),
+      lookupOpenFoodFacts(ingredient, ingredientLang),
+      lookupOpenBeautyFacts(ingredient, ingredientLang),
+      lookupWikidataIngredient(ingredient, ingredientLang)
     ])
 
     const firstHit = [
@@ -1521,11 +1554,11 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
     const detail = firstHit
       ? firstHit
         : {
-          category: t("generalCategory", lang),
-          detail: `${t("noPublicData", lang)} ${t("publicDbSourceNote", lang)}`
+          category: t("generalCategory", ingredientLang),
+          detail: `${t("noPublicData", ingredientLang)} ${t("publicDbSourceNote", ingredientLang)}`
         }
 
-    return `${ingredient}: [${detail.category}] ${detail.detail}`
+    return `${displayName}: [${detail.category}] ${detail.detail}`
   }))
   lines.push(...analysisLines)
 
@@ -1537,7 +1570,7 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage()) {
 AI ANALYSIS
 ----------------------- */
 
-async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
+async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), displayNameMap = {}){
   const normalizedAnalysisLang = normalizeSupportedLanguage(analysisLang)
   if(!Array.isArray(ingredients) || !ingredients.length){
     displayAIAnalysis(t("analysisPlaceholder", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
@@ -1545,6 +1578,10 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
   }
 
   displayAIAnalysis(t("analyzing", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang, isLoading: true })
+
+  // Send original user-typed names to the AI so it can respond per-ingredient
+  // in the language the user wrote each ingredient (e.g. "芦荟" → Chinese reply).
+  const ingredientsForAI = ingredients.map(i => displayNameMap[i] || i)
 
   if(supabaseClient){
     let invokeTimeoutId = null
@@ -1558,7 +1595,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
         "wykta-backend",
         {
           body: {
-            ingredients,
+            ingredients: ingredientsForAI,
             lang: langLocale,
             targetLanguage: langName,
             promptLanguage: langName
@@ -1593,7 +1630,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage()){
   }
 
   try{
-    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang)
+    const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang, displayNameMap)
     displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang })
   } catch(err){
     console.error("Public database lookup error:", err)
@@ -1648,10 +1685,29 @@ async function analyzeIngredients(){
     analysisLanguage = detectInputLanguage(text, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
+    // Build a map from normalized ingredient key → original user-typed token.
+    // This preserves the input language and display name (e.g. "芦荟" instead of "aloe vera")
+    // for per-ingredient language detection and display in the results.
+    const displayNameMap = {}
+    const scriptBoundaryNormalized = (text || "")
+      .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
+      .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
+    const rawTokens = scriptBoundaryNormalized
+      .split(ingredientSplitPunctuationPattern)
+      .flatMap(seg => seg.split(multilingualIngredientJoinerPattern))
+      .map(tok => tok.trim())
+      .filter(Boolean)
+    for (const raw of rawTokens) {
+      const normalized = normalizeIngredientName(raw)
+      if (normalized && !displayNameMap[normalized]) {
+        displayNameMap[normalized] = raw
+      }
+    }
+
     displayInteractions(warnings, analysisLanguage)
 
     await saveResult(text, warnings.join("; "))
-    await analyzeWithAI(ingredients, analysisLanguage)
+    await analyzeWithAI(ingredients, analysisLanguage, displayNameMap)
     showResultsSummary(analysisLanguage)
   } catch (err) {
     console.error("Analyze flow error:", err)
@@ -1743,9 +1799,6 @@ runOCR(canvas)
 
 /* -----------------------
 OCR TEXT RECOGNITION
------------------------ */
-/* -----------------------
-OCR TEXT RECOGNITION (Simpler, main thread)
 ----------------------- */
 async function runOCR(canvas) {
   try {
