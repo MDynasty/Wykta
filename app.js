@@ -1398,7 +1398,7 @@ async function startScan(){
 
 try{
 if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-  throw new Error("mediaDevices API unavailable")
+  throw new Error(t("cameraAccessFailed"))
 }
 
 stream = await navigator.mediaDevices.getUserMedia({
