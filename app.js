@@ -966,7 +966,13 @@ function detectInputLanguage(text = "", ingredients = []){
 
   Object.entries(languageSignalLexicon).forEach(([lang, tokens]) => {
     tokens.forEach((token) => {
-      if(sample.includes(token)) {
+      // Use word-boundary matching for Latin tokens to prevent substring false positives
+      // (e.g. "et" inside "retinol" incorrectly scoring French; "und" inside "wound").
+      const isLatinToken = /[a-z\u00C0-\u024F]/i.test(token)
+      const matched = isLatinToken
+        ? new RegExp(`\\b${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(sample)
+        : sample.includes(token)
+      if(matched) {
         scores[lang] += token.length >= 3
           ? LANGUAGE_SCORE_WEIGHTS.longTokenMatch
           : LANGUAGE_SCORE_WEIGHTS.shortTokenMatch
@@ -1247,9 +1253,15 @@ async function lookupOpenFoodFacts(ingredient, lang = currentLanguage()) {
   const cacheKey = `off|${sanitizeIngredientTerm(ingredient)}`
   const cached = getCachedLookup(cacheKey)
   if (cached !== undefined) {
-    return cached
-      ? { category: t("foodCategory", lang), detail: cached.detail }
-      : null
+    if (!cached) return null
+    // Rebuild localized labels from stored raw values on every retrieval.
+    const notes = [
+      `${t("sourceLabel", lang)}: Open Food Facts`,
+      `${t("seenInLabel", lang)}: ${cached.productName}`
+    ]
+    if(cached.allergenTags && cached.allergenTags.length) notes.push(`${t("allergenIndicatorsLabel", lang)}: ${cached.allergenTags.join(", ")}`)
+    if(cached.processingTag) notes.push(`${t("ingredientAnalysisTagLabel", lang)}: ${cached.processingTag}`)
+    return { category: t("foodCategory", lang), detail: notes.join(" · ") }
   }
 
   const params = new URLSearchParams({
@@ -1276,15 +1288,8 @@ async function lookupOpenFoodFacts(ingredient, lang = currentLanguage()) {
     ? stripTagPrefix(match.ingredients_analysis_tags[0])
     : null
 
-  // Cache raw data without lang-specific labels (labels are applied at retrieval)
-  const rawNotes = [
-    `Source: Open Food Facts`,
-    `Seen in: ${productName}`
-  ]
-  if(allergenTags.length) rawNotes.push(`Allergens: ${allergenTags.join(", ")}`)
-  if(processingTag) rawNotes.push(`Tag: ${processingTag}`)
-  const rawDetail = rawNotes.join(" · ")
-  setCachedLookup(cacheKey, { detail: rawDetail })
+  // Store only raw data values — labels are rebuilt with the correct language on every retrieval.
+  setCachedLookup(cacheKey, { productName, allergenTags, processingTag })
 
   const notes = [
     `${t("sourceLabel", lang)}: Open Food Facts`,
@@ -1303,9 +1308,15 @@ async function lookupOpenBeautyFacts(ingredient, lang = currentLanguage()) {
   const cacheKey = `obf|${sanitizeIngredientTerm(ingredient)}`
   const cached = getCachedLookup(cacheKey)
   if (cached !== undefined) {
-    return cached
-      ? { category: t("skincareCategory", lang), detail: cached.detail }
-      : null
+    if (!cached) return null
+    // Rebuild localized labels from stored raw values on every retrieval.
+    const notes = [
+      `${t("sourceLabel", lang)}: Open Beauty Facts`,
+      `${t("seenInLabel", lang)}: ${cached.productName}`
+    ]
+    if(cached.categoryTag) notes.push(`${t("productTypeLabel", lang)}: ${cached.categoryTag}`)
+    if(cached.ingredientTag) notes.push(`${t("ingredientTagLabel", lang)}: ${cached.ingredientTag}`)
+    return { category: t("skincareCategory", lang), detail: notes.join(" · ") }
   }
 
   const params = new URLSearchParams({
@@ -1332,10 +1343,8 @@ async function lookupOpenBeautyFacts(ingredient, lang = currentLanguage()) {
     ? stripTagPrefix(match.ingredients_analysis_tags[0])
     : null
 
-  const rawNotes = [`Source: Open Beauty Facts`, `Seen in: ${productName}`]
-  if(categoryTag) rawNotes.push(`Type: ${categoryTag}`)
-  if(ingredientTag) rawNotes.push(`Tag: ${ingredientTag}`)
-  setCachedLookup(cacheKey, { detail: rawNotes.join(" · ") })
+  // Store only raw data values — labels are rebuilt with the correct language on every retrieval.
+  setCachedLookup(cacheKey, { productName, categoryTag, ingredientTag })
 
   const notes = [
     `${t("sourceLabel", lang)}: Open Beauty Facts`,
@@ -1401,7 +1410,10 @@ async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
   const normalizedIngredient = normalizeIngredientName(ingredient)
   if(!normalizedIngredient) return null
 
-  const cacheKey = `wikidata|${normalizedIngredient}`
+  const selectedLanguage = getWikidataLanguageCode(lang)
+  // Include language in cache key so English/French/German/Chinese lookups
+  // each receive their own cached label and description.
+  const cacheKey = `wikidata|${normalizedIngredient}|${selectedLanguage}`
   const cachedEntry = getCachedLookup(cacheKey)
   if (cachedEntry !== undefined) {
     if (!cachedEntry) return null
@@ -1416,7 +1428,6 @@ async function lookupWikidataIngredient(ingredient, lang = currentLanguage()) {
     }
   }
 
-  const selectedLanguage = getWikidataLanguageCode(lang)
   // Query only the detected language first, then fall back to English.
   // Avoids 3 extra parallel requests per ingredient across all supported languages.
   const languagePriority = [...new Set([selectedLanguage, "en"])]
@@ -1616,10 +1627,11 @@ async function analyzeIngredients(){
 
   setAnalyzeBtnLoading(true)
 
+  let analysisLanguage = currentLanguage()
   try {
     const text = document.getElementById("ingredients").value
     const ingredients = extractIngredients(text)
-    const analysisLanguage = detectInputLanguage(text, ingredients)
+    analysisLanguage = detectInputLanguage(text, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
     displayInteractions(warnings, analysisLanguage)
@@ -1629,7 +1641,7 @@ async function analyzeIngredients(){
     showResultsSummary(analysisLanguage)
   } catch (err) {
     console.error("Analyze flow error:", err)
-    displayAIAnalysis(t("failed"), [])
+    displayAIAnalysis(t("failed", analysisLanguage), [])
   } finally {
     setAnalyzeBtnLoading(false)
   }
