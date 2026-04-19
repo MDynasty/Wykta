@@ -734,7 +734,20 @@ const uiMessages = {
     metaDescription: "Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.",
     exportEmptyError: "Run an analysis before exporting or sharing.",
     shareSuccess: "Result copied to clipboard.",
-    shareUnsupported: "Share is not available on this device."
+    shareUnsupported: "Share is not available on this device.",
+    scanBarcodeButton: "Scan Barcode",
+    stopBarcodeButton: "Stop",
+    barcodeScanning: "Point camera at a barcode…",
+    barcodeNotFound: "Product not found in the database.",
+    barcodeProductFound: "Product found",
+    barcodeIngredientsLoaded: "Ingredients loaded — analyzing…",
+    barcodeNoIngredients: "No ingredients found for this product.",
+    nutriScoreLabel: "Nutri-Score",
+    safetyScoreLabel: "Safety",
+    pwaInstallTitle: "Add Wykta to your home screen",
+    pwaInstallBody: "Install the app for quick access — no App Store needed.",
+    pwaInstallBtn: "Add to Home Screen",
+    pwaInstallDismiss: "Not now"
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -853,7 +866,20 @@ const uiMessages = {
     metaDescription: "Scannez les étiquettes alimentaires ou skincare instantanément. Analyse IA des ingrédients, alertes allergènes et avertissements d'interaction.",
     exportEmptyError: "Lancez une analyse avant d'exporter ou partager.",
     shareSuccess: "Résultat copié dans le presse-papiers.",
-    shareUnsupported: "Le partage n'est pas disponible sur cet appareil."
+    shareUnsupported: "Le partage n'est pas disponible sur cet appareil.",
+    scanBarcodeButton: "Scanner le code-barres",
+    stopBarcodeButton: "Arrêter",
+    barcodeScanning: "Pointez la caméra sur un code-barres…",
+    barcodeNotFound: "Produit non trouvé dans la base de données.",
+    barcodeProductFound: "Produit trouvé",
+    barcodeIngredientsLoaded: "Ingrédients chargés — analyse en cours…",
+    barcodeNoIngredients: "Aucun ingrédient trouvé pour ce produit.",
+    nutriScoreLabel: "Nutri-Score",
+    safetyScoreLabel: "Sécurité",
+    pwaInstallTitle: "Ajoutez Wykta à votre écran d'accueil",
+    pwaInstallBody: "Installez l'app pour un accès rapide — sans App Store.",
+    pwaInstallBtn: "Ajouter à l'écran d'accueil",
+    pwaInstallDismiss: "Plus tard"
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -972,7 +998,20 @@ const uiMessages = {
     metaDescription: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort. KI-gestützte Inhaltsstoffanalyse, Allergenalarme und Interaktionswarnungen.",
     exportEmptyError: "Bitte zuerst analysieren, dann exportieren oder teilen.",
     shareSuccess: "Ergebnis in die Zwischenablage kopiert.",
-    shareUnsupported: "Teilen ist auf diesem Gerät nicht verfügbar."
+    shareUnsupported: "Teilen ist auf diesem Gerät nicht verfügbar.",
+    scanBarcodeButton: "Barcode scannen",
+    stopBarcodeButton: "Stopp",
+    barcodeScanning: "Kamera auf Barcode richten…",
+    barcodeNotFound: "Produkt nicht in der Datenbank gefunden.",
+    barcodeProductFound: "Produkt gefunden",
+    barcodeIngredientsLoaded: "Inhaltsstoffe geladen — Analyse läuft…",
+    barcodeNoIngredients: "Keine Inhaltsstoffe für dieses Produkt gefunden.",
+    nutriScoreLabel: "Nutri-Score",
+    safetyScoreLabel: "Sicherheit",
+    pwaInstallTitle: "Wykta zum Home-Screen hinzufügen",
+    pwaInstallBody: "App installieren für schnellen Zugriff — kein App Store nötig.",
+    pwaInstallBtn: "Zum Home-Screen hinzufügen",
+    pwaInstallDismiss: "Nicht jetzt"
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -1091,7 +1130,20 @@ const uiMessages = {
     metaDescription: "即时扫描食品或护肤标签。AI 驱动的成分分析、过敏原警报和成分相互作用预警。",
     exportEmptyError: "请先完成一次分析，再导出或分享。",
     shareSuccess: "结果已复制到剪贴板。",
-    shareUnsupported: "当前设备不支持分享。"
+    shareUnsupported: "当前设备不支持分享。",
+    scanBarcodeButton: "扫描条形码",
+    stopBarcodeButton: "停止",
+    barcodeScanning: "将相机对准条形码…",
+    barcodeNotFound: "数据库中未找到该产品。",
+    barcodeProductFound: "已找到产品",
+    barcodeIngredientsLoaded: "成分已加载 — 正在分析…",
+    barcodeNoIngredients: "该产品暂无成分信息。",
+    nutriScoreLabel: "营养评级",
+    safetyScoreLabel: "安全",
+    pwaInstallTitle: "将 Wykta 添加到主屏幕",
+    pwaInstallBody: "安装应用快速访问 — 无需应用商店。",
+    pwaInstallBtn: "添加到主屏幕",
+    pwaInstallDismiss: "暂不"
   }
 }
 
@@ -1404,6 +1456,10 @@ function showResultsSummary(lang = currentLanguage()) {
   const dangerCount = resultEl.querySelectorAll(".ingredient-card.danger").length
   const flaggedCount = cautionCount + dangerCount
 
+  // Compute 0-100 safety score: start at 100, deduct for danger/caution cards
+  const safetyScore = Math.max(0, Math.min(100, 100 - dangerCount * 25 - cautionCount * 10))
+  const scoreClass = safetyScore >= 75 ? "score-high" : safetyScore >= 45 ? "score-medium" : "score-low"
+
   const parts = [
     typeof t("resultsSummaryIngredients", lang) === "function"
       ? t("resultsSummaryIngredients", lang)(total)
@@ -1418,7 +1474,16 @@ function showResultsSummary(lang = currentLanguage()) {
   const detectedLanguageName = Object.hasOwn(languageNames, normalizedLang) ? languageNames[normalizedLang] : normalizedLang
   parts.push(`${t("languageDetectedLabel", lang)}: ${detectedLanguageName}`)
 
-  summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}`
+  // Build badges HTML (safety score + optional Nutri-Score)
+  const safetyBadgeHtml = `<span class="safety-score-badge ${escapeHtml(scoreClass)}"><span class="score-label">${escapeHtml(t("safetyScoreLabel", lang))}</span> ${safetyScore}</span>`
+
+  let nutriBadgeHtml = ""
+  if (currentNutriScore && /^[a-e]$/.test(currentNutriScore)) {
+    const grade = currentNutriScore.toUpperCase()
+    nutriBadgeHtml = `<span class="summary-nutri-score ns-${escapeHtml(currentNutriScore)}" title="${escapeHtml(t("nutriScoreLabel", lang))}">Nutri-Score ${escapeHtml(grade)}</span>`
+  }
+
+  summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}${safetyBadgeHtml}${nutriBadgeHtml}`
   summaryEl.className = `analysis-summary ${dangerCount > 0 ? "has-danger" : flaggedCount > 0 ? "has-caution" : "all-clear"}`
   summaryEl.style.display = ""
   if (exportEl) exportEl.style.display = ""
@@ -1428,7 +1493,8 @@ function buildAnalysisReportText(lang = currentLanguage()) {
   const summaryEl = document.getElementById("analysisSummary")
   const analysisEl = document.getElementById("ingredientResult")
   const warningsEl = document.getElementById("interactionWarnings")
-  const summaryText = summaryEl ? summaryEl.innerText.trim() : ""
+  // Strip HTML from summary to get plain text for export
+  const summaryText = summaryEl ? (summaryEl.innerText || summaryEl.textContent || "").trim() : ""
   const analysisText = analysisEl ? analysisEl.innerText.trim() : ""
   const warningsText = warningsEl ? warningsEl.innerText.trim() : ""
 
@@ -1935,6 +2001,13 @@ async function analyzeIngredients(){
   const resultsSection = document.getElementById("resultsSection")
   if(resultsSection) resultsSection.style.display = ""
 
+  // Clear Nutri-Score if the product info banner is hidden
+  // (means this is a manual analysis, not from a barcode scan)
+  const productBanner = document.getElementById("productInfoBanner")
+  if (!productBanner || productBanner.style.display === "none" || !productBanner.innerHTML.trim()) {
+    currentNutriScore = null
+  }
+
   setAnalyzeBtnLoading(true)
 
   let analysisLanguage = currentLanguage()
@@ -1995,6 +2068,179 @@ CAMERA SCAN
 ----------------------- */
 
 let stream
+
+// Barcode scanning state
+let barcodeZxingControls = null
+let currentNutriScore = null
+
+/* -----------------------
+BARCODE PRODUCT LOOKUP
+Fetches product details from Open Food Facts by EAN/UPC barcode.
+Returns { name, ingredients, nutriScore } or null.
+----------------------- */
+
+async function lookupProductByBarcode(barcode) {
+  const url = `https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}.json`
+  try {
+    const data = await fetchJsonWithTimeout(url, 9000)
+    if (!data || data.status !== 1 || !data.product) return null
+    const p = data.product
+    const name = p.product_name_en || p.product_name || ""
+    const ingredients = p.ingredients_text_en || p.ingredients_text || ""
+    const nutriScore = (p.nutrition_grades || "").toLowerCase().trim() || null
+    return { name: name.trim(), ingredients: ingredients.trim(), nutriScore }
+  } catch (err) {
+    console.warn("Barcode OFF lookup failed:", err)
+    return null
+  }
+}
+
+/* -----------------------
+SHOW PRODUCT INFO BANNER
+Displays the product name + Nutri-Score badge after a barcode scan.
+----------------------- */
+
+function showProductInfoBanner(name, nutriScore, lang = currentLanguage()) {
+  currentNutriScore = nutriScore || null
+  const banner = document.getElementById("productInfoBanner")
+  if (!banner) return
+
+  let html = ""
+  if (name) {
+    html += `<span class="product-info-name">${escapeHtml(name)}</span>`
+  }
+  if (nutriScore && /^[a-e]$/.test(nutriScore)) {
+    const grade = nutriScore.toUpperCase()
+    html += `<span class="nutri-score-badge nutri-score-${nutriScore}" title="${escapeHtml(t("nutriScoreLabel", lang))}"><span class="ns-label">Nutri-Score</span> ${escapeHtml(grade)}</span>`
+  }
+
+  banner.innerHTML = html
+  banner.style.display = html ? "" : "none"
+}
+
+/* -----------------------
+STOP BARCODE SCANNING
+Stops any active ZXing reader and hides the overlay.
+----------------------- */
+
+function stopBarcodeScanning() {
+  if (barcodeZxingControls) {
+    try { barcodeZxingControls.stop() } catch (e) {}
+    barcodeZxingControls = null
+  }
+  const overlay = document.getElementById("barcodeOverlay")
+  if (overlay) overlay.style.display = "none"
+  const btn = document.getElementById("scanBarcodeBtn")
+  if (btn) btn.disabled = false
+}
+
+/* -----------------------
+BARCODE SCAN (ZXing)
+Starts camera + ZXing multi-format barcode reader.
+On detection: stops reader, looks up product on OFF, fills form, triggers analysis.
+----------------------- */
+
+async function scanBarcode() {
+  trackEvent('Barcode', 'Scan', 'barcode')
+  const lang = currentLanguage()
+
+  if (typeof ZXing === "undefined") {
+    const ocrEl = document.getElementById("ocrResult")
+    if (ocrEl) {
+      ocrEl.innerText = "ZXing library not loaded."
+      ocrEl.classList.add("visible")
+    }
+    return
+  }
+
+  // Stop any existing scan
+  stopBarcodeScanning()
+
+  // Start camera if not already running
+  if (!stream || stream.getTracks().every(track => track.readyState === "ended")) {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error(t("cameraAccessFailed", lang))
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      })
+      const video = document.getElementById("camera")
+      video.srcObject = stream
+      await video.play()
+      const placeholder = document.getElementById("cameraPlaceholder")
+      if (placeholder) placeholder.style.display = "none"
+    } catch (err) {
+      console.error("Camera error for barcode scan:", err)
+      const ocrEl = document.getElementById("ocrResult")
+      if (ocrEl) {
+        ocrEl.innerText = t("cameraAccessFailed", lang)
+        ocrEl.classList.add("visible")
+      }
+      return
+    }
+  }
+
+  // Show barcode overlay
+  const overlay = document.getElementById("barcodeOverlay")
+  const scanningLabel = document.getElementById("barcodeScanningLabel")
+  if (overlay) overlay.style.display = ""
+  if (scanningLabel) scanningLabel.textContent = t("barcodeScanning", lang)
+
+  const btn = document.getElementById("scanBarcodeBtn")
+  if (btn) btn.disabled = true
+
+  const video = document.getElementById("camera")
+  const codeReader = new ZXing.BrowserMultiFormatReader()
+
+  try {
+    barcodeZxingControls = await codeReader.decodeFromVideoElement(video, async (result, err) => {
+      if (!result) return
+      const barcode = result.getText()
+      if (!barcode) return
+
+      // Stop scanning immediately on first result
+      stopBarcodeScanning()
+      trackEvent('Barcode', 'Detected', barcode)
+
+      const ocrEl = document.getElementById("ocrResult")
+      if (ocrEl) {
+        ocrEl.innerText = `${t("barcodeProductFound", lang)}: ${barcode}`
+        ocrEl.classList.add("visible")
+      }
+
+      // Look up product on OFF
+      const product = await lookupProductByBarcode(barcode)
+      if (!product || !product.ingredients) {
+        if (ocrEl) ocrEl.innerText = t("barcodeNotFound", lang)
+        showProductInfoBanner("", null, lang)
+        return
+      }
+
+      // Display product info and Nutri-Score
+      showProductInfoBanner(product.name, product.nutriScore, lang)
+
+      // Populate ingredients textarea
+      const textarea = document.getElementById("ingredients")
+      if (textarea) textarea.value = product.ingredients
+
+      if (ocrEl) {
+        ocrEl.innerText = t("barcodeIngredientsLoaded", lang)
+      }
+
+      // Auto-trigger analysis
+      await analyzeIngredients()
+    })
+  } catch (err) {
+    console.error("ZXing barcode scan error:", err)
+    stopBarcodeScanning()
+    const ocrEl = document.getElementById("ocrResult")
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed", lang)
+      ocrEl.classList.add("visible")
+    }
+  }
+}
 
 async function startScan(){
   trackEvent('Camera', 'Open', 'camera')
@@ -2251,4 +2497,39 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   })
   setBilling(false)
+
+  // PWA install prompt — capture the beforeinstallprompt event and show a non-intrusive banner
+  let deferredInstallPrompt = null
+  const pwaKey = "wykta_pwa_dismissed"
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault()
+    deferredInstallPrompt = e
+    try {
+      if (sessionStorage.getItem(pwaKey)) return
+    } catch (ex) {}
+    const lang = currentLanguage()
+    const banner = document.createElement("div")
+    banner.className = "pwa-install-banner"
+    banner.setAttribute("role", "banner")
+    banner.innerHTML = `
+      <p><strong>${escapeHtml(t("pwaInstallTitle", lang))}</strong><br>${escapeHtml(t("pwaInstallBody", lang))}</p>
+      <button class="btn btn-primary btn-sm" id="pwaInstallBtn">${escapeHtml(t("pwaInstallBtn", lang))}</button>
+      <button class="pwa-close" aria-label="${escapeHtml(t("pwaInstallDismiss", lang))}" id="pwaCloseBtn">×</button>
+    `
+    const main = document.querySelector(".main")
+    if (main) main.insertBefore(banner, main.firstChild)
+
+    document.getElementById("pwaInstallBtn")?.addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return
+      deferredInstallPrompt.prompt()
+      const { outcome } = await deferredInstallPrompt.userChoice
+      trackEvent("PWA", "Install", outcome)
+      deferredInstallPrompt = null
+      banner.remove()
+    })
+    document.getElementById("pwaCloseBtn")?.addEventListener("click", () => {
+      try { sessionStorage.setItem(pwaKey, "1") } catch (ex) {}
+      banner.remove()
+    })
+  })
 })

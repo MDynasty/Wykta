@@ -16,6 +16,12 @@
 <meta property="og:image" content="https://mdynasty.github.io/Wykta/og-image.png">
 <meta name="twitter:image" content="https://mdynasty.github.io/Wykta/og-image.png">
 <link rel="canonical" href="https://mdynasty.github.io/Wykta/">
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2d8c52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wykta">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g1'%20x1='4'%20y1='2'%20x2='28'%20y2='30'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%232d8c52'/%3E%3Cstop%20offset='1'%20stop-color='%2340b870'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='g2'%20x1='8'%20y1='14'%20x2='24'%20y2='24'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23ffffff'/%3E%3Cstop%20offset='1'%20stop-color='%23d4f0de'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='1'%20y='1'%20width='30'%20height='30'%20rx='9.5'%20fill='%23f3f8f4'/%3E%3Cpath%20d='M16%204C16%204%207%2010%207%2017C7%2021.4%2011%2024%2016%2024C21%2024%2025%2021.4%2025%2017C25%2010%2016%204%2016%204Z'%20fill='url(%23g1)'%20opacity='0.18'%20stroke='url(%23g1)'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3Cpath%20d='M16%206.5V22'%20stroke='url(%23g1)'%20stroke-width='1.2'%20stroke-linecap='round'%20opacity='0.55'/%3E%3Cpath%20d='M10%2018L14%2022L22%2015'%20stroke='url(%23g2)'%20stroke-width='2.3'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E" type="image/svg+xml">
 <!-- Google Analytics: replace G-XXXXXXXX with your Measurement ID
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXX"></script>
@@ -201,7 +207,23 @@
           </span>
           <span data-i18n="captureButton">Capture Label</span>
         </button>
+        <button class="btn btn-secondary" id="scanBarcodeBtn" onclick="scanBarcode()">
+          <span class="btn-icon btn-icon-svg" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none">
+              <rect x="2" y="4" width="2" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="5.5" y="4" width="1" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="7.5" y="4" width="2" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="11" y="4" width="1" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="13" y="4" width="1.5" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="15.5" y="4" width="2.5" height="12" rx="0.5" fill="currentColor"/>
+            </svg>
+          </span>
+          <span data-i18n="scanBarcodeButton">Scan Barcode</span>
+        </button>
       </div>
+
+      <!-- Product info banner: shown after a successful barcode scan -->
+      <div id="productInfoBanner" class="product-info-banner" style="display:none;"></div>
     </div>
 
     <!-- Camera card -->
@@ -214,6 +236,14 @@
         <div class="camera-placeholder" id="cameraPlaceholder">
           <span class="cam-icon" data-i18n="cameraTag">Camera</span>
           <span data-i18n="cameraHint">Click "Open Camera" to start scanning</span>
+        </div>
+        <!-- Barcode scanning overlay -->
+        <div class="barcode-overlay" id="barcodeOverlay" style="display:none;">
+          <div class="barcode-viewfinder">
+            <div class="barcode-viewfinder-line"></div>
+          </div>
+          <span class="barcode-scanning-label" id="barcodeScanningLabel" data-i18n="barcodeScanning">Point camera at a barcode…</span>
+          <button class="btn btn-secondary btn-sm" onclick="stopBarcodeScanning()" id="barcodeStopBtn" data-i18n="stopBarcodeButton">Stop</button>
         </div>
       </div>
       <canvas id="snapshot" style="display:none;"></canvas>
@@ -363,6 +393,9 @@
 
 <!-- OCR library -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<!-- Barcode scanner library -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 
 <!-- Your application logic -->
 <script src="app.js"></script>
