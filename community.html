@@ -185,12 +185,16 @@
     document.getElementById('labelWallet').textContent = c.labelWallet;
     document.getElementById('submitLabel').textContent = c.submitLabel;
 
+    function externalLinkAttrs(url) {
+      return /^https?:/i.test(url) ? 'target="_blank" rel="noopener"' : '';
+    }
+
     const chList = document.getElementById('channelList');
     c.channels.forEach(ch => {
       chList.insertAdjacentHTML('beforeend', `
         <li class="channel-item">
           <span>${ch.label}</span>
-          <a class="btn btn-secondary btn-sm" href="${withLang(ch.url)}" ${/^https?:/i.test(ch.url) ? 'target="_blank" rel="noopener"' : ''}>${ch.btn}</a>
+          <a class="btn btn-secondary btn-sm" href="${withLang(ch.url)}" ${externalLinkAttrs(ch.url)}>${ch.btn}</a>
         </li>
       `);
     });
