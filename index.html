@@ -13,7 +13,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Wykta – Ingredient Analyzer">
 <meta name="twitter:description" content="Scan food or skincare labels instantly. Detect allergens, flag risky ingredients, and make confident choices — free.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g1'%20x1='6'%20y1='5'%20x2='26'%20y2='27'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%2334d399'/%3E%3Cstop%20offset='1'%20stop-color='%2338bdf8'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='g2'%20x1='11'%20y1='8'%20x2='22'%20y2='24'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23a78bfa'/%3E%3Cstop%20offset='1'%20stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='1'%20y='1'%20width='30'%20height='30'%20rx='9.5'%20fill='%23060d1a'/%3E%3Cpath%20d='M7%208.9L10.1%2022.5L15.6%2013.3L20.9%2022.5L24.7%209.6'%20stroke='url%28%23g1%29'%20stroke-width='2.15'%20stroke-linecap='round'%20stroke-linejoin='round'/%3E%3Cpath%20d='M17.6%208.5C19.3%207.2%2021.5%207.5%2022.8%209.1C24%2010.6%2023.8%2012.8%2022.3%2014.1C20.2%2015.9%2017.8%2017.8%2015.7%2019.8C15.3%2016.7%2013.9%2013.4%2015.5%2010.7C16%209.8%2016.8%209%2017.6%208.5Z'%20fill='url%28%23g2%29'/%3E%3Ccircle%20cx='24.6'%20cy='7.3'%20r='1.15'%20fill='%23e2e8f0'/%3E%3C/svg%3E" type="image/svg+xml">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g1'%20x1='4'%20y1='2'%20x2='28'%20y2='30'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%232d8c52'/%3E%3Cstop%20offset='1'%20stop-color='%2340b870'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='g2'%20x1='8'%20y1='14'%20x2='24'%20y2='24'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23ffffff'/%3E%3Cstop%20offset='1'%20stop-color='%23d4f0de'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='1'%20y='1'%20width='30'%20height='30'%20rx='9.5'%20fill='%23f3f8f4'/%3E%3Cpath%20d='M16%204C16%204%207%2010%207%2017C7%2021.4%2011%2024%2016%2024C21%2024%2025%2021.4%2025%2017C25%2010%2016%204%2016%204Z'%20fill='url(%23g1)'%20opacity='0.18'%20stroke='url(%23g1)'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3Cpath%20d='M16%206.5V22'%20stroke='url(%23g1)'%20stroke-width='1.2'%20stroke-linecap='round'%20opacity='0.55'/%3E%3Cpath%20d='M10%2018L14%2022L22%2015'%20stroke='url(%23g2)'%20stroke-width='2.3'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
 </head>
 
@@ -24,20 +24,19 @@
   <div class="nav-inner">
     <a class="brand" href="#">
       <div class="brand-mark">
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
-            <linearGradient id="brandMarkGradient" x1="3" y1="2.1" x2="17.1" y2="17.9" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#34d399"/>
-              <stop offset="1" stop-color="#38bdf8"/>
-            </linearGradient>
-            <linearGradient id="brandMarkPetal" x1="7.8" y1="5.7" x2="14.2" y2="15.8" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#a78bfa"/>
-              <stop offset="1" stop-color="#22d3ee"/>
+            <linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse">
+              <stop stop-color="#2d8c52"/>
+              <stop offset="1" stop-color="#40b870"/>
             </linearGradient>
           </defs>
-          <path d="M3.9 5.5L6.2 15.7L10.1 8.8L13.8 15.7L16.5 6.2" stroke="url(#brandMarkGradient)" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M11.4 6.2C12.6 5.3 14.2 5.4 15.1 6.6C16 7.7 15.8 9.3 14.7 10.2C13.3 11.3 11.8 12.6 10.2 14.2C10 11.9 9.2 9.3 10.3 7.4C10.6 6.9 10.9 6.6 11.4 6.2Z" fill="url(#brandMarkPetal)"/>
-          <circle cx="16.8" cy="4.6" r="0.85" fill="#e2e8f0"/>
+          <!-- Leaf outline -->
+          <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+          <!-- Center vein -->
+          <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+          <!-- Checkmark -->
+          <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
       <span>Wykta</span>
