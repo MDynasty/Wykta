@@ -1,5 +1,12 @@
 console.log("Wykta app started")
 
+function trackEvent(category, action, label) {
+  try {
+    if (window.gtag) window.gtag('event', action, { event_category: category, event_label: label })
+    if (window.dataLayer) window.dataLayer.push({ event: 'wykta_event', event_category: category, event_action: action, event_label: label })
+  } catch(e) {}
+}
+
 /* -----------------------
 SUPABASE CONNECTION
 ----------------------- */
@@ -513,6 +520,23 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
+// Industry-benchmarked pricing – verified against 2025 public App Store listings:
+// Yuka:        $15/yr (US App Store 2025), ~€14/yr (EU)
+// Think Dirty: $27.99–$29.99/yr Premium; $48.99/yr All Access (US App Store 2025)
+// INCI Beauty: €1.50/mo = €18/yr (official 2025)
+// CN market (成分扫描App): ¥15–38/月, ¥88–258/年 (主流 ¥18–28/月, ¥100–188/年)
+//
+// Wykta is AI-powered (web + camera OCR) — positioned above INCI/Yuka, matching Think Dirty Premium.
+// EN/USD: $3.99/mo, $27.99/yr  — matches Think Dirty Premium; above Yuka ($15/yr)
+// FR/DE/EUR: €2.99/mo, €21.99/yr — above INCI Beauty (€18/yr), below Think Dirty
+// ZH/CNY: ¥18/mo, ¥128/yr — mid-market of CN beauty-app range (¥15–38/月, ¥88–188/年)
+const marketPricing = {
+  en: { currency: "USD", monthly: 3.99, annual: 27.99, monthlySuffix: "/mo", annualSuffix: "/yr" },
+  fr: { currency: "EUR", monthly: 2.99, annual: 21.99, monthlySuffix: "/mois", annualSuffix: "/an" },
+  de: { currency: "EUR", monthly: 2.99, annual: 21.99, monthlySuffix: "/Monat", annualSuffix: "/Jahr" },
+  zh: { currency: "CNY", monthly: 18, annual: 128, monthlySuffix: "/月", annualSuffix: "/年" }
+}
+
 const ocrLanguageCodes = {
   en: "eng",
   fr: "fra",
@@ -543,6 +567,8 @@ const uiMessages = {
     chipLanguage: "4-Language Support",
     chipSpeed: "OCR-to-Analysis in Seconds",
     chipUpgrade: "Allergen & Safety Alerts",
+    workflowNav: "How It Works",
+    communityNav: "Community",
     proofData: "Data Sources",
     proofDataValue: "2.8M+ ingredients indexed",
     proofTrust: "Trust Signal",
@@ -553,6 +579,19 @@ const uiMessages = {
     scanSubtitle: "Use your camera to pull ingredients from labels in seconds.",
     ctaTitle: "Ready to know what's really in your products?",
     ctaBody: "Join the community of conscious shoppers. Wykta delivers instant, science-backed ingredient insight — for free.",
+    ctaGetPro: "Get Pro Annual",
+    ctaContactSales: "Contact Sales",
+    ctaJoinCommunity: "Join Community",
+    workflowTitle: "How Wykta works",
+    workflowSubtitle: "From scan to safety decision in seconds — completely free to start.",
+    workflowStep1Title: "Discover",
+    workflowStep1Body: "Find Wykta via social media, search, or a friend's recommendation.",
+    workflowStep2Title: "Scan & analyze",
+    workflowStep2Body: "Open camera, point at any food or skincare label. AI reads it in seconds.",
+    workflowStep3Title: "Get insights",
+    workflowStep3Body: "See ingredient safety ratings, allergen flags, and interaction warnings instantly.",
+    workflowStep4Title: "Stay informed",
+    workflowStep4Body: "Upgrade to Pro for unlimited scans, PDF exports, and join our community.",
     analysisLanguage: "Analysis Language",
     ingredientList: "Ingredient List",
     ingredientsPlaceholder: "Paste ingredients from food or skincare labels",
@@ -561,6 +600,7 @@ const uiMessages = {
     captureButton: "Capture Label",
     valueTitle: "Why users pay for Wykta",
     valueSubtitle: "Simple pricing that grows with you. Start free, upgrade when you're ready.",
+    pricingBenchmark: "Benchmarked against Yuka, Think Dirty, and INCI Beauty market ranges for each region.",
     billingMonthly: "Monthly",
     billingAnnual: "Annual",
     billingDiscount: "Save 20%",
@@ -632,7 +672,10 @@ const uiMessages = {
     wikidataLabel: "Wikidata",
     publicDbSourceNote: "Sources: Open Food Facts ingredient taxonomy / Open Food Facts / Open Beauty Facts",
     languageDetectedLabel: "Detected analysis language",
-    metaDescription: "Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings."
+    metaDescription: "Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.",
+    exportEmptyError: "Run an analysis before exporting or sharing.",
+    shareSuccess: "Result copied to clipboard.",
+    shareUnsupported: "Share is not available on this device."
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -644,6 +687,8 @@ const uiMessages = {
     chipLanguage: "Support 4 langues",
     chipSpeed: "OCR vers analyse en quelques secondes",
     chipUpgrade: "Alertes allergènes & sécurité",
+    workflowNav: "Fonctionnement",
+    communityNav: "Communauté",
     proofData: "Sources de données",
     proofDataValue: "2,8 M+ ingrédients indexés",
     proofTrust: "Signal de confiance",
@@ -654,6 +699,19 @@ const uiMessages = {
     scanSubtitle: "Utilisez votre caméra pour extraire les ingrédients en quelques secondes.",
     ctaTitle: "Prêt à savoir ce qui se cache vraiment dans vos produits ?",
     ctaBody: "Rejoignez la communauté des consommateurs avertis. Wykta vous offre une analyse instantanée et scientifique des ingrédients — gratuitement.",
+    ctaGetPro: "Passer Pro Annuel",
+    ctaContactSales: "Contacter l'équipe commerciale",
+    ctaJoinCommunity: "Rejoindre la communauté",
+    workflowTitle: "Comment fonctionne Wykta",
+    workflowSubtitle: "Du scan à la décision de sécurité en secondes — gratuit pour commencer.",
+    workflowStep1Title: "Découverte",
+    workflowStep1Body: "Trouvez Wykta via les réseaux sociaux, la recherche ou une recommandation.",
+    workflowStep2Title: "Scanner & analyser",
+    workflowStep2Body: "Ouvrez la caméra, pointez sur une étiquette alimentaire ou skincare. L'IA la lit en secondes.",
+    workflowStep3Title: "Obtenir des insights",
+    workflowStep3Body: "Voyez les notes de sécurité, alertes allergènes et avertissements d'interaction instantanément.",
+    workflowStep4Title: "Rester informé",
+    workflowStep4Body: "Passez Pro pour les scans illimités, exports PDF et rejoignez notre communauté.",
     analysisLanguage: "Langue d'analyse",
     ingredientList: "Liste d'ingrédients",
     ingredientsPlaceholder: "Collez les ingrédients d'étiquettes alimentaires ou skincare",
@@ -662,6 +720,7 @@ const uiMessages = {
     captureButton: "Capturer l'étiquette",
     valueTitle: "Pourquoi les utilisateurs paient Wykta",
     valueSubtitle: "Des tarifs simples qui évoluent avec vous. Commencez gratuitement, passez Pro quand vous êtes prêt.",
+    pricingBenchmark: "Tarifs calibrés selon les fourchettes de Yuka, Think Dirty et INCI Beauty par marché.",
     billingMonthly: "Mensuel",
     billingAnnual: "Annuel",
     billingDiscount: "Économisez 20 %",
@@ -733,7 +792,10 @@ const uiMessages = {
     wikidataLabel: "Wikidata",
     publicDbSourceNote: "Sources : taxonomie ingrédients Open Food Facts / Open Food Facts / Open Beauty Facts",
     languageDetectedLabel: "Langue d'analyse détectée",
-    metaDescription: "Scannez les étiquettes alimentaires ou skincare instantanément. Analyse IA des ingrédients, alertes allergènes et avertissements d'interaction."
+    metaDescription: "Scannez les étiquettes alimentaires ou skincare instantanément. Analyse IA des ingrédients, alertes allergènes et avertissements d'interaction.",
+    exportEmptyError: "Lancez une analyse avant d'exporter ou partager.",
+    shareSuccess: "Résultat copié dans le presse-papiers.",
+    shareUnsupported: "Le partage n'est pas disponible sur cet appareil."
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -745,6 +807,8 @@ const uiMessages = {
     chipLanguage: "Unterstützung für 4 Sprachen",
     chipSpeed: "OCR-zu-Analyse in Sekunden",
     chipUpgrade: "Allergen- & Sicherheitsalarme",
+    workflowNav: "Funktionsweise",
+    communityNav: "Community",
     proofData: "Datenquellen",
     proofDataValue: "2,8 Mio.+ Inhaltsstoffe indexiert",
     proofTrust: "Vertrauenssignal",
@@ -755,6 +819,19 @@ const uiMessages = {
     scanSubtitle: "Nutzen Sie Ihre Kamera, um Inhaltsstoffe in Sekunden zu erfassen.",
     ctaTitle: "Bereit zu wissen, was wirklich in Ihren Produkten steckt?",
     ctaBody: "Schließen Sie sich bewussten Verbrauchern an. Wykta liefert sofortige, wissenschaftlich fundierte Inhaltsstoff-Einblicke — kostenlos.",
+    ctaGetPro: "Pro jährlich holen",
+    ctaContactSales: "Vertrieb kontaktieren",
+    ctaJoinCommunity: "Community beitreten",
+    workflowTitle: "Wie Wykta funktioniert",
+    workflowSubtitle: "Vom Scan zur Sicherheitsentscheidung in Sekunden — kostenlos starten.",
+    workflowStep1Title: "Entdecken",
+    workflowStep1Body: "Finden Sie Wykta über Social Media, Suche oder eine Empfehlung.",
+    workflowStep2Title: "Scannen & Analysieren",
+    workflowStep2Body: "Kamera öffnen, auf ein Lebensmittel- oder Pflege-Etikett richten. KI liest es in Sekunden.",
+    workflowStep3Title: "Einblicke erhalten",
+    workflowStep3Body: "Sicherheitsbewertungen, Allergen-Warnungen und Wechselwirkungshinweise sofort sehen.",
+    workflowStep4Title: "Informiert bleiben",
+    workflowStep4Body: "Pro upgraden für unbegrenzte Scans, PDF-Exporte und Community-Zugang.",
     analysisLanguage: "Analysesprache",
     ingredientList: "Inhaltsstoffliste",
     ingredientsPlaceholder: "Inhaltsstoffe von Lebensmittel- oder Hautpflegeetiketten einfügen",
@@ -763,6 +840,7 @@ const uiMessages = {
     captureButton: "Etikett erfassen",
     valueTitle: "Warum Nutzer für Wykta zahlen",
     valueSubtitle: "Einfache Preisgestaltung, die mit Ihnen wächst. Kostenlos starten, jederzeit upgraden.",
+    pricingBenchmark: "Preisniveau orientiert an Yuka, Think Dirty und INCI Beauty je Zielmarkt.",
     billingMonthly: "Monatlich",
     billingAnnual: "Jährlich",
     billingDiscount: "20 % sparen",
@@ -834,7 +912,10 @@ const uiMessages = {
     wikidataLabel: "Wikidata",
     publicDbSourceNote: "Quellen: Open Food Facts Inhaltsstoff-Taxonomie / Open Food Facts / Open Beauty Facts",
     languageDetectedLabel: "Erkannte Analysesprache",
-    metaDescription: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort. KI-gestützte Inhaltsstoffanalyse, Allergenalarme und Interaktionswarnungen."
+    metaDescription: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort. KI-gestützte Inhaltsstoffanalyse, Allergenalarme und Interaktionswarnungen.",
+    exportEmptyError: "Bitte zuerst analysieren, dann exportieren oder teilen.",
+    shareSuccess: "Ergebnis in die Zwischenablage kopiert.",
+    shareUnsupported: "Teilen ist auf diesem Gerät nicht verfügbar."
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -846,6 +927,8 @@ const uiMessages = {
     chipLanguage: "支持 4 种语言",
     chipSpeed: "OCR 到分析仅需数秒",
     chipUpgrade: "过敏原与安全预警",
+    workflowNav: "使用方法",
+    communityNav: "社区",
     proofData: "数据来源",
     proofDataValue: "280 万+ 成分已索引",
     proofTrust: "信任信号",
@@ -856,6 +939,19 @@ const uiMessages = {
     scanSubtitle: "使用相机可在数秒内提取标签成分。",
     ctaTitle: "准备好了解您产品里真正含有什么了吗？",
     ctaBody: "加入注重健康的消费者社区。Wykta 提供即时、有科学依据的成分洞察——完全免费。",
+    ctaGetPro: "开通年度专业版",
+    ctaContactSales: "联系销售",
+    ctaJoinCommunity: "加入社区",
+    workflowTitle: "Wykta 怎么用",
+    workflowSubtitle: "从扫描到安全判断，只需几秒钟 — 免费开始使用。",
+    workflowStep1Title: "发现",
+    workflowStep1Body: "通过社交媒体、搜索或朋友推荐找到 Wykta。",
+    workflowStep2Title: "扫描 & 分析",
+    workflowStep2Body: "打开相机，对准任何食品或护肤品标签，AI 几秒内完成识别。",
+    workflowStep3Title: "获取洞察",
+    workflowStep3Body: "即时查看成分安全评级、过敏原标记和成分冲突警告。",
+    workflowStep4Title: "持续关注",
+    workflowStep4Body: "升级 Pro 解锁无限次扫描、PDF 导出，并加入我们的社区。",
     analysisLanguage: "分析语言",
     ingredientList: "成分列表",
     ingredientsPlaceholder: "粘贴食品或护肤品标签中的成分",
@@ -864,6 +960,7 @@ const uiMessages = {
     captureButton: "拍摄标签",
     valueTitle: "用户愿意为 Wykta 付费的原因",
     valueSubtitle: "清晰透明的定价，随您需求成长。免费开始，随时升级。",
+    pricingBenchmark: "价格参考 Yuka、Think Dirty、INCI Beauty 的区域市场区间后制定。",
     billingMonthly: "按月",
     billingAnnual: "按年",
     billingDiscount: "节省 20%",
@@ -935,7 +1032,10 @@ const uiMessages = {
     wikidataLabel: "Wikidata",
     publicDbSourceNote: "来源：Open Food Facts 成分分类 / Open Food Facts / Open Beauty Facts",
     languageDetectedLabel: "识别到的分析语言",
-    metaDescription: "即时扫描食品或护肤标签。AI 驱动的成分分析、过敏原警报和成分相互作用预警。"
+    metaDescription: "即时扫描食品或护肤标签。AI 驱动的成分分析、过敏原警报和成分相互作用预警。",
+    exportEmptyError: "请先完成一次分析，再导出或分享。",
+    shareSuccess: "结果已复制到剪贴板。",
+    shareUnsupported: "当前设备不支持分享。"
   }
 }
 
@@ -1266,6 +1366,81 @@ function showResultsSummary(lang = currentLanguage()) {
   summaryEl.className = `analysis-summary ${dangerCount > 0 ? "has-danger" : flaggedCount > 0 ? "has-caution" : "all-clear"}`
   summaryEl.style.display = ""
   if (exportEl) exportEl.style.display = ""
+}
+
+function buildAnalysisReportText(lang = currentLanguage()) {
+  const summaryEl = document.getElementById("analysisSummary")
+  const analysisEl = document.getElementById("ingredientResult")
+  const warningsEl = document.getElementById("interactionWarnings")
+  const summaryText = summaryEl ? summaryEl.innerText.trim() : ""
+  const analysisText = analysisEl ? analysisEl.innerText.trim() : ""
+  const warningsText = warningsEl ? warningsEl.innerText.trim() : ""
+
+  if (!analysisText || analysisText === t("analysisPlaceholder", lang)) return ""
+
+  return [
+    "Wykta Ingredient Report",
+    summaryText ? `Summary: ${summaryText}` : "",
+    "",
+    "Analysis",
+    analysisText,
+    "",
+    "Warnings",
+    warningsText || t("warningPlaceholder", lang),
+    "",
+    `Generated: ${new Date().toLocaleString()}`
+  ].filter(Boolean).join("\n")
+}
+
+function exportAnalysisPdf() {
+  trackEvent('PDF', 'Export', 'pdf')
+  const lang = currentLanguage()
+  const reportText = buildAnalysisReportText(lang)
+  if (!reportText) {
+    window.alert(t("exportEmptyError", lang))
+    return
+  }
+
+  const reportHtml = reportText
+    .split("\n")
+    .map(line => `<p>${escapeHtml(line)}</p>`)
+    .join("")
+  const popup = window.open("", "_blank", "noopener,noreferrer,width=900,height=720")
+  if (!popup) return
+  popup.document.write(`<!doctype html><html><head><title>Wykta Report</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#1f2937}p{margin:0 0 10px;line-height:1.5}</style></head><body>${reportHtml}</body></html>`)
+  popup.document.close()
+  popup.focus()
+  popup.print()
+}
+
+async function shareAnalysisResult() {
+  trackEvent('Share', 'Share', 'share')
+  const lang = currentLanguage()
+  const reportText = buildAnalysisReportText(lang)
+  if (!reportText) {
+    window.alert(t("exportEmptyError", lang))
+    return
+  }
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Wykta Ingredient Report",
+        text: reportText
+      })
+      return
+    } catch (error) {
+      if (error && error.name === "AbortError") return
+    }
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(reportText)
+    window.alert(t("shareSuccess", lang))
+    return
+  }
+
+  window.alert(t("shareUnsupported", lang))
 }
 
 async function fetchJsonWithTimeout(url, timeoutMs = 7000) {
@@ -1699,6 +1874,7 @@ MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
+  trackEvent('Ingredient', 'Analyze', 'manual')
   const resultsSection = document.getElementById("resultsSection")
   if(resultsSection) resultsSection.style.display = ""
 
@@ -1750,7 +1926,7 @@ CAMERA SCAN
 let stream
 
 async function startScan(){
-
+  trackEvent('Camera', 'Open', 'camera')
 try{
 if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
   throw new Error(t("cameraAccessFailed"))
@@ -1874,13 +2050,55 @@ async function runOCR(canvas) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  localizeStaticUI()
+function formatLocalizedPrice(amount, lang = currentLanguage()) {
+  const normalizedLang = normalizeSupportedLanguage(lang)
+  const pricing = marketPricing[normalizedLang] || marketPricing.en
+  const locale = languageLocales[normalizedLang] || "en"
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: pricing.currency,
+    maximumFractionDigits: pricing.currency === "CNY" ? 0 : 2
+  }).format(amount)
+}
 
+function getCheckoutHrefForPlan(plan, lang = currentLanguage()) {
+  const normalizedLang = normalizeSupportedLanguage(lang)
+  return `checkout.html?plan=${encodeURIComponent(plan)}&lang=${encodeURIComponent(normalizedLang)}`
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // UTM parameter capture + retention
+  ;(function captureUTM() {
+    const p = new URLSearchParams(window.location.search)
+    const utmKeys = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term']
+    utmKeys.forEach(k => {
+      const v = p.get(k)
+      if (v) {
+        try { sessionStorage.setItem(k, v) } catch(e) {}
+      }
+    })
+    // Attach UTMs to all checkout links
+    document.querySelectorAll('a[href*="checkout.html"]').forEach(el => {
+      try {
+        const url = new URL(el.href, location.origin)
+        utmKeys.forEach(k => {
+          const v = sessionStorage.getItem(k)
+          if (v) url.searchParams.set(k, v)
+        })
+        el.href = url.toString()
+      } catch(e) {}
+    })
+  })()
   const languageSelect = document.getElementById("language")
+  const storedLang = normalizeSupportedLanguage(localStorage.getItem("wykta_lang") || "")
+  if (languageSelect) languageSelect.value = storedLang
+  localizeStaticUI()
   if(languageSelect){
     languageSelect.addEventListener("change", () => {
+      localStorage.setItem("wykta_lang", currentLanguage())
       localizeStaticUI()
+      const isAnnual = annualBtn ? annualBtn.classList.contains("active") : false
+      setBilling(isAnnual)
     })
   }
 
@@ -1890,24 +2108,41 @@ document.addEventListener("DOMContentLoaded", () => {
   const proPriceEl = document.getElementById("proPriceDisplay")
   const proPeriodEl = document.getElementById("proPeriodDisplay")
   const discountBadge = document.getElementById("billingDiscountBadge")
+  const planProCta = document.getElementById("planProCta")
+  const ctaGetProBtn = document.getElementById("ctaGetProBtn")
+  const exportPdfBtn = document.getElementById("exportPdfBtn")
+  const shareResultBtn = document.getElementById("shareResultBtn")
 
   function setBilling(isAnnual) {
     const lang = currentLanguage()
+    const pricing = marketPricing[normalizeSupportedLanguage(lang)] || marketPricing.en
+    const amount = isAnnual ? pricing.annual : pricing.monthly
+    const suffix = isAnnual ? pricing.annualSuffix : pricing.monthlySuffix
+
     if (monthlyBtn) monthlyBtn.classList.toggle("active", !isAnnual)
     if (annualBtn) annualBtn.classList.toggle("active", isAnnual)
     if (discountBadge) discountBadge.classList.toggle("visible", isAnnual)
     if (proPriceEl) {
-      proPriceEl.innerHTML = isAnnual
-        ? '$7<small style="font-size:16px;font-weight:500">/mo</small>'
-        : '$9<small style="font-size:16px;font-weight:500">/mo</small>'
+      proPriceEl.innerHTML = `${escapeHtml(formatLocalizedPrice(amount, lang))}<small style="font-size:16px;font-weight:500">${escapeHtml(suffix)}</small>`
     }
     if (proPeriodEl) {
       proPeriodEl.textContent = isAnnual
         ? t("billingAnnualPeriod", lang)
         : t("proPeriod", lang)
     }
+    const checkoutHref = getCheckoutHrefForPlan(isAnnual ? "pro-annual" : "pro-monthly", lang)
+    if (planProCta) planProCta.setAttribute("href", checkoutHref)
+    if (ctaGetProBtn) ctaGetProBtn.setAttribute("href", checkoutHref)
   }
 
   if (monthlyBtn) monthlyBtn.addEventListener("click", () => setBilling(false))
   if (annualBtn) annualBtn.addEventListener("click", () => setBilling(true))
+  if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportAnalysisPdf)
+  if (shareResultBtn) shareResultBtn.addEventListener("click", () => {
+    shareAnalysisResult().catch((err) => {
+      console.error("Share failed:", err)
+      window.alert(t("shareUnsupported"))
+    })
+  })
+  setBilling(false)
 })

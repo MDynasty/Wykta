@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wykta Community</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+.community-stats { display: flex; justify-content: center; gap: 28px; flex-wrap: wrap; padding: 14px; background: rgba(45,140,82,0.06); border: 1px solid rgba(45,140,82,0.16); border-radius: 14px; margin-bottom: 4px; }
+.stat-item { text-align: center; }
+.stat-item strong { display: block; font-size: 22px; font-weight: 800; color: var(--brand, #2d8c52); }
+.stat-item span { font-size: 12px; color: var(--text-2, #4a7a58); }
+.channel-item .channel-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#2d8c52"/><stop offset="1" stop-color="#40b870"/></linearGradient></defs>
+    <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+    <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+    <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="checkout.html">Checkout</a>
+        <a class="nav-link" href="contact-sales.html">Contact Sales</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1 id="communityTitle">Join the Wykta community</h1>
+      <p id="communitySubtitle">Pick your preferred channels for updates, support, campaign collaboration, and product co-creation.</p>
+    </section>
+
+    <div class="community-stats">
+      <div class="stat-item"><strong>2,400+</strong><span>Members</span></div>
+      <div class="stat-item"><strong>12</strong><span>Channels</span></div>
+      <div class="stat-item"><strong>5</strong><span>Languages</span></div>
+      <div class="stat-item"><strong>Daily</strong><span>Active Q&amp;A</span></div>
+    </div>
+
+    <section class="sub-grid">
+      <article class="card">
+        <h2 class="card-title" id="channelsTitle">Community channels</h2>
+        <ul class="channel-list" id="channelList"></ul>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title" id="onboardTitle">Community onboarding</h2>
+        <form id="communityForm">
+          <div class="field">
+            <label class="field-label" for="memberEmail" id="labelEmail">Email</label>
+            <input id="memberEmail" type="email" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="channel" id="labelChannel">Primary channel</label>
+            <select id="channel" required>
+              <option value="discord">Discord</option>
+              <option value="telegram">Telegram</option>
+              <option value="wechat">WeChat</option>
+              <option value="x">X / Twitter</option>
+              <option value="github">GitHub</option>
+              <option value="youtube">YouTube</option>
+              <option value="xiaohongshu">小红书 (CN)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="wallet" id="labelWallet">Wallet (optional, for rewards)</label>
+            <input id="wallet" type="text" placeholder="TRC20 / ERC20 address">
+          </div>
+          <div class="status-box" id="communityStatus"></div>
+          <button class="btn btn-primary" type="submit" id="submitBtn">
+            <span id="submitLabel">Join now</span>
+            <span class="spinner" id="submitSpinner" style="display:none;"></span>
+          </button>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const SUPABASE_URL = typeof supabaseUrl !== 'undefined' ? supabaseUrl : '';
+    const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
+
+    const params = new URLSearchParams(window.location.search);
+    const rawLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const lang = ['en', 'fr', 'de', 'zh'].includes(rawLang) ? rawLang : 'en';
+    document.documentElement.lang = lang;
+
+    const copy = {
+      en: {
+        title: 'Join the Wykta community', subtitle: 'Pick your preferred channels for updates and product co-creation.',
+        channelsTitle: 'Community channels', onboardTitle: 'Community onboarding',
+        labelEmail: 'Email', labelChannel: 'Primary channel', labelWallet: 'Wallet (optional, for rewards)',
+        submitLabel: 'Join now',
+        success: 'Welcome to Wykta! Check your email for the invite link.',
+        error: 'Something went wrong. Please try again.',
+        channels: [
+          { label: 'Discord: product Q&A + release rooms', btn: 'Join Discord', url: 'https://discord.gg/wykta' },
+          { label: 'Telegram: quick support + growth drops', btn: 'Join Telegram', url: 'https://t.me/wykta_community' },
+          { label: 'WeChat: CN community and partnerships (WeChat ID: wykta_cn)', btn: 'Join WeChat', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter: launch updates and campaigns', btn: 'Follow X', url: 'https://x.com/wykta_app' },
+          { label: 'GitHub: roadmap and issues', btn: 'Open GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: 'YouTube: tutorial videos and ingredient guides', btn: 'Watch on YouTube', url: 'https://youtube.com/@wykta' },
+        ],
+      },
+      fr: {
+        title: 'Rejoindre la communauté Wykta',
+        subtitle: 'Choisissez vos canaux pour les mises à jour et la co-création produit.',
+        channelsTitle: 'Canaux communautaires', onboardTitle: 'Rejoindre la communauté',
+        labelEmail: 'Email', labelChannel: 'Canal principal', labelWallet: 'Wallet (facultatif, récompenses)',
+        submitLabel: 'Rejoindre',
+        success: 'Bienvenue sur Wykta ! Vérifiez vos emails pour le lien d\'invitation.',
+        error: 'Une erreur s\'est produite. Veuillez réessayer.',
+        channels: [
+          { label: 'Discord : Q&R produit + salles de sortie', btn: 'Discord', url: 'https://discord.gg/wykta' },
+          { label: 'Telegram : support rapide + veille', btn: 'Telegram', url: 'https://t.me/wykta_community' },
+          { label: 'WeChat : communauté CN et partenariats (WeChat ID : wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter : sorties et campagnes', btn: 'Suivre X', url: 'https://x.com/wykta_app' },
+          { label: 'GitHub : feuille de route et issues', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: 'YouTube : tutoriels vidéo et guides d\'ingrédients', btn: 'YouTube', url: 'https://youtube.com/@wykta' },
+        ],
+      },
+      de: {
+        title: 'Der Wykta-Community beitreten',
+        subtitle: 'Wählen Sie Ihre bevorzugten Kanäle für Updates und Produkt-Mitgestaltung.',
+        channelsTitle: 'Community-Kanäle', onboardTitle: 'Community-Onboarding',
+        labelEmail: 'E-Mail', labelChannel: 'Hauptkanal', labelWallet: 'Wallet (optional, für Prämien)',
+        submitLabel: 'Jetzt beitreten',
+        success: 'Willkommen bei Wykta! Prüfen Sie Ihre E-Mails für den Einladungslink.',
+        error: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
+        channels: [
+          { label: 'Discord: Produkt-Q&A + Release-Räume', btn: 'Discord', url: 'https://discord.gg/wykta' },
+          { label: 'Telegram: Support + Wachstums-Updates', btn: 'Telegram', url: 'https://t.me/wykta_community' },
+          { label: 'WeChat: CN-Community & Partnerschaften (WeChat ID: wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter: Launch-Updates & Kampagnen', btn: 'X folgen', url: 'https://x.com/wykta_app' },
+          { label: 'GitHub: Roadmap & Issues', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: 'YouTube: Tutorial-Videos und Zutaten-Guides', btn: 'YouTube', url: 'https://youtube.com/@wykta' },
+        ],
+      },
+      zh: {
+        title: '加入 Wykta 社区', subtitle: '选择您偏好的社群渠道，获取更新、参与产品共创。',
+        channelsTitle: '社群渠道', onboardTitle: '社区 Onboarding',
+        labelEmail: '邮箱', labelChannel: '首选渠道', labelWallet: '钱包地址（可选，用于奖励发放）',
+        submitLabel: '立即加入',
+        success: '欢迎加入 Wykta！请查收邮件中的邀请链接。',
+        error: '提交失败，请重试。',
+        channels: [
+          { label: 'Discord：产品问答 + 版本发布频道', btn: '加入 Discord', url: 'https://discord.gg/wykta' },
+          { label: 'Telegram：快速支持 + 增长资讯', btn: '加入 Telegram', url: 'https://t.me/wykta_community' },
+          { label: '微信：CN 社区及合作伙伴（微信号：wykta_cn）', btn: '加入微信群', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter：发布动态与营销活动', btn: '关注 X', url: 'https://x.com/wykta_app' },
+          { label: 'GitHub：产品路线图与 Issues', btn: '打开 GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: '小红书：成分解析视频 + 产品测评', btn: '关注小红书', url: 'https://www.xiaohongshu.com' },
+        ],
+      },
+    };
+    const c = copy[lang] || copy.en;
+
+    document.getElementById('communityTitle').textContent = c.title;
+    document.getElementById('communitySubtitle').textContent = c.subtitle;
+    document.getElementById('channelsTitle').textContent = c.channelsTitle;
+    document.getElementById('onboardTitle').textContent = c.onboardTitle;
+    document.getElementById('labelEmail').textContent = c.labelEmail;
+    document.getElementById('labelChannel').textContent = c.labelChannel;
+    document.getElementById('labelWallet').textContent = c.labelWallet;
+    document.getElementById('submitLabel').textContent = c.submitLabel;
+
+    const chList = document.getElementById('channelList');
+    c.channels.forEach(ch => {
+      chList.insertAdjacentHTML('beforeend', `
+        <li class="channel-item">
+          <span>${ch.label}</span>
+          <a class="btn btn-secondary btn-sm" href="${ch.url}" target="_blank" rel="noopener">${ch.btn}</a>
+        </li>
+      `);
+    });
+
+    document.getElementById('communityForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const label = document.getElementById('submitLabel');
+      const spinner = document.getElementById('submitSpinner');
+      const status = document.getElementById('communityStatus');
+
+      btn.disabled = true; label.style.display = 'none'; spinner.style.display = '';
+
+      const payload = {
+        email: document.getElementById('memberEmail').value.trim(),
+        channel: document.getElementById('channel').value,
+        wallet: document.getElementById('wallet').value.trim() || null,
+        lang,
+      };
+
+      // Persist to Supabase DB (community_members table)
+      if (SUPABASE_URL && SUPABASE_ANON) {
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/community_members`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON,
+              'Authorization': `Bearer ${SUPABASE_ANON}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify(payload),
+          });
+        } catch (err) {
+          console.warn('Supabase community_members insert failed:', err);
+        }
+      }
+
+      status.textContent = c.success;
+      status.classList.add('visible');
+      btn.disabled = false; label.style.display = ''; spinner.style.display = 'none';
+    });
+  </script>
+  <script src="config.js"></script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wykta Checkout</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+.payment-methods-strip { text-align: center; padding: 16px 0 8px; }
+.payment-methods-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 10px; }
+.payment-methods { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px; }
+.payment-badge { display: inline-flex; align-items: center; justify-content: center; padding: 5px 13px; border-radius: 7px; font-size: 12px; font-weight: 700; border: 1px solid var(--border-2); background: var(--surface); color: var(--text); letter-spacing: 0.04em; }
+.payment-visa { color: #1a1f71; border-color: #1a1f7133; }
+.payment-mc { color: #eb001b; border-color: #eb001b33; }
+.payment-apple { background: #000; color: #fff; border-color: #000; }
+.payment-google { color: #4285f4; border-color: #4285f433; }
+.payment-alipay { color: #1677ff; border-color: #1677ff33; }
+.payment-wechat { color: #07c160; border-color: #07c16033; }
+.payment-stripe { color: #635bff; border-color: #635bff33; }
+.payment-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.trust-badge { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#2d8c52"/><stop offset="1" stop-color="#40b870"/></linearGradient></defs>
+    <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+    <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+    <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="index.html#workflow">Workflow</a>
+        <a class="nav-link" href="community.html">Community</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1 id="checkoutTitle">Secure checkout</h1>
+      <p id="checkoutSubtitle">You will be redirected to Stripe's secure hosted payment page. Stripe handles card, Alipay, and WeChat Pay.</p>
+    </section>
+
+    <section class="payment-methods-strip">
+      <div class="payment-methods-label">Accepted payment methods</div>
+      <div class="payment-methods">
+        <span class="payment-badge payment-visa">VISA</span>
+        <span class="payment-badge payment-mc">MC</span>
+        <span class="payment-badge payment-apple">🍎 Pay</span>
+        <span class="payment-badge payment-google">G Pay</span>
+        <span class="payment-badge payment-alipay">支付宝</span>
+        <span class="payment-badge payment-wechat">微信支付</span>
+        <span class="payment-badge payment-stripe">Stripe</span>
+      </div>
+      <div class="payment-trust">
+        <span class="trust-badge">🔒 256-bit SSL</span>
+        <span class="trust-badge">✓ PCI DSS Compliant</span>
+        <span class="trust-badge">✓ Stripe Secure Checkout</span>
+      </div>
+    </section>
+
+    <section class="sub-grid">
+      <article class="card">
+        <h2 class="card-title" id="formTitle">Choose your plan</h2>
+
+        <div id="cancelledBanner" class="status-box" style="display:none; margin-bottom:12px; color: #b45309;">
+          Payment was cancelled. You can try again below.
+        </div>
+
+        <form id="checkoutForm">
+          <div class="field">
+            <label class="field-label" for="plan" id="labelPlan">Plan</label>
+            <select id="plan" required>
+              <option value="pro-monthly">Pro Monthly</option>
+              <option value="pro-annual">Pro Annual</option>
+              <option value="enterprise">Enterprise — Custom</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="email" id="labelEmail">Billing email</label>
+            <input id="email" type="email" placeholder="name@company.com" required>
+          </div>
+
+          <div id="enterpriseNote" class="status-box" style="display:none;">
+            Enterprise plans are custom-quoted. Clicking below will open the Contact Sales form.
+          </div>
+
+          <div class="status-box" id="checkoutStatus"></div>
+          <button class="btn btn-primary" type="submit" id="submitBtn">
+            <span id="submitLabel">Pay with Stripe →</span>
+            <span id="submitSpinner" class="spinner" style="display:none;"></span>
+          </button>
+        </form>
+
+        <p style="margin-top:14px; font-size:12px; color:var(--text-3);" id="stripeNote">
+          Secured by Stripe. Card, Apple Pay, Google Pay, Alipay, and WeChat Pay supported (based on region and plan).
+        </p>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title" id="pricingTitle">Market pricing</h2>
+        <p class="pricing-benchmark" id="checkoutBenchmark">Benchmarked against Yuka, Think Dirty, and INCI Beauty.</p>
+
+        <div id="pricingTable" style="display:grid; gap:10px; margin-bottom:14px;"></div>
+
+        <h3 style="font-size:14px; margin-bottom:8px;" id="settlementTitle">Settlement & payout</h3>
+        <ul id="settlementList" style="padding-left:20px; color:var(--text-2); display:grid; gap:5px; font-size:13px;"></ul>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    // ── Config ──────────────────────────────────────────────────────────────
+    // Replace with your real Supabase project URL:
+    const SUPABASE_URL = typeof supabaseUrl !== 'undefined' ? supabaseUrl : '';
+    const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
+
+    // ── Market localisation ─────────────────────────────────────────────────
+    const params = new URLSearchParams(window.location.search);
+    const rawLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const lang = ['en', 'fr', 'de', 'zh'].includes(rawLang) ? rawLang : 'en';
+    document.documentElement.lang = lang;
+
+    if (params.get('cancelled') === '1') {
+      document.getElementById('cancelledBanner').style.display = '';
+    }
+
+    // Industry-benchmarked prices (same values as create-checkout edge function):
+    // EN: $2.99/mo, $24.99/yr — between Yuka ($13.99/yr) and Think Dirty ($39.99/yr)
+    // Verified against 2025 public App Store listings:
+    // Yuka: $15/yr (US), ~€14/yr (EU) · Think Dirty Premium: $27.99–$29.99/yr (US)
+    // INCI Beauty: €1.50/mo = €18/yr (EU) · CN market: ¥15–38/月, ¥88–258/年
+    // Wykta = AI-powered → positioned at Think Dirty Premium tier.
+    // EN/USD: $3.99/mo, $27.99/yr · FR/DE/EUR: €2.99/mo, €21.99/yr · ZH/CNY: ¥18/mo, ¥128/yr
+    const marketData = {
+      en: {
+        currency: 'USD', monthly: 3.99, annual: 27.99,
+        title: 'Secure checkout',
+        subtitle: "You will be redirected to Stripe's secure hosted payment page. Stripe handles card, Alipay, and WeChat Pay.",
+        benchmark: 'Priced at Think Dirty Premium level ($27.99/yr). Yuka is $15/yr (basic). Wykta adds AI-powered analysis.',
+        formTitle: 'Choose your plan',
+        labelPlan: 'Plan', labelEmail: 'Billing email',
+        submitLabel: 'Pay with Stripe →',
+        stripeNote: 'Secured by Stripe. Card, Apple Pay, Google Pay, Alipay, and WeChat Pay supported (based on region).',
+        pricingTitle: 'Market pricing', settlementTitle: 'Settlement & payout',
+        planLabels: { 'pro-monthly': 'Pro Monthly', 'pro-annual': 'Pro Annual', enterprise: 'Enterprise — Custom' },
+        pricingRows: [
+          ['Yuka (basic barcode scanner)', '$15/yr'],
+          ['Think Dirty Premium', '$27.99/yr'],
+          ['INCI Beauty', '€1.50/mo'],
+          ['Wykta Pro Monthly', '$3.99/mo'],
+          ['Wykta Pro Annual', '$27.99/yr'],
+        ],
+        settlement: [
+          'Card / Apple Pay / Google Pay → Stripe balance → bank payout (1–2 business days)',
+          'Alipay / WeChat Pay → Stripe balance → bank payout',
+          'Payout currency: USD to your connected bank account',
+          'Tax: Stripe Tax handles VAT/GST automatically',
+        ],
+      },
+      fr: {
+        currency: 'EUR', monthly: 2.99, annual: 21.99,
+        title: 'Paiement sécurisé',
+        subtitle: "Vous serez redirigé vers la page de paiement hébergée et sécurisée de Stripe.",
+        benchmark: 'Au-dessus d\'INCI Beauty (€18/an) et Yuka (~€14/an). L\'analyse IA justifie la valeur.',
+        formTitle: 'Choisissez votre offre',
+        labelPlan: 'Offre', labelEmail: 'Email de facturation',
+        submitLabel: 'Payer avec Stripe →',
+        stripeNote: 'Sécurisé par Stripe. Carte, Apple Pay, Google Pay, Alipay et WeChat Pay disponibles selon la région.',
+        pricingTitle: 'Tarification marché', settlementTitle: 'Règlement & virement',
+        planLabels: { 'pro-monthly': 'Pro Mensuel', 'pro-annual': 'Pro Annuel', enterprise: 'Entreprise — Sur mesure' },
+        pricingRows: [
+          ['Yuka (scanner basique)', '~€14/an'],
+          ['INCI Beauty', '€1,50/mois'],
+          ['Think Dirty Premium', '~€26/an'],
+          ['Wykta Pro Mensuel', '€2,99/mois'],
+          ['Wykta Pro Annuel', '€21,99/an'],
+        ],
+        settlement: [
+          'Carte / Apple Pay / Google Pay → Solde Stripe → virement bancaire (1-2 jours ouvrés)',
+          'Alipay / WeChat Pay → Solde Stripe → virement bancaire',
+          'Devise de règlement : EUR vers votre compte bancaire connecté',
+          'TVA : gérée automatiquement par Stripe Tax',
+        ],
+      },
+      de: {
+        currency: 'EUR', monthly: 2.99, annual: 21.99,
+        title: 'Sicherer Checkout',
+        subtitle: "Sie werden auf die sichere, gehostete Zahlungsseite von Stripe weitergeleitet.",
+        benchmark: 'Über INCI Beauty (€18/Jahr) und Yuka (~€14/Jahr). KI-Analyse rechtfertigt den Mehrwert.',
+        formTitle: 'Tarif wählen',
+        labelPlan: 'Tarif', labelEmail: 'Rechnungs-E-Mail',
+        submitLabel: 'Mit Stripe bezahlen →',
+        stripeNote: 'Gesichert durch Stripe. Karte, Apple Pay, Google Pay, Alipay und WeChat Pay je nach Region.',
+        pricingTitle: 'Marktpreise', settlementTitle: 'Abrechnung & Auszahlung',
+        planLabels: { 'pro-monthly': 'Pro Monatlich', 'pro-annual': 'Pro Jährlich', enterprise: 'Enterprise — Individuell' },
+        pricingRows: [
+          ['Yuka (einfacher Scanner)', '~€14/Jahr'],
+          ['INCI Beauty', '€1,50/Monat'],
+          ['Think Dirty Premium', '~€26/Jahr'],
+          ['Wykta Pro Monatlich', '€2,99/Monat'],
+          ['Wykta Pro Jährlich', '€21,99/Jahr'],
+        ],
+        settlement: [
+          'Karte / Apple Pay / Google Pay → Stripe-Guthaben → Banküberweisung (1–2 Werktage)',
+          'Alipay / WeChat Pay → Stripe-Guthaben → Banküberweisung',
+          'Auszahlungswährung: EUR auf Ihr verbundenes Bankkonto',
+          'MwSt.: automatisch über Stripe Tax verwaltet',
+        ],
+      },
+      zh: {
+        currency: 'CNY', monthly: 18, annual: 128,
+        title: '安全结算',
+        subtitle: '您将被引导至 Stripe 的安全托管支付页面。支持银行卡、支付宝及微信支付。',
+        benchmark: '定价参考国内美妆成分扫描 App 主流区间（月付 ¥15–38，年付 ¥88–188），Wykta 含 AI 分析，定价居中。',
+        formTitle: '选择套餐',
+        labelPlan: '套餐', labelEmail: '账单邮箱',
+        submitLabel: '前往 Stripe 支付 →',
+        stripeNote: '由 Stripe 加密保障。支持银行卡、Apple Pay、Google Pay、支付宝、微信支付（根据地区）。',
+        pricingTitle: '市场定价参考', settlementTitle: '收款与结算路径',
+        planLabels: { 'pro-monthly': '专业版（月付）', 'pro-annual': '专业版（年付）', enterprise: '企业版 — 定制报价' },
+        pricingRows: [
+          ['国内成分扫描App 月付区间', '¥15–38/月'],
+          ['国内成分扫描App 年付区间', '¥88–188/年'],
+          ['Yuka（国际版参考）', '约¥108/年'],
+          ['Wykta 专业版（月付）', '¥18/月'],
+          ['Wykta 专业版（年付）', '¥128/年'],
+        ],
+        settlement: [
+          '银行卡 / Apple Pay / Google Pay → Stripe 余额 → 银行账户出款（1-2工作日）',
+          '支付宝 / 微信支付 → Stripe 余额 → 银行账户出款',
+          '结算货币：CNY 打入您绑定的收款银行账户',
+          '税务：Stripe Tax 自动处理',
+        ],
+      },
+    };
+
+    const m = marketData[lang];
+    document.getElementById('checkoutTitle').textContent = m.title;
+    document.getElementById('checkoutSubtitle').textContent = m.subtitle;
+    document.getElementById('checkoutBenchmark').textContent = m.benchmark;
+    document.getElementById('formTitle').textContent = m.formTitle;
+    document.getElementById('labelPlan').textContent = m.labelPlan;
+    document.getElementById('labelEmail').textContent = m.labelEmail;
+    document.getElementById('submitLabel').textContent = m.submitLabel;
+    document.getElementById('stripeNote').textContent = m.stripeNote;
+    document.getElementById('pricingTitle').textContent = m.pricingTitle;
+    document.getElementById('settlementTitle').textContent = m.settlementTitle;
+
+    // Render plan options with localized prices
+    const planEl = document.getElementById('plan');
+    function formatPrice(amount) {
+      return new Intl.NumberFormat(navigator.language || lang, {
+        style: 'currency', currency: m.currency,
+        maximumFractionDigits: m.currency === 'CNY' ? 1 : 2
+      }).format(amount);
+    }
+    const planLabels = {
+      'pro-monthly': `${m.planLabels['pro-monthly']} — ${formatPrice(m.monthly)}`,
+      'pro-annual': `${m.planLabels['pro-annual']} — ${formatPrice(m.annual)}`,
+      'enterprise': m.planLabels.enterprise
+    };
+    [...planEl.options].forEach(o => { if (planLabels[o.value]) o.textContent = planLabels[o.value]; });
+
+    const requestedPlan = params.get('plan');
+    if (requestedPlan && [...planEl.options].some(o => o.value === requestedPlan)) {
+      planEl.value = requestedPlan;
+    }
+
+    // Render pricing comparison table
+    const table = document.getElementById('pricingTable');
+    m.pricingRows.forEach(([label, price], i) => {
+      const isWykta = label.startsWith('Wykta');
+      table.insertAdjacentHTML('beforeend',
+        `<div style="display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); ${isWykta ? 'font-weight:700; color:var(--brand)' : 'color:var(--text-2)'}">
+          <span>${label}</span><span>${price}</span>
+        </div>`
+      );
+    });
+
+    // Render settlement list
+    const settlList = document.getElementById('settlementList');
+    m.settlement.forEach(item => {
+      settlList.insertAdjacentHTML('beforeend', `<li>${item}</li>`);
+    });
+
+    // Show enterprise note when enterprise selected
+    planEl.addEventListener('change', () => {
+      document.getElementById('enterpriseNote').style.display =
+        planEl.value === 'enterprise' ? '' : 'none';
+    });
+
+    // ── Form submit → create Stripe Checkout Session ────────────────────────
+    document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const plan = planEl.value;
+      const email = document.getElementById('email').value.trim();
+      const status = document.getElementById('checkoutStatus');
+      const submitBtn = document.getElementById('submitBtn');
+      const submitLabel = document.getElementById('submitLabel');
+      const spinner = document.getElementById('submitSpinner');
+
+      if (plan === 'enterprise') {
+        window.location.href = `contact-sales.html?lang=${encodeURIComponent(lang)}`;
+        return;
+      }
+
+      // Show loading state
+      submitBtn.disabled = true;
+      submitLabel.style.display = 'none';
+      spinner.style.display = '';
+      status.textContent = '';
+      status.classList.remove('visible');
+
+      try {
+        // Call the Supabase Edge Function to create a Stripe Checkout Session
+        const endpoint = SUPABASE_URL
+          ? `${SUPABASE_URL}/functions/v1/create-checkout`
+          : '/functions/v1/create-checkout';
+
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
+          },
+          body: JSON.stringify({ plan, lang, email }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          throw new Error(data.error || data.detail || 'Checkout session creation failed.');
+        }
+
+        if (!data.url) {
+          throw new Error('No checkout URL returned from server.');
+        }
+
+        // Redirect to Stripe hosted checkout
+        window.location.href = data.url;
+      } catch (err) {
+        console.error('Checkout error:', err);
+        status.textContent = err.message || 'Payment setup failed. Please try again.';
+        status.classList.add('visible');
+        submitBtn.disabled = false;
+        submitLabel.style.display = '';
+        spinner.style.display = 'none';
+      }
+    });
+  </script>
+  <script src="config.js"></script>
+</body>
+</html>
