@@ -5,11 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wykta Checkout</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+.payment-methods-strip { text-align: center; padding: 16px 0 8px; }
+.payment-methods-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 10px; }
+.payment-methods { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px; }
+.payment-badge { display: inline-flex; align-items: center; justify-content: center; padding: 5px 13px; border-radius: 7px; font-size: 12px; font-weight: 700; border: 1px solid var(--border-2); background: var(--surface); color: var(--text); letter-spacing: 0.04em; }
+.payment-visa { color: #1a1f71; border-color: #1a1f7133; }
+.payment-mc { color: #eb001b; border-color: #eb001b33; }
+.payment-apple { background: #000; color: #fff; border-color: #000; }
+.payment-google { color: #4285f4; border-color: #4285f433; }
+.payment-alipay { color: #1677ff; border-color: #1677ff33; }
+.payment-wechat { color: #07c160; border-color: #07c16033; }
+.payment-stripe { color: #635bff; border-color: #635bff33; }
+.payment-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+.trust-badge { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
+  </style>
 </head>
 <body>
   <nav class="nav">
     <div class="nav-inner">
-      <a class="brand" href="index.html"><div class="brand-mark">✓</div><span>Wykta</span></a>
+      <a class="brand" href="index.html"><div class="brand-mark">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#2d8c52"/><stop offset="1" stop-color="#40b870"/></linearGradient></defs>
+    <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+    <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+    <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div><span>Wykta</span></a>
       <div class="nav-right">
         <a class="nav-link" href="index.html#workflow">Workflow</a>
         <a class="nav-link" href="community.html">Community</a>
@@ -21,6 +43,24 @@
     <section class="sub-hero">
       <h1 id="checkoutTitle">Secure checkout</h1>
       <p id="checkoutSubtitle">You will be redirected to Stripe's secure hosted payment page. Stripe handles card, Alipay, and WeChat Pay.</p>
+    </section>
+
+    <section class="payment-methods-strip">
+      <div class="payment-methods-label">Accepted payment methods</div>
+      <div class="payment-methods">
+        <span class="payment-badge payment-visa">VISA</span>
+        <span class="payment-badge payment-mc">MC</span>
+        <span class="payment-badge payment-apple">🍎 Pay</span>
+        <span class="payment-badge payment-google">G Pay</span>
+        <span class="payment-badge payment-alipay">支付宝</span>
+        <span class="payment-badge payment-wechat">微信支付</span>
+        <span class="payment-badge payment-stripe">Stripe</span>
+      </div>
+      <div class="payment-trust">
+        <span class="trust-badge">🔒 256-bit SSL</span>
+        <span class="trust-badge">✓ PCI DSS Compliant</span>
+        <span class="trust-badge">✓ Stripe Secure Checkout</span>
+      </div>
     </section>
 
     <section class="sub-grid">
