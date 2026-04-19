@@ -58,7 +58,7 @@ function normalizeLocale(lang: string): keyof typeof PLANS {
   return "en"
 }
 
-function normalizeSiteUrl(rawUrl?: string | null): string | null {
+function validateAndNormalizeSiteUrl(rawUrl?: string | null): string | null {
   if (!rawUrl) return null
   try {
     const u = new URL(rawUrl)
@@ -82,16 +82,16 @@ function inferSiteUrlFromHeaders(req: Request): string | null {
     }
   }
   const origin = req.headers.get("origin")
-  return normalizeSiteUrl(origin)
+  return validateAndNormalizeSiteUrl(origin)
 }
 
 function isAllowedSiteUrlForRequest(siteUrl: string, req: Request): boolean {
-  const candidate = normalizeSiteUrl(siteUrl)
+  const candidate = validateAndNormalizeSiteUrl(siteUrl)
   if (!candidate) return false
   const candidateOrigin = new URL(candidate).origin
   const originHeader = req.headers.get("origin")
   if (originHeader) {
-    const origin = normalizeSiteUrl(originHeader)
+    const origin = validateAndNormalizeSiteUrl(originHeader)
     if (!origin || new URL(origin).origin !== candidateOrigin) return false
   }
   const referer = req.headers.get("referer")
@@ -120,14 +120,14 @@ serve(async (req) => {
       )
     }
 
-    const defaultSiteUrl = normalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://wykta.app"
+    const defaultSiteUrl = validateAndNormalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://wykta.app"
     const body = await req.json()
     const { plan, lang, email, site_url } = body as { plan: string; lang: string; email?: string; site_url?: string }
 
     const locale = normalizeLocale(lang)
     const localeMap = PLANS[locale]
     const planConfig = localeMap?.[plan]
-    const requestedSiteUrl = normalizeSiteUrl(site_url)
+    const requestedSiteUrl = validateAndNormalizeSiteUrl(site_url)
     const siteUrl =
       (requestedSiteUrl && isAllowedSiteUrlForRequest(requestedSiteUrl, req) ? requestedSiteUrl : null) ||
       inferSiteUrlFromHeaders(req) ||
