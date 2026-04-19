@@ -370,13 +370,14 @@
           ? `${SUPABASE_URL}/functions/v1/create-checkout`
           : '/functions/v1/create-checkout';
 
+        const siteBaseUrl = new URL('.', window.location.href).href.replace(/\/$/, '');
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
           },
-          body: JSON.stringify({ plan, lang, email }),
+          body: JSON.stringify({ plan, lang, email, site_url: siteBaseUrl }),
         });
 
         const data = await res.json();
