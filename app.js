@@ -981,8 +981,9 @@ function detectInputLanguage(text = "", ingredients = []){
   // are predominantly Latin-script vs CJK.  This gives Latin tokens a fair weight
   // against per-character Chinese scoring in mixed inputs
   // (e.g. "aqua, 芦荟, acid, retinol, peptide" → 4 Latin tokens vs 1 CJK → English wins).
+  // Reuse ingredientSplitPunctuationPattern plus whitespace as delimiters.
   const tokenWords = rawSample
-    .split(/[\s,，;；、\n\r\t.。|/\\()（）\[\]【】·•]+/)
+    .split(ingredientSplitPunctuationPattern)
     .map(tok => tok.trim())
     .filter(tok => tok.length >= 2)
   let latinTokenCount = 0
@@ -990,8 +991,9 @@ function detectInputLanguage(text = "", ingredients = []){
   for (const tok of tokenWords) {
     const cjkChars = (tok.match(/[\u4e00-\u9fa5]/g) || []).length
     const latChars = (tok.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length
+    // Skip tokens with equal counts — no clear majority, so don't bias either language.
     if (cjkChars > latChars) cjkTokenCount++
-    else if (latChars > 0) latinTokenCount++
+    else if (latChars > cjkChars && latChars > 0) latinTokenCount++
   }
   if (latinTokenCount > 0) scores.en += latinTokenCount * LANGUAGE_SCORE_WEIGHTS.tokenScript
   if (cjkTokenCount > 0) scores.zh += cjkTokenCount * LANGUAGE_SCORE_WEIGHTS.tokenScript
