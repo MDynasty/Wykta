@@ -58,6 +58,56 @@ function normalizeLocale(lang: string): keyof typeof PLANS {
   return "en"
 }
 
+function validateAndNormalizeSiteUrl(rawUrl?: string | null): string | null {
+  if (!rawUrl) return null
+  try {
+    const u = new URL(rawUrl)
+    if (!/^https?:$/.test(u.protocol)) return null
+    const normalizedPath = u.pathname.replace(/\/+$/, "")
+    return `${u.origin}${normalizedPath}`
+  } catch {
+    return null
+  }
+}
+
+function inferSiteUrlFromHeaders(req: Request): string | null {
+  const referer = req.headers.get("referer")
+  if (referer) {
+    try {
+      const u = new URL(referer)
+      const basePath = u.pathname.endsWith("/")
+        ? u.pathname.replace(/\/+$/, "")
+        : u.pathname.replace(/\/[^/]*$/, "")
+      return `${u.origin}${basePath}`
+    } catch {
+      // no-op: fallback to Origin below
+    }
+  }
+  const origin = req.headers.get("origin")
+  return validateAndNormalizeSiteUrl(origin)
+}
+
+function isAllowedSiteUrlForRequest(siteUrl: string, req: Request): boolean {
+  const candidate = validateAndNormalizeSiteUrl(siteUrl)
+  if (!candidate) return false
+  const candidateOrigin = new URL(candidate).origin
+  const originHeader = req.headers.get("origin")
+  if (originHeader) {
+    const origin = validateAndNormalizeSiteUrl(originHeader)
+    if (!origin || new URL(origin).origin !== candidateOrigin) return false
+  }
+  const referer = req.headers.get("referer")
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin
+      if (refererOrigin !== candidateOrigin) return false
+    } catch {
+      return false
+    }
+  }
+  return true
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
@@ -72,13 +122,18 @@ serve(async (req) => {
       )
     }
 
-    const siteUrl = Deno.env.get("SITE_URL") || "https://wykta.app"
+    const defaultSiteUrl = validateAndNormalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://wykta.app"
     const body = await req.json()
-    const { plan, lang, email } = body as { plan: string; lang: string; email?: string }
+    const { plan, lang, email, site_url } = body as { plan: string; lang: string; email?: string; site_url?: string }
 
     const locale = normalizeLocale(lang)
     const localeMap = PLANS[locale]
     const planConfig = localeMap?.[plan]
+    const requestedSiteUrl = validateAndNormalizeSiteUrl(site_url)
+    const siteUrl =
+      (requestedSiteUrl && isAllowedSiteUrlForRequest(requestedSiteUrl, req) ? requestedSiteUrl : null) ||
+      inferSiteUrlFromHeaders(req) ||
+      defaultSiteUrl
 
     if (!planConfig) {
       return new Response(

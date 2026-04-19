@@ -87,7 +87,7 @@
       if (!href || href.startsWith('#')) return href;
       if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
       try {
-        const url = new URL(href, window.location.origin);
+        const url = new URL(href, window.location.href);
         if (url.origin !== window.location.origin) return href;
         const page = url.pathname.split('/').pop() || 'index.html';
         const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html']);

@@ -118,6 +118,7 @@
     </section>
   </main>
 
+  <script src="config.js"></script>
   <script>
     // ── Config ──────────────────────────────────────────────────────────────
     // Replace with your real Supabase project URL:
@@ -135,7 +136,7 @@
       if (!href || href.startsWith('#')) return href;
       if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
       try {
-        const url = new URL(href, window.location.origin);
+        const url = new URL(href, window.location.href);
         if (url.origin !== window.location.origin) return href;
         const page = url.pathname.split('/').pop() || 'index.html';
         const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html']);
@@ -369,13 +370,14 @@
           ? `${SUPABASE_URL}/functions/v1/create-checkout`
           : '/functions/v1/create-checkout';
 
+        const siteUrl = new URL('.', window.location.href).href.replace(/\/$/, '');
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
           },
-          body: JSON.stringify({ plan, lang, email }),
+          body: JSON.stringify({ plan, lang, email, site_url: siteUrl }),
         });
 
         const data = await res.json();
@@ -400,7 +402,6 @@
       }
     });
   </script>
-  <script src="config.js"></script>
   <footer style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);margin-top:40px;">
     Wykta &copy; 2026 &nbsp;&middot;&nbsp;
     <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a> &nbsp;&middot;&nbsp;

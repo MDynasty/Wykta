@@ -2425,7 +2425,7 @@ function withLangQuery(href, lang = currentLanguage()) {
   if (/^(mailto:|tel:|javascript:)/i.test(href)) return href
   try {
     const normalizedLang = normalizeSupportedLanguage(lang)
-    const url = new URL(href, window.location.origin)
+    const url = new URL(href, window.location.href)
     if (url.origin !== window.location.origin) return href
     const page = url.pathname.split("/").pop() || "index.html"
     const localPages = new Set(["index.html", "checkout.html", "contact-sales.html", "community.html", "payment-success.html"])
@@ -2461,7 +2461,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Attach UTMs to all checkout links
     document.querySelectorAll('a[href*="checkout.html"]').forEach(el => {
       try {
-        const url = new URL(el.href, location.origin)
+        const rawHref = el.getAttribute("href")
+        if (!rawHref) return
+        const url = new URL(rawHref, window.location.href)
         utmKeys.forEach(k => {
           const v = sessionStorage.getItem(k)
           if (v) url.searchParams.set(k, v)

@@ -1,5 +1,2 @@
 # Cloudflare Pages – redirect rules
 # https://developers.cloudflare.com/pages/platform/redirects/
-
-# Redirect legacy GitHub Pages URLs to the canonical domain
-https://mdynasty.github.io/Wykta/* https://wykta.app/:splat 301

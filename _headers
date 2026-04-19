@@ -8,12 +8,13 @@
   Permissions-Policy: camera=self, microphone=(), geolocation=()
   X-XSS-Protection: 1; mode=block
 
-# Cache static assets aggressively; HTML is always revalidated
+# JS/CSS use no-cache so browsers revalidate on every HTML reload.
+# Files do not carry content hashes, so immutable caching would serve stale code after deploys.
 /*.js
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, no-cache
 
 /*.css
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, no-cache
 
 /*.png
   Cache-Control: public, max-age=31536000, immutable
