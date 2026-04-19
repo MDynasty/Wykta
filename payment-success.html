@@ -11,51 +11,153 @@
     <div class="nav-inner">
       <a class="brand" href="index.html"><div class="brand-mark">✓</div><span>Wykta</span></a>
       <div class="nav-right">
-        <a class="nav-link" href="community.html">Join Community</a>
+        <a class="nav-link" href="community.html">Community</a>
       </div>
     </div>
   </nav>
 
   <main class="sub-main">
-    <section class="sub-hero">
-      <h1>Payment completed</h1>
-      <p>Your subscription is active. Next step: join community and start using premium workflows.</p>
+    <section class="sub-hero" id="heroSection">
+      <h1 id="heroTitle">Verifying payment…</h1>
+      <p id="heroSubtitle">Please wait while we confirm your payment with Stripe.</p>
     </section>
 
-    <section class="card">
-      <h2 class="card-title">Receipt</h2>
+    <section class="card" id="receiptCard" style="display:none;">
+      <h2 class="card-title" id="receiptTitle">Receipt</h2>
       <div id="receipt" style="display:grid; gap:8px; color:var(--text-2);"></div>
       <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
-        <a class="btn btn-primary" href="community.html">Join Community</a>
+        <a class="btn btn-primary" id="communityBtn" href="community.html">Join Community</a>
         <a class="btn btn-secondary" href="index.html">Back to Home</a>
       </div>
+    </section>
+
+    <section class="card" id="errorCard" style="display:none;">
+      <h2 class="card-title">Payment not confirmed</h2>
+      <div id="errorMsg" style="color:var(--text-2); margin-bottom:16px;"></div>
+      <a class="btn btn-secondary" href="checkout.html">Return to checkout</a>
     </section>
   </main>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const paymentId = params.get('paymentId');
-    const receipt = document.getElementById('receipt');
+    // Replace with your real Supabase project URL (or load from config.js):
+    const SUPABASE_URL = typeof supabaseUrl !== 'undefined' ? supabaseUrl : '';
+    const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
 
-    if (!paymentId) {
-      receipt.innerHTML = '<p>No payment record was provided.</p>';
-    } else {
-      const raw = localStorage.getItem(`wykta_payment_${paymentId}`);
-      if (!raw) {
-        receipt.innerHTML = `<p>Payment ID: ${paymentId}</p><p>Record not found in this browser storage.</p>`;
-      } else {
-        const data = JSON.parse(raw);
-        receipt.innerHTML = `
-          <p><strong>Payment ID:</strong> ${data.paymentId}</p>
-          <p><strong>Plan:</strong> ${data.plan}</p>
-          <p><strong>Amount:</strong> ${data.amount}</p>
-          <p><strong>Method:</strong> ${data.method}</p>
-          <p><strong>Billing email:</strong> ${data.email}</p>
-          <p><strong>Paid at:</strong> ${new Date(data.paidAt).toLocaleString()}</p>
-          <p><strong>Settlement route:</strong> Payment gateway balance → merchant payout account.</p>
-        `;
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+    const lang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    document.documentElement.lang = ['en', 'fr', 'de', 'zh'].includes(lang) ? lang : 'en';
+
+    const copy = {
+      en: {
+        verifying: 'Verifying payment…', verifyingNote: 'Please wait while we confirm your payment with Stripe.',
+        heroSuccess: 'Payment completed ✓', heroSuccessNote: 'Your subscription is active.',
+        receiptTitle: 'Receipt', communityBtn: 'Join Community',
+        plan: 'Plan', amount: 'Amount', email: 'Billing email', method: 'Payment method',
+        date: 'Paid at', settlement: 'Settlement', settlementNote: 'Stripe balance → bank payout (1–2 business days)',
+        statusPaid: 'Paid', noSession: 'No session ID found. Please return to checkout.',
+        failed: 'Payment could not be verified. If you believe this is an error, contact support.',
+      },
+      fr: {
+        verifying: 'Vérification du paiement…', verifyingNote: 'Veuillez patienter pendant la confirmation Stripe.',
+        heroSuccess: 'Paiement confirmé ✓', heroSuccessNote: 'Votre abonnement est actif.',
+        receiptTitle: 'Reçu', communityBtn: 'Rejoindre la communauté',
+        plan: 'Offre', amount: 'Montant', email: 'Email de facturation', method: 'Mode de paiement',
+        date: 'Date', settlement: 'Règlement', settlementNote: 'Solde Stripe → virement bancaire (1–2 jours ouvrés)',
+        statusPaid: 'Payé', noSession: 'Aucun identifiant de session. Veuillez revenir au paiement.',
+        failed: 'Paiement non vérifié. En cas d\'erreur, contactez le support.',
+      },
+      de: {
+        verifying: 'Zahlung wird überprüft…', verifyingNote: 'Bitte warten, während die Zahlung von Stripe bestätigt wird.',
+        heroSuccess: 'Zahlung abgeschlossen ✓', heroSuccessNote: 'Ihr Abonnement ist aktiv.',
+        receiptTitle: 'Quittung', communityBtn: 'Community beitreten',
+        plan: 'Tarif', amount: 'Betrag', email: 'Rechnungs-E-Mail', method: 'Zahlungsart',
+        date: 'Bezahlt am', settlement: 'Abrechnung', settlementNote: 'Stripe-Guthaben → Banküberweisung (1–2 Werktage)',
+        statusPaid: 'Bezahlt', noSession: 'Keine Session-ID. Bitte kehren Sie zum Checkout zurück.',
+        failed: 'Zahlung konnte nicht verifiziert werden. Bitte kontaktieren Sie den Support.',
+      },
+      zh: {
+        verifying: '正在验证付款…', verifyingNote: '请稍候，我们正在通过 Stripe 确认您的付款。',
+        heroSuccess: '付款完成 ✓', heroSuccessNote: '您的订阅已激活。',
+        receiptTitle: '收据', communityBtn: '加入社区',
+        plan: '套餐', amount: '金额', email: '账单邮箱', method: '支付方式',
+        date: '付款时间', settlement: '结算路径', settlementNote: 'Stripe 余额 → 银行账户出款（1-2工作日）',
+        statusPaid: '已支付', noSession: '未找到会话 ID，请返回结算页。',
+        failed: '无法验证付款。如有疑问，请联系支持。',
+      },
+    };
+    const c = copy[document.documentElement.lang] || copy.en;
+
+    document.getElementById('heroTitle').textContent = c.verifying;
+    document.getElementById('heroSubtitle').textContent = c.verifyingNote;
+    document.getElementById('communityBtn').textContent = c.communityBtn;
+    if (document.getElementById('communityBtn'))
+      document.getElementById('communityBtn').href = `community.html?lang=${encodeURIComponent(lang)}`;
+
+    function showError(msg) {
+      document.getElementById('heroTitle').textContent = '⚠';
+      document.getElementById('heroSubtitle').textContent = '';
+      document.getElementById('errorMsg').textContent = msg;
+      document.getElementById('errorCard').style.display = '';
+    }
+
+    function showReceipt(data) {
+      document.getElementById('heroTitle').textContent = c.heroSuccess;
+      document.getElementById('heroSubtitle').textContent = c.heroSuccessNote;
+      document.getElementById('receiptTitle').textContent = c.receiptTitle;
+
+      const amountFormatted = new Intl.NumberFormat(navigator.language || lang, {
+        style: 'currency',
+        currency: (data.currency || 'usd').toUpperCase(),
+        maximumFractionDigits: 2,
+      }).format((data.amountTotal || 0) / 100);
+
+      document.getElementById('receipt').innerHTML = `
+        <p><strong>${c.plan}:</strong> ${data.productName || data.plan || ''}</p>
+        <p><strong>${c.amount}:</strong> ${amountFormatted}</p>
+        <p><strong>${c.email}:</strong> ${data.customerEmail || ''}</p>
+        <p><strong>${c.date}:</strong> ${data.createdAt ? new Date(data.createdAt).toLocaleString() : ''}</p>
+        <p><strong>${c.settlement}:</strong> ${c.settlementNote}</p>
+        <p><strong>Stripe Session:</strong> <code style="font-size:11px">${data.id || ''}</code></p>
+      `;
+      document.getElementById('receiptCard').style.display = '';
+    }
+
+    async function verifySession() {
+      if (!sessionId) {
+        showError(c.noSession);
+        return;
+      }
+
+      try {
+        const endpoint = SUPABASE_URL
+          ? `${SUPABASE_URL}/functions/v1/verify-session?session_id=${encodeURIComponent(sessionId)}`
+          : `/functions/v1/verify-session?session_id=${encodeURIComponent(sessionId)}`;
+
+        const res = await fetch(endpoint, {
+          headers: SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {},
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          showError(data.error || c.failed);
+          return;
+        }
+
+        if (data.paymentStatus !== 'paid' && data.status !== 'complete') {
+          showError(c.failed);
+          return;
+        }
+
+        showReceipt(data);
+      } catch (err) {
+        console.error('verify-session error:', err);
+        showError(c.failed);
       }
     }
+
+    verifySession();
   </script>
+  <script src="config.js"></script>
 </body>
 </html>

@@ -1,229 +1,128 @@
-# Wykta Database & AI Setup Guide
+# Wykta – Backend & Payment Setup Guide
 
-## Current Status
+## Architecture Overview
 
-- ✅ **Supabase credentials** configured in `config.js`
-- ✅ **Edge Function code** lives in `supabase/functions/wykta-backend/index.ts`
-- ✅ **Fallback chain**: local DB → Open Food Facts taxonomy → Open Food Facts search → Open Beauty Facts
-- ⚠️ **Edge Function must be deployed** to the Supabase project (one-time step below)
+```
+User browser
+  └─ checkout.html
+       └─ POST /functions/v1/create-checkout  (Supabase Edge Function)
+            └─ Stripe Checkout Session API
+                 └─ Stripe hosted payment page (card / Alipay / WeChat Pay)
+                      ├─ Success → payment-success.html?session_id=…
+                      │     └─ GET /functions/v1/verify-session  → show real receipt
+                      └─ Stripe Webhook → /functions/v1/stripe-webhook
+                            └─ Inserts/updates `subscriptions` table in Supabase DB
+```
 
-## Deploy the Edge Function (One-Time Setup)
+---
 
-### Automatic (GitHub Actions)
+## Step 1 – Supabase project
 
-The repo includes `.github/workflows/deploy-edge-function.yml` which deploys on every push to `main` that touches `supabase/functions/`.
+1. Create a project at https://supabase.com
+2. Copy **Project URL** and **anon public key** into `config.js`:
+   ```js
+   const supabaseUrl = "https://<project-ref>.supabase.co"
+   const supabaseKey = "<anon-public-key>"
+   ```
+3. Run the database migration in **SQL Editor**:
+   - Open `supabase/migrations/001_subscriptions.sql` and execute it.
+   - This creates `subscriptions`, `sales_leads`, and `community_members` tables.
 
-**Required GitHub secret:**
+---
 
-1. Go to your repo → **Settings → Secrets and variables → Actions → New repository secret**
-2. Name: `SUPABASE_ACCESS_TOKEN`
-3. Value: your Supabase personal access token → get it at https://supabase.com/dashboard/account/tokens
+## Step 2 – Stripe account
 
-**Required for AI API connection (recommended):**
+1. Sign up at https://stripe.com (use Stripe Connect for multi-currency payouts).
+2. Activate payment methods you need in **Dashboard → Settings → Payment methods**:
+   - Cards (enabled by default)
+   - Alipay (required for zh/CNY market)
+   - WeChat Pay (required for zh/CNY market)
+3. Get your **Secret key** from **Developers → API keys** (`sk_live_…` or `sk_test_…`).
+4. Create a **Webhook endpoint**:
+   - URL: `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
+   - Events to listen for:
+     - `checkout.session.completed`
+     - `customer.subscription.deleted`
+5. Copy the **Signing secret** (`whsec_…`) for the webhook.
 
-4. Name: `OPENAI_API_KEY`
-5. Value: your OpenAI API key (`sk-...`)
+> **Payout:** Funds settle to your Stripe balance and are automatically swept to your
+> connected bank account on your configured payout schedule (daily or weekly).
+> Stripe supports USD, EUR, CNY (via Alipay/WeChat) → converted to your payout currency.
 
-**Optional:**
+---
 
-6. Name: `OPENAI_MODEL`
-7. Value: model name like `gpt-4o-mini` (defaults to `gpt-4o-mini` if omitted)
+## Step 3 – GitHub Secrets (CI/CD)
 
-Once the secret is added, push any change to `supabase/functions/` (or trigger the workflow manually) and the function will deploy automatically.
-The deploy workflow now syncs these secrets to Supabase Edge Function runtime so AI calls can execute server-side.
+Go to **Repository → Settings → Secrets and variables → Actions** and add:
 
-### Manual (Supabase CLI)
+| Secret name             | Value                             | Required |
+|-------------------------|-----------------------------------|----------|
+| `SUPABASE_ACCESS_TOKEN` | Supabase personal access token    | ✅        |
+| `OPENAI_API_KEY`        | OpenAI API key (`sk-…`)           | Optional |
+| `OPENAI_MODEL`          | e.g. `gpt-4o-mini`                | Optional |
+| `STRIPE_SECRET_KEY`     | Stripe secret key (`sk_live_…`)   | ✅        |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret     | ✅        |
+| `SITE_URL`              | Your deployed site URL (no slash) | ✅        |
+
+Push any change to `supabase/functions/**` to trigger the deploy workflow,
+which deploys all four edge functions and syncs all secrets to the Supabase runtime.
+
+---
+
+## Step 4 – Manual deploy (Supabase CLI)
 
 ```bash
-# Install CLI
 npm install -g supabase
-
-# Log in
 supabase login
+PROJECT=rryuicpnjxxzsmkotgrj
 
-# Deploy
-supabase functions deploy wykta-backend --project-ref rryuicpnjxxzsmkotgrj --no-verify-jwt
+# Deploy all edge functions
+supabase functions deploy wykta-backend     --project-ref $PROJECT --no-verify-jwt
+supabase functions deploy create-checkout  --project-ref $PROJECT --no-verify-jwt
+supabase functions deploy stripe-webhook   --project-ref $PROJECT --no-verify-jwt
+supabase functions deploy verify-session   --project-ref $PROJECT --no-verify-jwt
 
-# Set AI secrets in Supabase runtime (required for OpenAI-powered analysis)
-supabase secrets set OPENAI_API_KEY=sk-... --project-ref rryuicpnjxxzsmkotgrj
-
-# Optional model override
-supabase secrets set OPENAI_MODEL=gpt-4o-mini --project-ref rryuicpnjxxzsmkotgrj
+# Sync secrets
+supabase secrets set STRIPE_SECRET_KEY=sk_live_...     --project-ref $PROJECT
+supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...   --project-ref $PROJECT
+supabase secrets set SITE_URL=https://wykta.app        --project-ref $PROJECT
+supabase secrets set OPENAI_API_KEY=sk-...             --project-ref $PROJECT
 ```
 
 ---
 
-## Why ingredients might still fall back to open databases
+## Industry-Benchmarked Pricing
 
-If the Edge Function is deployed but analysis still uses the free-DB path, check:
+| Market  | Currency | Monthly | Annual  | Competitor reference                                    |
+|---------|----------|---------|---------|--------------------------------------------------------|
+| EN (US) | USD      | $2.99   | $24.99  | Yuka $13.99/yr · Think Dirty $39.99/yr                 |
+| FR (EU) | EUR      | €2.49   | €19.99  | Yuka ~€14/yr · INCI Beauty €1.50/mo · Think Dirty ~€37/yr |
+| DE (EU) | EUR      | €2.49   | €19.99  | Same EU range as FR                                     |
+| ZH (CN) | CNY      | ¥9.90   | ¥68     | CN beauty-app market: ¥9.9–29.9/mo mainstream range     |
 
-1. **Browser console** — look for `"Supabase connected"` and any `"AI function error"` messages
-2. **Supabase dashboard → Edge Functions → wykta-backend → Logs** — confirm requests arrive and succeed
-3. **CORS** — the function already returns `Access-Control-Allow-Origin: *`
-
----
-
-### Option 2: Extend the Built-in Local Database (Free, No Setup)
-
-**What you get:**
-- ✅ Unlimited ingredient analysis
-- ✅ AI-powered explanations
-- ✅ Multi-language support
-- ✅ Can analyze ANY ingredient
-- ⚠️ Requires Supabase account ($25/month)
-
-**Steps:**
-
-1. **Create Supabase Project**
-   ```
-   https://supabase.com → Create new project
-   ```
-
-2. **Create Edge Function**
-   - Go to: SQL Editor → Create new function → `Wykta-backend`
-   
-3. **Replace `config.example.js` with your credentials**
-   ```javascript
-   const supabaseUrl = "https://YOUR_PROJECT.supabase.co"
-   const supabaseKey = "YOUR_ANON_KEY"
-   ```
-
-4. **Example Edge Function Code:**
-
-```typescript
-import Anthropic from "@anthropic-ai/sdk";
-
-const client = new Anthropic();
-
-export default async (req: Request) => {
-  try {
-    const { ingredients, targetLanguage = "English" } = await req.json();
-
-    const message = await client.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 1024,
-      messages: [
-        {
-          role: "user",
-          content: `Analyze these ingredients in detail (respond in ${targetLanguage}):
-
-${ingredients}
-
-For each ingredient, provide:
-1. What it is
-2. Its purpose in food
-3. Safety profile
-4. Any dietary concerns
-
-Format clearly with emojis.`,
-        },
-      ],
-    });
-
-    const analysis = message.content[0].type === "text" ? message.content[0].text : "";
-    return new Response(JSON.stringify({ analysis }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
-};
-```
+Wykta is AI-powered (camera OCR + multi-source ingredient analysis) which justifies
+positioning above Yuka and INCI Beauty while staying accessible vs Think Dirty.
 
 ---
 
-### Option 3: Use Free Ingredient API
+## Payment Flow Summary
 
-**Use EDAMAM Food Database (Free tier)**
-
-```javascript
-const API_KEY = "YOUR_API_KEY"
-const APP_ID = "YOUR_APP_ID"
-
-async function analyzeWithAPI(ingredient) {
-  const response = await fetch(
-    `https://api.edamam.com/api/food-database/v2/parser?query=${ingredient}&type=generic&app_id=${APP_ID}&app_key=${API_KEY}`
-  )
-  return response.json()
-}
-```
-
-Sign up: https://developer.edamam.com/food-database-api
+1. User opens `checkout.html`, selects plan + enters email.
+2. Browser calls `create-checkout` Edge Function (POST).
+3. Edge function creates a Stripe Checkout Session (using `price_data` inline pricing).
+4. User is redirected to **Stripe's hosted page** — Stripe handles all PCI compliance.
+5. After payment:
+   - Stripe redirects user to `payment-success.html?session_id=…`
+   - `payment-success.html` calls `verify-session` to confirm payment and show receipt.
+   - Stripe fires `checkout.session.completed` webhook → `stripe-webhook` edge function
+     → inserts record into `subscriptions` table.
+6. **Money lands in:** Stripe balance → automatically swept to your bank account.
 
 ---
 
-### Option 4: Public Ingredient Database API
+## Troubleshooting
 
-**Use Open Food Facts API (Completely Free)**
-
-```javascript
-async function searchOpenFoodFacts(ingredient) {
-  const response = await fetch(
-    `https://world.openfoodfacts.org/api/v0/product/search?q=${ingredient}`
-  )
-  return response.json()
-}
-```
-
-No authentication needed. Perfect for quick lookups!
-
----
-
-## Quick Test
-
-Test the current implementation:
-
-```javascript
-// In browser console
-testOCR("water glycérine glykolsäure salt sugar")
-
-// Output will show:
-// ✅ 5 Safe ingredients found
-// ✅ 0 warnings
-// ❓ 0 unknown
-```
-
----
-
-## Recommended Path Forward
-
-**For MVP:**
-1. ✅ Use built-in local database (already done)
-2. Expand database with ~500 common ingredients
-3. Deploy and test
-
-**For Production:**
-1. Add Supabase Edge Function + Claude AI
-2. Keep local fallback as backup
-3. Monitor API usage and costs
-
----
-
-## Expand Local Database (Easy)
-
-Popular ingredients to add:
-
-```javascript
-'baking powder': { en: 'Baking Powder', type: 'leavening', safe: true },
-'cornstarch': { en: 'Cornstarch', type: 'thickener', safe: true },
-'cellulose': { en: 'Cellulose', type: 'thickener', safe: true },
-'guar gum': { en: 'Guar Gum', type: 'thickener', safe: true },
-'carrageenan': { en: 'Carrageenan', type: 'thickener', safe: true },
-'polysorbate 80': { en: 'Polysorbate 80', type: 'emulsifier', safe: true },
-'sorbitol': { en: 'Sorbitol', type: 'sweetener', safe: true },
-'maltodextrin': { en: 'Maltodextrin', type: 'sweetener', safe: true },
-'erythritol': { en: 'Erythritol', type: 'sweetener', safe: true },
-'invert sugar': { en: 'Invert Sugar', type: 'sweetener', safe: true },
-```
-
----
-
-## Questions?
-
-- **How much will API cost?** Supabase: ~$25/month. EDAMAM: Free tier available. Open Food Facts: Free.
-- **Can I use local-only?** Yes! Current setup works offline.
-- **How to add more ingredients?** Edit the `ingredientDatabase` object in app.js
-- **How many ingredients?** Local DB can handle 1000+ without issues
+- **"Stripe not configured"** on checkout → `STRIPE_SECRET_KEY` secret is missing.
+- **Webhook signature invalid** → `STRIPE_WEBHOOK_SECRET` doesn't match the endpoint's signing secret in Stripe Dashboard.
+- **Payment verified but no DB record** → Check `stripe-webhook` function logs in Supabase Dashboard → Edge Functions.
+- **Alipay / WeChat Pay not showing** → Enable them in Stripe Dashboard → Settings → Payment methods.

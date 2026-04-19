@@ -19,68 +19,180 @@
 
   <main class="sub-main">
     <section class="sub-hero">
-      <h1>Join the Wykta community</h1>
-      <p>Pick your preferred channels for updates, support, campaign collaboration, and product co-creation.</p>
+      <h1 id="communityTitle">Join the Wykta community</h1>
+      <p id="communitySubtitle">Pick your preferred channels for updates, support, campaign collaboration, and product co-creation.</p>
     </section>
 
     <section class="sub-grid">
       <article class="card">
-        <h2 class="card-title">Community channels</h2>
-        <ul class="channel-list">
-          <li class="channel-item"><span>Discord: product Q&A + release rooms</span><a class="btn btn-secondary btn-sm" href="https://discord.com" target="_blank" rel="noopener">Join Discord</a></li>
-          <li class="channel-item"><span>Telegram: quick support + growth drops</span><a class="btn btn-secondary btn-sm" href="https://telegram.org" target="_blank" rel="noopener">Join Telegram</a></li>
-          <li class="channel-item"><span>WeChat: CN community and partnerships</span><a class="btn btn-secondary btn-sm" href="https://www.wechat.com" target="_blank" rel="noopener">Join WeChat</a></li>
-          <li class="channel-item"><span>X/Twitter: launch updates and campaigns</span><a class="btn btn-secondary btn-sm" href="https://x.com" target="_blank" rel="noopener">Follow X</a></li>
-          <li class="channel-item"><span>GitHub: roadmap and issues</span><a class="btn btn-secondary btn-sm" href="https://github.com/MDynasty/Wykta" target="_blank" rel="noopener">Open GitHub</a></li>
-        </ul>
+        <h2 class="card-title" id="channelsTitle">Community channels</h2>
+        <ul class="channel-list" id="channelList"></ul>
       </article>
 
       <article class="card">
-        <h2 class="card-title">Community onboarding</h2>
+        <h2 class="card-title" id="onboardTitle">Community onboarding</h2>
         <form id="communityForm">
           <div class="field">
-            <label class="field-label" for="memberEmail">Email</label>
+            <label class="field-label" for="memberEmail" id="labelEmail">Email</label>
             <input id="memberEmail" type="email" required>
           </div>
           <div class="field">
-            <label class="field-label" for="channel">Primary channel</label>
+            <label class="field-label" for="channel" id="labelChannel">Primary channel</label>
             <select id="channel" required>
               <option value="discord">Discord</option>
               <option value="telegram">Telegram</option>
               <option value="wechat">WeChat</option>
-              <option value="x">X/Twitter</option>
+              <option value="x">X / Twitter</option>
               <option value="github">GitHub</option>
             </select>
           </div>
           <div class="field">
-            <label class="field-label" for="wallet">Wallet (optional, for rewards)</label>
-            <input id="wallet" type="text" placeholder="TRC20 / ERC20 wallet address">
+            <label class="field-label" for="wallet" id="labelWallet">Wallet (optional, for rewards)</label>
+            <input id="wallet" type="text" placeholder="TRC20 / ERC20 address">
           </div>
           <div class="status-box" id="communityStatus"></div>
-          <button class="btn btn-primary" type="submit">Join now</button>
+          <button class="btn btn-primary" type="submit" id="submitBtn">
+            <span id="submitLabel">Join now</span>
+            <span class="spinner" id="submitSpinner" style="display:none;"></span>
+          </button>
         </form>
       </article>
     </section>
   </main>
 
   <script>
-    document.getElementById('communityForm').addEventListener('submit', (event) => {
-      event.preventDefault();
-      const entry = {
+    const SUPABASE_URL = typeof supabaseUrl !== 'undefined' ? supabaseUrl : '';
+    const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
+
+    const params = new URLSearchParams(window.location.search);
+    const rawLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const lang = ['en', 'fr', 'de', 'zh'].includes(rawLang) ? rawLang : 'en';
+    document.documentElement.lang = lang;
+
+    const copy = {
+      en: {
+        title: 'Join the Wykta community', subtitle: 'Pick your preferred channels for updates and product co-creation.',
+        channelsTitle: 'Community channels', onboardTitle: 'Community onboarding',
+        labelEmail: 'Email', labelChannel: 'Primary channel', labelWallet: 'Wallet (optional, for rewards)',
+        submitLabel: 'Join now',
+        success: 'Welcome to Wykta! Check your email for the invite link.',
+        error: 'Something went wrong. Please try again.',
+        channels: [
+          { label: 'Discord: product Q&A + release rooms', btn: 'Join Discord', url: 'https://discord.com' },
+          { label: 'Telegram: quick support + growth drops', btn: 'Join Telegram', url: 'https://telegram.org' },
+          { label: 'WeChat: CN community and partnerships', btn: 'Join WeChat', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter: launch updates and campaigns', btn: 'Follow X', url: 'https://x.com' },
+          { label: 'GitHub: roadmap and issues', btn: 'Open GitHub', url: 'https://github.com/MDynasty/Wykta' },
+        ],
+      },
+      fr: {
+        title: 'Rejoindre la communauté Wykta',
+        subtitle: 'Choisissez vos canaux pour les mises à jour et la co-création produit.',
+        channelsTitle: 'Canaux communautaires', onboardTitle: 'Rejoindre la communauté',
+        labelEmail: 'Email', labelChannel: 'Canal principal', labelWallet: 'Wallet (facultatif, récompenses)',
+        submitLabel: 'Rejoindre',
+        success: 'Bienvenue sur Wykta ! Vérifiez vos emails pour le lien d\'invitation.',
+        error: 'Une erreur s\'est produite. Veuillez réessayer.',
+        channels: [
+          { label: 'Discord : Q&R produit + salles de sortie', btn: 'Discord', url: 'https://discord.com' },
+          { label: 'Telegram : support rapide + veille', btn: 'Telegram', url: 'https://telegram.org' },
+          { label: 'WeChat : communauté CN et partenariats', btn: 'WeChat', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter : sorties et campagnes', btn: 'Suivre X', url: 'https://x.com' },
+          { label: 'GitHub : feuille de route et issues', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
+        ],
+      },
+      de: {
+        title: 'Der Wykta-Community beitreten',
+        subtitle: 'Wählen Sie Ihre bevorzugten Kanäle für Updates und Produkt-Mitgestaltung.',
+        channelsTitle: 'Community-Kanäle', onboardTitle: 'Community-Onboarding',
+        labelEmail: 'E-Mail', labelChannel: 'Hauptkanal', labelWallet: 'Wallet (optional, für Prämien)',
+        submitLabel: 'Jetzt beitreten',
+        success: 'Willkommen bei Wykta! Prüfen Sie Ihre E-Mails für den Einladungslink.',
+        error: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
+        channels: [
+          { label: 'Discord: Produkt-Q&A + Release-Räume', btn: 'Discord', url: 'https://discord.com' },
+          { label: 'Telegram: Support + Wachstums-Updates', btn: 'Telegram', url: 'https://telegram.org' },
+          { label: 'WeChat: CN-Community & Partnerschaften', btn: 'WeChat', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter: Launch-Updates & Kampagnen', btn: 'X folgen', url: 'https://x.com' },
+          { label: 'GitHub: Roadmap & Issues', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
+        ],
+      },
+      zh: {
+        title: '加入 Wykta 社区', subtitle: '选择您偏好的社群渠道，获取更新、参与产品共创。',
+        channelsTitle: '社群渠道', onboardTitle: '社区 Onboarding',
+        labelEmail: '邮箱', labelChannel: '首选渠道', labelWallet: '钱包地址（可选，用于奖励发放）',
+        submitLabel: '立即加入',
+        success: '欢迎加入 Wykta！请查收邮件中的邀请链接。',
+        error: '提交失败，请重试。',
+        channels: [
+          { label: 'Discord：产品问答 + 版本发布频道', btn: '加入 Discord', url: 'https://discord.com' },
+          { label: 'Telegram：快速支持 + 增长资讯', btn: '加入 Telegram', url: 'https://telegram.org' },
+          { label: '微信：CN 社区及合作伙伴', btn: '加入微信群', url: 'https://www.wechat.com' },
+          { label: 'X/Twitter：发布动态与营销活动', btn: '关注 X', url: 'https://x.com' },
+          { label: 'GitHub：产品路线图与 Issues', btn: '打开 GitHub', url: 'https://github.com/MDynasty/Wykta' },
+        ],
+      },
+    };
+    const c = copy[lang] || copy.en;
+
+    document.getElementById('communityTitle').textContent = c.title;
+    document.getElementById('communitySubtitle').textContent = c.subtitle;
+    document.getElementById('channelsTitle').textContent = c.channelsTitle;
+    document.getElementById('onboardTitle').textContent = c.onboardTitle;
+    document.getElementById('labelEmail').textContent = c.labelEmail;
+    document.getElementById('labelChannel').textContent = c.labelChannel;
+    document.getElementById('labelWallet').textContent = c.labelWallet;
+    document.getElementById('submitLabel').textContent = c.submitLabel;
+
+    const chList = document.getElementById('channelList');
+    c.channels.forEach(ch => {
+      chList.insertAdjacentHTML('beforeend', `
+        <li class="channel-item">
+          <span>${ch.label}</span>
+          <a class="btn btn-secondary btn-sm" href="${ch.url}" target="_blank" rel="noopener">${ch.btn}</a>
+        </li>
+      `);
+    });
+
+    document.getElementById('communityForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const label = document.getElementById('submitLabel');
+      const spinner = document.getElementById('submitSpinner');
+      const status = document.getElementById('communityStatus');
+
+      btn.disabled = true; label.style.display = 'none'; spinner.style.display = '';
+
+      const payload = {
         email: document.getElementById('memberEmail').value.trim(),
         channel: document.getElementById('channel').value,
-        wallet: document.getElementById('wallet').value.trim(),
-        joinedAt: new Date().toISOString()
+        wallet: document.getElementById('wallet').value.trim() || null,
+        lang,
       };
 
-      const members = JSON.parse(localStorage.getItem('wykta_community_members') || '[]');
-      members.push(entry);
-      localStorage.setItem('wykta_community_members', JSON.stringify(members));
+      // Persist to Supabase DB (community_members table)
+      if (SUPABASE_URL && SUPABASE_ANON) {
+        try {
+          await fetch(`${SUPABASE_URL}/rest/v1/community_members`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON,
+              'Authorization': `Bearer ${SUPABASE_ANON}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify(payload),
+          });
+        } catch (err) {
+          console.warn('Supabase community_members insert failed:', err);
+        }
+      }
 
-      const status = document.getElementById('communityStatus');
-      status.textContent = 'Community onboarding complete. Welcome to Wykta!';
+      status.textContent = c.success;
       status.classList.add('visible');
+      btn.disabled = false; label.style.display = ''; spinner.style.display = 'none';
     });
   </script>
+  <script src="config.js"></script>
 </body>
 </html>

@@ -513,11 +513,17 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
+// Industry-benchmarked pricing – calibrated against competitor public prices:
+// Yuka $13.99/yr (US), Think Dirty $39.99/yr (US), INCI Beauty €1.50/mo (EU)
+// Wykta is AI-powered (web + camera) → slight premium vs basic barcode scanners.
+// EN/USD: $2.99/mo, $24.99/yr  — between Yuka and Think Dirty annual
+// FR/DE/EUR: €2.49/mo, €19.99/yr — above Yuka, below Think Dirty; AI justifies premium
+// ZH/CNY: ¥9.9/mo, ¥68/yr — aligns with CN beauty-app mainstream ¥9.9-29.9/mo range
 const marketPricing = {
-  en: { currency: "USD", monthly: 4.99, annual: 39, monthlySuffix: "/mo", annualSuffix: "/yr" },
-  fr: { currency: "EUR", monthly: 4.49, annual: 42, monthlySuffix: "/mois", annualSuffix: "/an" },
-  de: { currency: "EUR", monthly: 4.79, annual: 45, monthlySuffix: "/Monat", annualSuffix: "/Jahr" },
-  zh: { currency: "CNY", monthly: 19, annual: 168, monthlySuffix: "/月", annualSuffix: "/年" }
+  en: { currency: "USD", monthly: 2.99, annual: 24.99, monthlySuffix: "/mo", annualSuffix: "/yr" },
+  fr: { currency: "EUR", monthly: 2.49, annual: 19.99, monthlySuffix: "/mois", annualSuffix: "/an" },
+  de: { currency: "EUR", monthly: 2.49, annual: 19.99, monthlySuffix: "/Monat", annualSuffix: "/Jahr" },
+  zh: { currency: "CNY", monthly: 9.9, annual: 68, monthlySuffix: "/月", annualSuffix: "/年" }
 }
 
 const ocrLanguageCodes = {

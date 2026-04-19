@@ -19,75 +19,183 @@
 
   <main class="sub-main">
     <section class="sub-hero">
-      <h1>Contact sales</h1>
-      <p>Tell us your team size, channels, and growth goals. We will prepare an enterprise plan with rollout support.</p>
+      <h1 id="salesTitle">Contact sales</h1>
+      <p id="salesSubtitle">Tell us your team size and goals. We will respond within 1 business day with a custom quote and onboarding plan.</p>
     </section>
 
     <section class="sub-grid">
       <article class="card">
-        <h2 class="card-title">Enterprise request form</h2>
+        <h2 class="card-title" id="formTitle">Enterprise request</h2>
         <form id="salesForm">
           <div class="field">
-            <label class="field-label" for="company">Company</label>
+            <label class="field-label" for="company" id="labelCompany">Company</label>
             <input id="company" type="text" required>
           </div>
           <div class="field">
-            <label class="field-label" for="workEmail">Work email</label>
+            <label class="field-label" for="workEmail" id="labelEmail">Work email</label>
             <input id="workEmail" type="email" required>
           </div>
           <div class="field">
-            <label class="field-label" for="teamSize">Team size</label>
+            <label class="field-label" for="teamSize" id="labelTeamSize">Team size</label>
             <select id="teamSize" required>
-              <option value="1-10">1-10</option>
-              <option value="11-50">11-50</option>
-              <option value="51-200">51-200</option>
+              <option value="1-10">1–10</option>
+              <option value="11-50">11–50</option>
+              <option value="51-200">51–200</option>
               <option value="200+">200+</option>
             </select>
           </div>
           <div class="field">
-            <label class="field-label" for="needs">Primary needs</label>
-            <textarea id="needs" placeholder="API, white-label, campaign channels, team workflow..."></textarea>
+            <label class="field-label" for="needs" id="labelNeeds">Primary needs</label>
+            <textarea id="needs" placeholder="API, white-label, campaign channels, team workflow…"></textarea>
           </div>
           <div class="status-box" id="salesStatus"></div>
-          <button class="btn btn-primary" type="submit">Send request</button>
+          <button class="btn btn-primary" type="submit" id="submitBtn">
+            <span id="submitLabel">Send request</span>
+            <span class="spinner" id="submitSpinner" style="display:none;"></span>
+          </button>
         </form>
       </article>
 
       <article class="card">
-        <h2 class="card-title">What happens next</h2>
-        <ul style="padding-left:20px; color:var(--text-2); display:grid; gap:8px;">
-          <li>Sales lead is stored in CRM queue and tagged by plan, team size, and channel.</li>
-          <li>Response within 1 business day with pricing, implementation scope, and support SLA.</li>
-          <li>If approved, payment invoice is issued through Stripe Billing or wire transfer.</li>
-          <li>After payment, your team receives onboarding and community access links.</li>
-        </ul>
+        <h2 class="card-title" id="nextTitle">What happens next</h2>
+        <ul id="nextSteps" style="padding-left:20px; color:var(--text-2); display:grid; gap:8px;"></ul>
       </article>
     </section>
   </main>
 
   <script>
-    document.getElementById('salesForm').addEventListener('submit', (event) => {
-      event.preventDefault();
+    const SUPABASE_URL = typeof supabaseUrl !== 'undefined' ? supabaseUrl : '';
+    const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
+
+    const params = new URLSearchParams(window.location.search);
+    const rawLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const lang = ['en', 'fr', 'de', 'zh'].includes(rawLang) ? rawLang : 'en';
+    document.documentElement.lang = lang;
+
+    const copy = {
+      en: {
+        title: 'Contact sales', subtitle: 'Tell us your team size and goals. We will respond within 1 business day.',
+        formTitle: 'Enterprise request', labelCompany: 'Company', labelEmail: 'Work email',
+        labelTeamSize: 'Team size', labelNeeds: 'Primary needs', submitLabel: 'Send request',
+        nextTitle: 'What happens next',
+        steps: [
+          'Your lead is logged in our CRM queue and tagged by plan, team size, and channel.',
+          'Response within 1 business day with pricing, implementation scope, and SLA.',
+          'If approved, payment invoice via Stripe Billing or wire transfer.',
+          'After payment, your team receives onboarding and community access links.',
+        ],
+        success: 'Request sent! We will be in touch within 1 business day.',
+        error: 'Submission failed. Please try again or email us directly.',
+      },
+      fr: {
+        title: 'Contacter l\'équipe commerciale',
+        subtitle: 'Décrivez votre équipe et vos objectifs. Réponse sous 1 jour ouvré.',
+        formTitle: 'Demande entreprise', labelCompany: 'Société', labelEmail: 'Email professionnel',
+        labelTeamSize: 'Taille de l\'équipe', labelNeeds: 'Besoins principaux', submitLabel: 'Envoyer la demande',
+        nextTitle: 'Prochaines étapes',
+        steps: [
+          'Votre demande est enregistrée dans notre CRM et qualifiée.',
+          'Réponse sous 1 jour ouvré avec tarification et périmètre d\'implémentation.',
+          'Si validé, facture via Stripe Billing ou virement bancaire.',
+          'Après paiement, liens d\'onboarding et d\'accès communauté envoyés.',
+        ],
+        success: 'Demande envoyée ! Nous reviendrons vers vous sous 1 jour ouvré.',
+        error: 'Échec de l\'envoi. Réessayez ou contactez-nous directement.',
+      },
+      de: {
+        title: 'Vertrieb kontaktieren',
+        subtitle: 'Beschreiben Sie Ihr Team und Ihre Ziele. Antwort innerhalb 1 Werktag.',
+        formTitle: 'Enterprise-Anfrage', labelCompany: 'Unternehmen', labelEmail: 'Geschäftliche E-Mail',
+        labelTeamSize: 'Teamgröße', labelNeeds: 'Hauptbedürfnisse', submitLabel: 'Anfrage senden',
+        nextTitle: 'Nächste Schritte',
+        steps: [
+          'Ihre Anfrage wird in unsere CRM-Warteschlange aufgenommen und qualifiziert.',
+          'Antwort innerhalb 1 Werktags mit Preisangebot und Implementierungsumfang.',
+          'Bei Freigabe: Rechnung via Stripe Billing oder Banküberweisung.',
+          'Nach Zahlung: Onboarding- und Community-Zugangsdaten werden gesendet.',
+        ],
+        success: 'Anfrage gesendet! Wir melden uns innerhalb 1 Werktags.',
+        error: 'Übermittlung fehlgeschlagen. Bitte erneut versuchen.',
+      },
+      zh: {
+        title: '联系销售', subtitle: '告诉我们您的团队规模和需求，我们将在1个工作日内回复。',
+        formTitle: '企业方案申请', labelCompany: '公司名称', labelEmail: '工作邮箱',
+        labelTeamSize: '团队规模', labelNeeds: '主要需求', submitLabel: '发送申请',
+        nextTitle: '后续流程',
+        steps: [
+          '您的申请将进入我们的 CRM 队列，按套餐、规模、渠道分类跟进。',
+          '1个工作日内回复定价方案、实施范围及 SLA 说明。',
+          '通过 Stripe 发票或银行转账完成付款。',
+          '付款后，发送团队 onboarding 链接及社区权限。',
+        ],
+        success: '申请已发送！我们将在1个工作日内与您联系。',
+        error: '提交失败，请重试或直接发邮件联系我们。',
+      },
+    };
+    const c = copy[lang] || copy.en;
+
+    document.getElementById('salesTitle').textContent = c.title;
+    document.getElementById('salesSubtitle').textContent = c.subtitle;
+    document.getElementById('formTitle').textContent = c.formTitle;
+    document.getElementById('labelCompany').textContent = c.labelCompany;
+    document.getElementById('labelEmail').textContent = c.labelEmail;
+    document.getElementById('labelTeamSize').textContent = c.labelTeamSize;
+    document.getElementById('labelNeeds').textContent = c.labelNeeds;
+    document.getElementById('submitLabel').textContent = c.submitLabel;
+    document.getElementById('nextTitle').textContent = c.nextTitle;
+    const ul = document.getElementById('nextSteps');
+    c.steps.forEach(s => ul.insertAdjacentHTML('beforeend', `<li>${s}</li>`));
+
+    document.getElementById('salesForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const label = document.getElementById('submitLabel');
+      const spinner = document.getElementById('submitSpinner');
+      const status = document.getElementById('salesStatus');
+
+      btn.disabled = true; label.style.display = 'none'; spinner.style.display = '';
+
       const payload = {
         company: document.getElementById('company').value.trim(),
         email: document.getElementById('workEmail').value.trim(),
-        teamSize: document.getElementById('teamSize').value,
+        team_size: document.getElementById('teamSize').value,
         needs: document.getElementById('needs').value.trim(),
-        submittedAt: new Date().toISOString()
+        lang,
       };
 
-      const entries = JSON.parse(localStorage.getItem('wykta_sales_leads') || '[]');
-      entries.push(payload);
-      localStorage.setItem('wykta_sales_leads', JSON.stringify(entries));
+      let saved = false;
 
-      const status = document.getElementById('salesStatus');
-      status.textContent = 'Request sent. We also opened your email app for direct follow-up.';
-      status.classList.add('visible');
+      // Persist to Supabase DB (sales_leads table) if configured
+      if (SUPABASE_URL && SUPABASE_ANON) {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/rest/v1/sales_leads`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON,
+              'Authorization': `Bearer ${SUPABASE_ANON}`,
+              'Prefer': 'return=minimal',
+            },
+            body: JSON.stringify(payload),
+          });
+          if (res.ok || res.status === 201) saved = true;
+        } catch (err) {
+          console.warn('Supabase sales_leads insert failed:', err);
+        }
+      }
 
-      const subject = encodeURIComponent(`Wykta Enterprise Inquiry - ${payload.company}`);
-      const body = encodeURIComponent(`Company: ${payload.company}\nEmail: ${payload.email}\nTeam Size: ${payload.teamSize}\nNeeds: ${payload.needs}`);
+      // Fallback: email handoff
+      const subject = encodeURIComponent(`Wykta Enterprise – ${payload.company}`);
+      const body = encodeURIComponent(
+        `Company: ${payload.company}\nEmail: ${payload.email}\nTeam: ${payload.team_size}\nNeeds: ${payload.needs}`
+      );
       window.location.href = `mailto:sales@wykta.app?subject=${subject}&body=${body}`;
+
+      status.textContent = c.success;
+      status.classList.add('visible');
+      btn.disabled = false; label.style.display = ''; spinner.style.display = 'none';
     });
   </script>
+  <script src="config.js"></script>
 </body>
 </html>
