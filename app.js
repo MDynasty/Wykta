@@ -513,6 +513,13 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
+const marketPricing = {
+  en: { currency: "USD", monthly: 4.99, annual: 39, monthlySuffix: "/mo", annualSuffix: "/yr" },
+  fr: { currency: "EUR", monthly: 4.49, annual: 42, monthlySuffix: "/mois", annualSuffix: "/an" },
+  de: { currency: "EUR", monthly: 4.79, annual: 45, monthlySuffix: "/Monat", annualSuffix: "/Jahr" },
+  zh: { currency: "CNY", monthly: 19, annual: 168, monthlySuffix: "/月", annualSuffix: "/年" }
+}
+
 const ocrLanguageCodes = {
   en: "eng",
   fr: "fra",
@@ -576,6 +583,7 @@ const uiMessages = {
     captureButton: "Capture Label",
     valueTitle: "Why users pay for Wykta",
     valueSubtitle: "Simple pricing that grows with you. Start free, upgrade when you're ready.",
+    pricingBenchmark: "Benchmarked against Yuka, Think Dirty, and INCI Beauty market ranges for each region.",
     billingMonthly: "Monthly",
     billingAnnual: "Annual",
     billingDiscount: "Save 20%",
@@ -695,6 +703,7 @@ const uiMessages = {
     captureButton: "Capturer l'étiquette",
     valueTitle: "Pourquoi les utilisateurs paient Wykta",
     valueSubtitle: "Des tarifs simples qui évoluent avec vous. Commencez gratuitement, passez Pro quand vous êtes prêt.",
+    pricingBenchmark: "Tarifs calibrés selon les fourchettes de Yuka, Think Dirty et INCI Beauty par marché.",
     billingMonthly: "Mensuel",
     billingAnnual: "Annuel",
     billingDiscount: "Économisez 20 %",
@@ -814,6 +823,7 @@ const uiMessages = {
     captureButton: "Etikett erfassen",
     valueTitle: "Warum Nutzer für Wykta zahlen",
     valueSubtitle: "Einfache Preisgestaltung, die mit Ihnen wächst. Kostenlos starten, jederzeit upgraden.",
+    pricingBenchmark: "Preisniveau orientiert an Yuka, Think Dirty und INCI Beauty je Zielmarkt.",
     billingMonthly: "Monatlich",
     billingAnnual: "Jährlich",
     billingDiscount: "20 % sparen",
@@ -933,6 +943,7 @@ const uiMessages = {
     captureButton: "拍摄标签",
     valueTitle: "用户愿意为 Wykta 付费的原因",
     valueSubtitle: "清晰透明的定价，随您需求成长。免费开始，随时升级。",
+    pricingBenchmark: "价格参考 Yuka、Think Dirty、INCI Beauty 的区域市场区间后制定。",
     billingMonthly: "按月",
     billingAnnual: "按年",
     billingDiscount: "节省 20%",
@@ -2019,13 +2030,33 @@ async function runOCR(canvas) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  localizeStaticUI()
+function formatLocalizedPrice(amount, lang = currentLanguage()) {
+  const normalizedLang = normalizeSupportedLanguage(lang)
+  const pricing = marketPricing[normalizedLang] || marketPricing.en
+  const locale = languageLocales[normalizedLang] || "en"
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: pricing.currency,
+    maximumFractionDigits: pricing.currency === "CNY" ? 0 : 2
+  }).format(amount)
+}
 
+function getCheckoutHrefForPlan(plan, lang = currentLanguage()) {
+  const normalizedLang = normalizeSupportedLanguage(lang)
+  return `checkout.html?plan=${encodeURIComponent(plan)}&lang=${encodeURIComponent(normalizedLang)}`
+}
+
+document.addEventListener("DOMContentLoaded", () => {
   const languageSelect = document.getElementById("language")
+  const storedLang = normalizeSupportedLanguage(localStorage.getItem("wykta_lang") || "")
+  if (languageSelect) languageSelect.value = storedLang
+  localizeStaticUI()
   if(languageSelect){
     languageSelect.addEventListener("change", () => {
+      localStorage.setItem("wykta_lang", currentLanguage())
       localizeStaticUI()
+      const isAnnual = annualBtn ? annualBtn.classList.contains("active") : false
+      setBilling(isAnnual)
     })
   }
 
@@ -2042,20 +2073,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setBilling(isAnnual) {
     const lang = currentLanguage()
+    const pricing = marketPricing[normalizeSupportedLanguage(lang)] || marketPricing.en
+    const amount = isAnnual ? pricing.annual : pricing.monthly
+    const suffix = isAnnual ? pricing.annualSuffix : pricing.monthlySuffix
+
     if (monthlyBtn) monthlyBtn.classList.toggle("active", !isAnnual)
     if (annualBtn) annualBtn.classList.toggle("active", isAnnual)
     if (discountBadge) discountBadge.classList.toggle("visible", isAnnual)
     if (proPriceEl) {
-      proPriceEl.innerHTML = isAnnual
-        ? '$7<small style="font-size:16px;font-weight:500">/mo</small>'
-        : '$9<small style="font-size:16px;font-weight:500">/mo</small>'
+      proPriceEl.innerHTML = `${escapeHtml(formatLocalizedPrice(amount, lang))}<small style="font-size:16px;font-weight:500">${escapeHtml(suffix)}</small>`
     }
     if (proPeriodEl) {
       proPeriodEl.textContent = isAnnual
         ? t("billingAnnualPeriod", lang)
         : t("proPeriod", lang)
     }
-    const checkoutHref = isAnnual ? "checkout.html?plan=pro-annual" : "checkout.html?plan=pro-monthly"
+    const checkoutHref = getCheckoutHrefForPlan(isAnnual ? "pro-annual" : "pro-monthly", lang)
     if (planProCta) planProCta.setAttribute("href", checkoutHref)
     if (ctaGetProBtn) ctaGetProBtn.setAttribute("href", checkoutHref)
   }
@@ -2069,4 +2102,5 @@ document.addEventListener("DOMContentLoaded", () => {
       window.alert(t("shareUnsupported"))
     })
   })
+  setBilling(false)
 })

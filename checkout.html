@@ -19,8 +19,8 @@
 
   <main class="sub-main">
     <section class="sub-hero">
-      <h1>Secure checkout</h1>
-      <p>Choose your plan and payment channel. After payment, funds settle to your connected merchant account (configured gateway destination).</p>
+      <h1 id="checkoutTitle">Secure checkout</h1>
+      <p id="checkoutSubtitle">Choose your plan and payment channel. After payment, funds settle to your connected merchant account (configured gateway destination).</p>
     </section>
 
     <section class="sub-grid">
@@ -65,6 +65,7 @@
 
       <article class="card">
         <h2 class="card-title">Settlement destination & channels</h2>
+        <p class="pricing-benchmark" id="checkoutBenchmark">Pricing benchmarked against Yuka, Think Dirty, and INCI Beauty market ranges.</p>
         <div class="pill-list" style="margin-bottom:12px;">
           <span class="pill">Gateway: Stripe / PayPal / Wallet</span>
           <span class="pill">Settlement: Merchant account</span>
@@ -87,14 +88,97 @@
     const planEl = document.getElementById('plan');
     const params = new URLSearchParams(window.location.search);
     const requestedPlan = params.get('plan');
+    const lang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    document.documentElement.lang = ['en', 'fr', 'de', 'zh'].includes(lang) ? lang : 'en';
+
+    const marketCopy = {
+      en: {
+        title: 'Secure checkout',
+        subtitle: 'Choose your plan and payment channel. After payment, funds settle to your connected merchant account (configured gateway destination).',
+        benchmark: 'Pricing benchmarked against Yuka, Think Dirty, and INCI Beauty market ranges.',
+        plan: {
+          'pro-monthly': 'Pro Monthly',
+          'pro-annual': 'Pro Annual',
+          'enterprise': 'Enterprise'
+        },
+        methods: {
+          card: 'Credit / Debit Card (Stripe)',
+          paypal: 'PayPal',
+          alipay: 'Alipay',
+          wechat: 'WeChat Pay',
+          usdt: 'USDT (TRC20)',
+          bank: 'Wire Transfer'
+        }
+      },
+      fr: {
+        title: 'Paiement sécurisé',
+        subtitle: 'Choisissez votre offre et votre canal de paiement. Après paiement, les fonds sont versés vers votre compte marchand configuré.',
+        benchmark: 'Tarifs alignés sur les fourchettes Yuka, Think Dirty et INCI Beauty.',
+        plan: { 'pro-monthly': 'Pro Mensuel', 'pro-annual': 'Pro Annuel', 'enterprise': 'Entreprise' },
+        methods: { card: 'Carte bancaire (Stripe)', paypal: 'PayPal', alipay: 'Alipay', wechat: 'WeChat Pay', usdt: 'USDT (TRC20)', bank: 'Virement bancaire' }
+      },
+      de: {
+        title: 'Sicherer Checkout',
+        subtitle: 'Wählen Sie Tarif und Zahlungsweg. Nach der Zahlung werden Gelder auf Ihr hinterlegtes Händlerkonto ausgezahlt.',
+        benchmark: 'Preisniveau anhand von Yuka-, Think-Dirty- und INCI-Beauty-Marktwerten kalibriert.',
+        plan: { 'pro-monthly': 'Pro Monatlich', 'pro-annual': 'Pro Jährlich', 'enterprise': 'Enterprise' },
+        methods: { card: 'Kredit-/Debitkarte (Stripe)', paypal: 'PayPal', alipay: 'Alipay', wechat: 'WeChat Pay', usdt: 'USDT (TRC20)', bank: 'Banküberweisung' }
+      },
+      zh: {
+        title: '安全结算',
+        subtitle: '请选择套餐与支付通道。支付完成后，资金会结算到已配置的商户收款账户。',
+        benchmark: '价格已参考 Yuka、Think Dirty、INCI Beauty 的区域市场区间。',
+        plan: { 'pro-monthly': '专业版（月付）', 'pro-annual': '专业版（年付）', 'enterprise': '企业版' },
+        methods: { card: '银行卡（Stripe）', paypal: 'PayPal', alipay: '支付宝', wechat: '微信支付', usdt: 'USDT (TRC20)', bank: '银行转账' }
+      }
+    };
+    const pricingByLang = {
+      en: { currency: 'USD', monthly: 4.99, annual: 39 },
+      fr: { currency: 'EUR', monthly: 4.49, annual: 42 },
+      de: { currency: 'EUR', monthly: 4.79, annual: 45 },
+      zh: { currency: 'CNY', monthly: 19, annual: 168 }
+    };
+    const market = marketCopy[document.documentElement.lang] || marketCopy.en;
+    const pricing = pricingByLang[document.documentElement.lang] || pricingByLang.en;
+
+    function formatPrice(value) {
+      return new Intl.NumberFormat(navigator.language || 'en', {
+        style: 'currency',
+        currency: pricing.currency,
+        maximumFractionDigits: pricing.currency === 'CNY' ? 0 : 2
+      }).format(value);
+    }
+    function renderPlanOptions() {
+      const labels = {
+        'pro-monthly': `${market.plan['pro-monthly']} — ${formatPrice(pricing.monthly)}`,
+        'pro-annual': `${market.plan['pro-annual']} — ${formatPrice(pricing.annual)}`,
+        'enterprise': `${market.plan.enterprise} — ${document.documentElement.lang === 'zh' ? '定制报价' : 'Custom'}`
+      };
+      [...planEl.options].forEach((option) => {
+        option.textContent = labels[option.value] || option.textContent;
+      });
+    }
+    function renderMethodOptions() {
+      const methods = document.getElementById('paymentMethod');
+      [...methods.options].forEach((option) => {
+        option.textContent = market.methods[option.value] || option.textContent;
+      });
+    }
+
+    document.getElementById('checkoutTitle').textContent = market.title;
+    document.getElementById('checkoutSubtitle').textContent = market.subtitle;
+    document.getElementById('checkoutBenchmark').textContent = market.benchmark;
+    renderPlanOptions();
+    renderMethodOptions();
+
     if (requestedPlan && [...planEl.options].some(o => o.value === requestedPlan)) {
       planEl.value = requestedPlan;
     }
 
     const planPrices = {
-      'pro-monthly': '$9/mo',
-      'pro-annual': '$84/yr',
-      'enterprise': 'Custom'
+      'pro-monthly': formatPrice(pricing.monthly),
+      'pro-annual': formatPrice(pricing.annual),
+      'enterprise': document.documentElement.lang === 'zh' ? '定制报价' : 'Custom'
     };
 
     document.getElementById('checkoutForm').addEventListener('submit', (event) => {

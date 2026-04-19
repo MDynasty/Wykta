@@ -728,6 +728,13 @@ body::before {
   margin-bottom: 22px;
 }
 
+.pricing-benchmark {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--text-3);
+  margin: -8px 0 20px;
+}
+
 .billing-btn {
   background: var(--surface-2);
   border: 1px solid var(--border-2);
