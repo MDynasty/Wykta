@@ -1,5 +1,12 @@
 console.log("Wykta app started")
 
+function trackEvent(category, action, label) {
+  try {
+    if (window.gtag) window.gtag('event', action, { event_category: category, event_label: label })
+    if (window.dataLayer) window.dataLayer.push({ event: 'wykta_event', event_category: category, event_action: action, event_label: label })
+  } catch(e) {}
+}
+
 /* -----------------------
 SUPABASE CONNECTION
 ----------------------- */
@@ -560,7 +567,7 @@ const uiMessages = {
     chipLanguage: "4-Language Support",
     chipSpeed: "OCR-to-Analysis in Seconds",
     chipUpgrade: "Allergen & Safety Alerts",
-    workflowNav: "Workflow",
+    workflowNav: "How It Works",
     communityNav: "Community",
     proofData: "Data Sources",
     proofDataValue: "2.8M+ ingredients indexed",
@@ -575,16 +582,16 @@ const uiMessages = {
     ctaGetPro: "Get Pro Annual",
     ctaContactSales: "Contact Sales",
     ctaJoinCommunity: "Join Community",
-    workflowTitle: "From discovery to paid community",
-    workflowSubtitle: "A complete growth + product workflow for acquisition, trial, payment, and retention.",
-    workflowStep1Title: "Marketing acquisition",
-    workflowStep1Body: "Launch short videos, influencer demos, and SEO landing pages that send users to Wykta.",
-    workflowStep2Title: "Product trial",
-    workflowStep2Body: "Users open camera, scan labels, and receive instant AI + open-data ingredient analysis.",
-    workflowStep3Title: "Payment conversion",
-    workflowStep3Body: "Users choose card, wallet, or bank transfer in checkout and get activated immediately.",
-    workflowStep4Title: "Community retention",
-    workflowStep4Body: "After payment, users join community channels and keep engagement through campaigns.",
+    workflowTitle: "How Wykta works",
+    workflowSubtitle: "From scan to safety decision in seconds — completely free to start.",
+    workflowStep1Title: "Discover",
+    workflowStep1Body: "Find Wykta via social media, search, or a friend's recommendation.",
+    workflowStep2Title: "Scan & analyze",
+    workflowStep2Body: "Open camera, point at any food or skincare label. AI reads it in seconds.",
+    workflowStep3Title: "Get insights",
+    workflowStep3Body: "See ingredient safety ratings, allergen flags, and interaction warnings instantly.",
+    workflowStep4Title: "Stay informed",
+    workflowStep4Body: "Upgrade to Pro for unlimited scans, PDF exports, and join our community.",
     analysisLanguage: "Analysis Language",
     ingredientList: "Ingredient List",
     ingredientsPlaceholder: "Paste ingredients from food or skincare labels",
@@ -680,7 +687,7 @@ const uiMessages = {
     chipLanguage: "Support 4 langues",
     chipSpeed: "OCR vers analyse en quelques secondes",
     chipUpgrade: "Alertes allergènes & sécurité",
-    workflowNav: "Parcours",
+    workflowNav: "Fonctionnement",
     communityNav: "Communauté",
     proofData: "Sources de données",
     proofDataValue: "2,8 M+ ingrédients indexés",
@@ -695,16 +702,16 @@ const uiMessages = {
     ctaGetPro: "Passer Pro Annuel",
     ctaContactSales: "Contacter l'équipe commerciale",
     ctaJoinCommunity: "Rejoindre la communauté",
-    workflowTitle: "De la découverte à la communauté payante",
-    workflowSubtitle: "Un workflow complet d'acquisition, essai produit, paiement et fidélisation.",
-    workflowStep1Title: "Acquisition marketing",
-    workflowStep1Body: "Lancez vidéos courtes, influenceurs et SEO pour attirer les utilisateurs vers Wykta.",
-    workflowStep2Title: "Essai produit",
-    workflowStep2Body: "Les utilisateurs ouvrent la caméra, scannent les étiquettes et reçoivent une analyse instantanée.",
-    workflowStep3Title: "Conversion paiement",
-    workflowStep3Body: "Les utilisateurs choisissent carte, wallet ou virement au checkout et sont activés immédiatement.",
-    workflowStep4Title: "Fidélisation communauté",
-    workflowStep4Body: "Après paiement, les utilisateurs rejoignent les canaux communauté et restent engagés.",
+    workflowTitle: "Comment fonctionne Wykta",
+    workflowSubtitle: "Du scan à la décision de sécurité en secondes — gratuit pour commencer.",
+    workflowStep1Title: "Découverte",
+    workflowStep1Body: "Trouvez Wykta via les réseaux sociaux, la recherche ou une recommandation.",
+    workflowStep2Title: "Scanner & analyser",
+    workflowStep2Body: "Ouvrez la caméra, pointez sur une étiquette alimentaire ou skincare. L'IA la lit en secondes.",
+    workflowStep3Title: "Obtenir des insights",
+    workflowStep3Body: "Voyez les notes de sécurité, alertes allergènes et avertissements d'interaction instantanément.",
+    workflowStep4Title: "Rester informé",
+    workflowStep4Body: "Passez Pro pour les scans illimités, exports PDF et rejoignez notre communauté.",
     analysisLanguage: "Langue d'analyse",
     ingredientList: "Liste d'ingrédients",
     ingredientsPlaceholder: "Collez les ingrédients d'étiquettes alimentaires ou skincare",
@@ -800,7 +807,7 @@ const uiMessages = {
     chipLanguage: "Unterstützung für 4 Sprachen",
     chipSpeed: "OCR-zu-Analyse in Sekunden",
     chipUpgrade: "Allergen- & Sicherheitsalarme",
-    workflowNav: "Ablauf",
+    workflowNav: "Funktionsweise",
     communityNav: "Community",
     proofData: "Datenquellen",
     proofDataValue: "2,8 Mio.+ Inhaltsstoffe indexiert",
@@ -815,16 +822,16 @@ const uiMessages = {
     ctaGetPro: "Pro jährlich holen",
     ctaContactSales: "Vertrieb kontaktieren",
     ctaJoinCommunity: "Community beitreten",
-    workflowTitle: "Von Discovery bis Paid-Community",
-    workflowSubtitle: "Ein kompletter Workflow für Akquise, Produkttest, Bezahlung und Bindung.",
-    workflowStep1Title: "Marketing-Akquise",
-    workflowStep1Body: "Starten Sie Kurzvideos, Influencer-Demos und SEO-Landingpages als Zuflusskanäle.",
-    workflowStep2Title: "Produkttest",
-    workflowStep2Body: "Nutzer öffnen die Kamera, scannen Etiketten und erhalten sofortige Analysen.",
-    workflowStep3Title: "Zahlungs-Conversion",
-    workflowStep3Body: "Nutzer wählen Karte, Wallet oder Überweisung und werden direkt freigeschaltet.",
-    workflowStep4Title: "Community-Bindung",
-    workflowStep4Body: "Nach der Zahlung treten Nutzer Community-Kanälen bei und bleiben aktiv.",
+    workflowTitle: "Wie Wykta funktioniert",
+    workflowSubtitle: "Vom Scan zur Sicherheitsentscheidung in Sekunden — kostenlos starten.",
+    workflowStep1Title: "Entdecken",
+    workflowStep1Body: "Finden Sie Wykta über Social Media, Suche oder eine Empfehlung.",
+    workflowStep2Title: "Scannen & Analysieren",
+    workflowStep2Body: "Kamera öffnen, auf ein Lebensmittel- oder Pflege-Etikett richten. KI liest es in Sekunden.",
+    workflowStep3Title: "Einblicke erhalten",
+    workflowStep3Body: "Sicherheitsbewertungen, Allergen-Warnungen und Wechselwirkungshinweise sofort sehen.",
+    workflowStep4Title: "Informiert bleiben",
+    workflowStep4Body: "Pro upgraden für unbegrenzte Scans, PDF-Exporte und Community-Zugang.",
     analysisLanguage: "Analysesprache",
     ingredientList: "Inhaltsstoffliste",
     ingredientsPlaceholder: "Inhaltsstoffe von Lebensmittel- oder Hautpflegeetiketten einfügen",
@@ -920,7 +927,7 @@ const uiMessages = {
     chipLanguage: "支持 4 种语言",
     chipSpeed: "OCR 到分析仅需数秒",
     chipUpgrade: "过敏原与安全预警",
-    workflowNav: "流程",
+    workflowNav: "使用方法",
     communityNav: "社区",
     proofData: "数据来源",
     proofDataValue: "280 万+ 成分已索引",
@@ -935,16 +942,16 @@ const uiMessages = {
     ctaGetPro: "开通年度专业版",
     ctaContactSales: "联系销售",
     ctaJoinCommunity: "加入社区",
-    workflowTitle: "从引流到付费社群",
-    workflowSubtitle: "覆盖获客、试用、支付、留存的完整增长与产品流程。",
-    workflowStep1Title: "营销获客",
-    workflowStep1Body: "通过短视频、达人演示与 SEO 落地页把用户引流到 Wykta。",
-    workflowStep2Title: "产品试用",
-    workflowStep2Body: "用户打开相机扫描标签，立即获得 AI + 开放数据成分分析。",
-    workflowStep3Title: "支付转化",
-    workflowStep3Body: "用户在结算页选择银行卡、钱包或转账方式并即时开通。",
-    workflowStep4Title: "社区留存",
-    workflowStep4Body: "支付后加入社区渠道，通过活动与内容持续留存。",
+    workflowTitle: "Wykta 怎么用",
+    workflowSubtitle: "从扫描到安全判断，只需几秒钟 — 免费开始使用。",
+    workflowStep1Title: "发现",
+    workflowStep1Body: "通过社交媒体、搜索或朋友推荐找到 Wykta。",
+    workflowStep2Title: "扫描 & 分析",
+    workflowStep2Body: "打开相机，对准任何食品或护肤品标签，AI 几秒内完成识别。",
+    workflowStep3Title: "获取洞察",
+    workflowStep3Body: "即时查看成分安全评级、过敏原标记和成分冲突警告。",
+    workflowStep4Title: "持续关注",
+    workflowStep4Body: "升级 Pro 解锁无限次扫描、PDF 导出，并加入我们的社区。",
     analysisLanguage: "分析语言",
     ingredientList: "成分列表",
     ingredientsPlaceholder: "粘贴食品或护肤品标签中的成分",
@@ -1386,6 +1393,7 @@ function buildAnalysisReportText(lang = currentLanguage()) {
 }
 
 function exportAnalysisPdf() {
+  trackEvent('PDF', 'Export', 'pdf')
   const lang = currentLanguage()
   const reportText = buildAnalysisReportText(lang)
   if (!reportText) {
@@ -1406,6 +1414,7 @@ function exportAnalysisPdf() {
 }
 
 async function shareAnalysisResult() {
+  trackEvent('Share', 'Share', 'share')
   const lang = currentLanguage()
   const reportText = buildAnalysisReportText(lang)
   if (!reportText) {
@@ -1865,6 +1874,7 @@ MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
+  trackEvent('Ingredient', 'Analyze', 'manual')
   const resultsSection = document.getElementById("resultsSection")
   if(resultsSection) resultsSection.style.display = ""
 
@@ -1916,7 +1926,7 @@ CAMERA SCAN
 let stream
 
 async function startScan(){
-
+  trackEvent('Camera', 'Open', 'camera')
 try{
 if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
   throw new Error(t("cameraAccessFailed"))
@@ -2057,6 +2067,28 @@ function getCheckoutHrefForPlan(plan, lang = currentLanguage()) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // UTM parameter capture + retention
+  ;(function captureUTM() {
+    const p = new URLSearchParams(window.location.search)
+    const utmKeys = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term']
+    utmKeys.forEach(k => {
+      const v = p.get(k)
+      if (v) {
+        try { sessionStorage.setItem(k, v) } catch(e) {}
+      }
+    })
+    // Attach UTMs to all checkout links
+    document.querySelectorAll('a[href*="checkout.html"]').forEach(el => {
+      try {
+        const url = new URL(el.href, location.origin)
+        utmKeys.forEach(k => {
+          const v = sessionStorage.getItem(k)
+          if (v) url.searchParams.set(k, v)
+        })
+        el.href = url.toString()
+      } catch(e) {}
+    })
+  })()
   const languageSelect = document.getElementById("language")
   const storedLang = normalizeSupportedLanguage(localStorage.getItem("wykta_lang") || "")
   if (languageSelect) languageSelect.value = storedLang
