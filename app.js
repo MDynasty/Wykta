@@ -516,12 +516,20 @@ function getOrCreateSessionId() {
   try {
     let id = localStorage.getItem("wykta_session_id")
     if (!id) {
-      id = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
-            const r = (Math.random() * 16) | 0
-            return (c === "x" ? r : (r & 0x3) | 0x8).toString(16)
-          })
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        id = crypto.randomUUID()
+      } else {
+        // Fallback: build a v4 UUID using crypto.getRandomValues (available since IE11)
+        const b = new Uint8Array(16)
+        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+          crypto.getRandomValues(b)
+        }
+        b[6] = (b[6] & 0x0f) | 0x40  // version 4
+        b[8] = (b[8] & 0x3f) | 0x80  // variant bits
+        id = [b.slice(0, 4), b.slice(4, 6), b.slice(6, 8), b.slice(8, 10), b.slice(10)]
+          .map(seg => Array.from(seg).map(x => x.toString(16).padStart(2, "0")).join(""))
+          .join("-")
+      }
       localStorage.setItem("wykta_session_id", id)
     }
     return id
