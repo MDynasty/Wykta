@@ -22,6 +22,10 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
   const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
   if (!supabaseUrl || !supabaseServiceKey || !sessionId || sessionId === "unknown") {
     // If we can't check (missing secrets or no session), allow the call.
+    // Log missing secrets as a warning so operators are alerted.
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.warn("rate-limit: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set — limit check skipped")
+    }
     return { allowed: true, remaining: FREE_DAILY_AI_LIMIT }
   }
 

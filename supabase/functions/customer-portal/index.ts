@@ -108,7 +108,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("customer-portal error:", err)
     return new Response(
-      JSON.stringify({ error: String(err) }),
+      JSON.stringify({ error: "An internal error occurred. Please try again." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     )
   }
