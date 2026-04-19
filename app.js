@@ -506,6 +506,58 @@ async function saveResult(input, result){
   }
 }
 
+/* -----------------------
+ANONYMOUS SESSION ID
+Returns a stable anonymous UUID stored in localStorage.
+No PII is attached; used only for grouping scan_events from the same session.
+----------------------- */
+
+function getOrCreateSessionId() {
+  try {
+    let id = localStorage.getItem("wykta_session_id")
+    if (!id) {
+      id = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+            const r = (Math.random() * 16) | 0
+            return (c === "x" ? r : (r & 0x3) | 0x8).toString(16)
+          })
+      localStorage.setItem("wykta_session_id", id)
+    }
+    return id
+  } catch (e) {
+    return "unknown"
+  }
+}
+
+/* -----------------------
+SCAN EVENT TELEMETRY
+Records an anonymous analysis signal to scan_events.
+No ingredient text or user identity is stored.
+----------------------- */
+
+async function recordScanEvent({ ingredientCount, inputLang, analysisSource, warningCount, allergenCount, lang }) {
+  if (!supabaseClient) return
+  try {
+    const sessionId = getOrCreateSessionId()
+    const { error } = await supabaseClient
+      .from("scan_events")
+      .insert([{
+        session_id:       sessionId,
+        ingredient_count: ingredientCount,
+        input_lang:       inputLang,
+        analysis_source:  analysisSource,
+        warning_count:    warningCount,
+        allergen_count:   allergenCount,
+        lang:             lang
+      }])
+    if (error) throw error
+  } catch (err) {
+    // Telemetry errors are non-fatal; swallow silently
+    console.debug("scan_event record failed:", err)
+  }
+}
+
 const languageNames = {
   en: "English",
   fr: "Français",
@@ -1771,7 +1823,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
   const normalizedAnalysisLang = normalizeSupportedLanguage(analysisLang)
   if(!Array.isArray(ingredients) || !ingredients.length){
     displayAIAnalysis(t("analysisPlaceholder", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
-    return
+    return "local"
   }
 
   displayAIAnalysis(t("analyzing", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang, isLoading: true })
@@ -1816,7 +1868,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
       if(data && data.analysis){
         const lines = data.analysis.split("\n")
         displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
-        return
+        return "ai"
       }
 
       console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
@@ -1833,6 +1885,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
     console.error("Public database lookup error:", err)
     displayAIAnalysis(t("failed", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
   }
+  return "local"
 }
 
 /* -----------------------
@@ -1905,8 +1958,22 @@ async function analyzeIngredients(){
     displayInteractions(warnings, analysisLanguage)
 
     await saveResult(text, warnings.join("; "))
-    await analyzeWithAI(ingredients, analysisLanguage, displayNameMap)
+    const analysisSource = await analyzeWithAI(ingredients, analysisLanguage, displayNameMap)
     showResultsSummary(analysisLanguage)
+
+    // Record anonymous scan telemetry (no PII: no ingredient text stored)
+    const resultEl = document.getElementById("ingredientResult")
+    const allergenCount = resultEl
+      ? resultEl.querySelectorAll(".ingredient-card.danger").length
+      : 0
+    recordScanEvent({
+      ingredientCount: ingredients.length,
+      inputLang:       analysisLanguage,
+      analysisSource:  analysisSource || "local",
+      warningCount:    warnings.length,
+      allergenCount,
+      lang:            currentLanguage()
+    })
   } catch (err) {
     console.error("Analyze flow error:", err)
     displayAIAnalysis(t("failed", analysisLanguage), [])

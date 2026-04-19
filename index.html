@@ -21,6 +21,28 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXX"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXX');</script>
 -->
+<!-- Analytics: set gaId and/or plausibleDomain in config.js to activate -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    if (typeof gaId !== 'undefined' && gaId) {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      function gtag() { dataLayer.push(arguments); }
+      gtag('js', new Date());
+      gtag('config', gaId);
+    }
+    if (typeof plausibleDomain !== 'undefined' && plausibleDomain) {
+      var ps = document.createElement('script');
+      ps.defer = true;
+      ps.setAttribute('data-domain', plausibleDomain);
+      ps.src = 'https://plausible.io/js/script.js';
+      document.head.appendChild(ps);
+    }
+  });
+</script>
 <link rel="stylesheet" href="style.css">
 <style>
 .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
