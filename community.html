@@ -186,7 +186,7 @@
     document.getElementById('labelChannel').textContent = c.labelChannel;
     document.getElementById('submitLabel').textContent = c.submitLabel;
 
-    function externalLinkAttrs(url) {
+    function getExternalLinkAttributes(url) {
       return /^https?:/i.test(url) ? 'target="_blank" rel="noopener"' : '';
     }
 
@@ -195,7 +195,7 @@
       chList.insertAdjacentHTML('beforeend', `
         <li class="channel-item">
           <span>${ch.label}</span>
-          <a class="btn btn-secondary btn-sm" href="${withLang(ch.url)}" ${externalLinkAttrs(ch.url)}>${ch.btn}</a>
+          <a class="btn btn-secondary btn-sm" href="${withLang(ch.url)}" ${getExternalLinkAttributes(ch.url)}>${ch.btn}</a>
         </li>
       `);
     });
