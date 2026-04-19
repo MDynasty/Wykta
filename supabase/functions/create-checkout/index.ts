@@ -75,7 +75,9 @@ function inferSiteUrlFromHeaders(req: Request): string | null {
   if (referer) {
     try {
       const u = new URL(referer)
-      const basePath = u.pathname.replace(/\/[^/]*$/, "").replace(/\/+$/, "")
+      const basePath = u.pathname.endsWith("/")
+        ? u.pathname.replace(/\/+$/, "")
+        : u.pathname.replace(/\/[^/]*$/, "")
       return `${u.origin}${basePath}`
     } catch {
       // no-op: fallback to Origin below
