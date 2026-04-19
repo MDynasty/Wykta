@@ -93,15 +93,24 @@ supabase secrets set OPENAI_API_KEY=sk-...             --project-ref $PROJECT
 
 ## Industry-Benchmarked Pricing
 
-| Market  | Currency | Monthly | Annual  | Competitor reference                                    |
-|---------|----------|---------|---------|--------------------------------------------------------|
-| EN (US) | USD      | $2.99   | $24.99  | Yuka $13.99/yr · Think Dirty $39.99/yr                 |
-| FR (EU) | EUR      | €2.49   | €19.99  | Yuka ~€14/yr · INCI Beauty €1.50/mo · Think Dirty ~€37/yr |
-| DE (EU) | EUR      | €2.49   | €19.99  | Same EU range as FR                                     |
-| ZH (CN) | CNY      | ¥9.90   | ¥68     | CN beauty-app market: ¥9.9–29.9/mo mainstream range     |
+Verified against 2025 public App Store listings:
 
-Wykta is AI-powered (camera OCR + multi-source ingredient analysis) which justifies
-positioning above Yuka and INCI Beauty while staying accessible vs Think Dirty.
+| Competitor | Price | Notes |
+|---|---|---|
+| Yuka | $15/yr (US) · ~€14/yr (EU) | Basic barcode scanner, no AI |
+| Think Dirty Premium | $27.99–$29.99/yr (US) | Cosmetic ingredients, no AI |
+| Think Dirty All Access | $48.99/yr (US) | Full feature set |
+| INCI Beauty | €1.50/mo = €18/yr (EU) | Official 2025 confirmed |
+| CN 美妆成分App | ¥15–38/月 · ¥88–258/年 | Mainstream range ¥18–28/月, ¥100–188/年 |
+
+Wykta pricing (AI-powered web + camera OCR → positioned at Think Dirty Premium tier):
+
+| Market  | Currency | Monthly | Annual  | Positioning                                      |
+|---------|----------|---------|---------|--------------------------------------------------|
+| EN (US) | USD      | $3.99   | $27.99  | = Think Dirty Premium; above Yuka ($15/yr)        |
+| FR (EU) | EUR      | €2.99   | €21.99  | Above INCI Beauty (€18/yr); below Think Dirty    |
+| DE (EU) | EUR      | €2.99   | €21.99  | Same EU range as FR                              |
+| ZH (CN) | CNY      | ¥18     | ¥128    | Mid-market of CN range (¥15–38/月, ¥88–188/年)    |
 
 ---
 

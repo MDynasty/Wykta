@@ -92,14 +92,17 @@
 
     // Industry-benchmarked prices (same values as create-checkout edge function):
     // EN: $2.99/mo, $24.99/yr — between Yuka ($13.99/yr) and Think Dirty ($39.99/yr)
-    // FR/DE: €2.49/mo, €19.99/yr — above Yuka (AI-powered advantage)
-    // ZH: ¥9.90/mo, ¥68/yr — aligns with CN beauty-app ¥9.9-29.9/mo market range
+    // Verified against 2025 public App Store listings:
+    // Yuka: $15/yr (US), ~€14/yr (EU) · Think Dirty Premium: $27.99–$29.99/yr (US)
+    // INCI Beauty: €1.50/mo = €18/yr (EU) · CN market: ¥15–38/月, ¥88–258/年
+    // Wykta = AI-powered → positioned at Think Dirty Premium tier.
+    // EN/USD: $3.99/mo, $27.99/yr · FR/DE/EUR: €2.99/mo, €21.99/yr · ZH/CNY: ¥18/mo, ¥128/yr
     const marketData = {
       en: {
-        currency: 'USD', monthly: 2.99, annual: 24.99,
+        currency: 'USD', monthly: 3.99, annual: 27.99,
         title: 'Secure checkout',
         subtitle: "You will be redirected to Stripe's secure hosted payment page. Stripe handles card, Alipay, and WeChat Pay.",
-        benchmark: 'Priced between Yuka ($13.99/yr) and Think Dirty ($39.99/yr). AI-powered analysis justifies the premium.',
+        benchmark: 'Priced at Think Dirty Premium level ($27.99/yr). Yuka is $15/yr (basic). Wykta adds AI-powered analysis.',
         formTitle: 'Choose your plan',
         labelPlan: 'Plan', labelEmail: 'Billing email',
         submitLabel: 'Pay with Stripe →',
@@ -107,11 +110,11 @@
         pricingTitle: 'Market pricing', settlementTitle: 'Settlement & payout',
         planLabels: { 'pro-monthly': 'Pro Monthly', 'pro-annual': 'Pro Annual', enterprise: 'Enterprise — Custom' },
         pricingRows: [
-          ['Competitor: Yuka', '$13.99/yr'],
-          ['Competitor: Think Dirty', '$39.99/yr'],
-          ['Competitor: INCI Beauty', '€1.50/mo'],
-          ['Wykta Pro Monthly', '$2.99/mo'],
-          ['Wykta Pro Annual', '$24.99/yr'],
+          ['Yuka (basic barcode scanner)', '$15/yr'],
+          ['Think Dirty Premium', '$27.99/yr'],
+          ['INCI Beauty', '€1.50/mo'],
+          ['Wykta Pro Monthly', '$3.99/mo'],
+          ['Wykta Pro Annual', '$27.99/yr'],
         ],
         settlement: [
           'Card / Apple Pay / Google Pay → Stripe balance → bank payout (1–2 business days)',
@@ -121,10 +124,10 @@
         ],
       },
       fr: {
-        currency: 'EUR', monthly: 2.49, annual: 19.99,
+        currency: 'EUR', monthly: 2.99, annual: 21.99,
         title: 'Paiement sécurisé',
         subtitle: "Vous serez redirigé vers la page de paiement hébergée et sécurisée de Stripe.",
-        benchmark: 'Tarif calé entre Yuka (~€14/an) et Think Dirty (~€37/an). L\'IA justifie la valeur ajoutée.',
+        benchmark: 'Au-dessus d\'INCI Beauty (€18/an) et Yuka (~€14/an). L\'analyse IA justifie la valeur.',
         formTitle: 'Choisissez votre offre',
         labelPlan: 'Offre', labelEmail: 'Email de facturation',
         submitLabel: 'Payer avec Stripe →',
@@ -132,11 +135,11 @@
         pricingTitle: 'Tarification marché', settlementTitle: 'Règlement & virement',
         planLabels: { 'pro-monthly': 'Pro Mensuel', 'pro-annual': 'Pro Annuel', enterprise: 'Entreprise — Sur mesure' },
         pricingRows: [
-          ['Concurrent : Yuka', '~€14/an'],
-          ['Concurrent : Think Dirty', '~€37/an'],
-          ['Concurrent : INCI Beauty', '€1,50/mois'],
-          ['Wykta Pro Mensuel', '€2,49/mois'],
-          ['Wykta Pro Annuel', '€19,99/an'],
+          ['Yuka (scanner basique)', '~€14/an'],
+          ['INCI Beauty', '€1,50/mois'],
+          ['Think Dirty Premium', '~€26/an'],
+          ['Wykta Pro Mensuel', '€2,99/mois'],
+          ['Wykta Pro Annuel', '€21,99/an'],
         ],
         settlement: [
           'Carte / Apple Pay / Google Pay → Solde Stripe → virement bancaire (1-2 jours ouvrés)',
@@ -146,10 +149,10 @@
         ],
       },
       de: {
-        currency: 'EUR', monthly: 2.49, annual: 19.99,
+        currency: 'EUR', monthly: 2.99, annual: 21.99,
         title: 'Sicherer Checkout',
         subtitle: "Sie werden auf die sichere, gehostete Zahlungsseite von Stripe weitergeleitet.",
-        benchmark: 'Preis zwischen Yuka (~€14/Jahr) und Think Dirty (~€37/Jahr). KI-Analyse rechtfertigt den Mehrwert.',
+        benchmark: 'Über INCI Beauty (€18/Jahr) und Yuka (~€14/Jahr). KI-Analyse rechtfertigt den Mehrwert.',
         formTitle: 'Tarif wählen',
         labelPlan: 'Tarif', labelEmail: 'Rechnungs-E-Mail',
         submitLabel: 'Mit Stripe bezahlen →',
@@ -157,11 +160,11 @@
         pricingTitle: 'Marktpreise', settlementTitle: 'Abrechnung & Auszahlung',
         planLabels: { 'pro-monthly': 'Pro Monatlich', 'pro-annual': 'Pro Jährlich', enterprise: 'Enterprise — Individuell' },
         pricingRows: [
-          ['Wettbewerber: Yuka', '~€14/Jahr'],
-          ['Wettbewerber: Think Dirty', '~€37/Jahr'],
-          ['Wettbewerber: INCI Beauty', '€1,50/Monat'],
-          ['Wykta Pro Monatlich', '€2,49/Monat'],
-          ['Wykta Pro Jährlich', '€19,99/Jahr'],
+          ['Yuka (einfacher Scanner)', '~€14/Jahr'],
+          ['INCI Beauty', '€1,50/Monat'],
+          ['Think Dirty Premium', '~€26/Jahr'],
+          ['Wykta Pro Monatlich', '€2,99/Monat'],
+          ['Wykta Pro Jährlich', '€21,99/Jahr'],
         ],
         settlement: [
           'Karte / Apple Pay / Google Pay → Stripe-Guthaben → Banküberweisung (1–2 Werktage)',
@@ -171,10 +174,10 @@
         ],
       },
       zh: {
-        currency: 'CNY', monthly: 9.9, annual: 68,
+        currency: 'CNY', monthly: 18, annual: 128,
         title: '安全结算',
         subtitle: '您将被引导至 Stripe 的安全托管支付页面。支持银行卡、支付宝及微信支付。',
-        benchmark: '定价参考国内美妆/护肤 App 主流订阅区间（¥9.9-29.9/月）。',
+        benchmark: '定价参考国内美妆成分扫描 App 主流区间（月付 ¥15–38，年付 ¥88–188），Wykta 含 AI 分析，定价居中。',
         formTitle: '选择套餐',
         labelPlan: '套餐', labelEmail: '账单邮箱',
         submitLabel: '前往 Stripe 支付 →',
@@ -182,11 +185,11 @@
         pricingTitle: '市场定价参考', settlementTitle: '收款与结算路径',
         planLabels: { 'pro-monthly': '专业版（月付）', 'pro-annual': '专业版（年付）', enterprise: '企业版 — 定制报价' },
         pricingRows: [
-          ['参考: Yuka', '约¥100/年'],
-          ['参考: Think Dirty', '约¥290/年'],
-          ['参考: 国内美妆App（月付）', '¥9.9-29.9/月'],
-          ['Wykta 专业版（月付）', '¥9.9/月'],
-          ['Wykta 专业版（年付）', '¥68/年'],
+          ['国内成分扫描App 月付区间', '¥15–38/月'],
+          ['国内成分扫描App 年付区间', '¥88–188/年'],
+          ['Yuka（国际版参考）', '约¥108/年'],
+          ['Wykta 专业版（月付）', '¥18/月'],
+          ['Wykta 专业版（年付）', '¥128/年'],
         ],
         settlement: [
           '银行卡 / Apple Pay / Google Pay → Stripe 余额 → 银行账户出款（1-2工作日）',

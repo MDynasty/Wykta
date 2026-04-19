@@ -20,27 +20,33 @@ const corsHeaders = {
 }
 
 // Industry-benchmarked pricing (amounts in smallest currency unit):
-// EN/USD: $2.99/mo, $24.99/yr — between Yuka ($13.99/yr) and Think Dirty ($39.99/yr)
-// FR/DE/EUR: €2.49/mo, €19.99/yr — above Yuka ~€14/yr with AI-advantage
-// ZH/CNY: ¥9.90/mo, ¥68/yr — aligns with CN beauty-app ¥9.9-29.9/mo range
+// Verified against 2025 public App Store listings:
+//   Yuka:        $15/yr (US), ~€14/yr (EU) — basic barcode scanner
+//   Think Dirty: $27.99–$29.99/yr Premium (US) — cosmetic scanner, ingredient DB
+//   INCI Beauty: €1.50/mo = €18/yr (EU) — ingredient-only, no AI
+//   CN market:   ¥15–38/月, ¥88–258/年 (mainstream ¥18–28/月, ¥100–188/年)
+// Wykta = AI-powered multi-source analysis + camera OCR → matches Think Dirty Premium tier.
+// EN/USD: $3.99/mo, $27.99/yr — matches Think Dirty Premium; above Yuka ($15/yr)
+// FR/DE/EUR: €2.99/mo, €21.99/yr — above INCI Beauty (€18/yr), just below Think Dirty
+// ZH/CNY: ¥18/mo, ¥128/yr — mid-market of CN beauty-app range
 const PLANS: Record<string, Record<string, { currency: string; unitAmount: number; interval: "month" | "year" | null; name: string }>> = {
   en: {
-    "pro-monthly": { currency: "usd", unitAmount: 299, interval: "month", name: "Wykta Pro Monthly" },
-    "pro-annual":  { currency: "usd", unitAmount: 2499, interval: "year",  name: "Wykta Pro Annual"  },
+    "pro-monthly": { currency: "usd", unitAmount: 399, interval: "month", name: "Wykta Pro Monthly" },
+    "pro-annual":  { currency: "usd", unitAmount: 2799, interval: "year",  name: "Wykta Pro Annual"  },
   },
   fr: {
-    "pro-monthly": { currency: "eur", unitAmount: 249, interval: "month", name: "Wykta Pro Mensuel" },
-    "pro-annual":  { currency: "eur", unitAmount: 1999, interval: "year",  name: "Wykta Pro Annuel"  },
+    "pro-monthly": { currency: "eur", unitAmount: 299, interval: "month", name: "Wykta Pro Mensuel" },
+    "pro-annual":  { currency: "eur", unitAmount: 2199, interval: "year",  name: "Wykta Pro Annuel"  },
   },
   de: {
-    "pro-monthly": { currency: "eur", unitAmount: 249, interval: "month", name: "Wykta Pro Monatlich" },
-    "pro-annual":  { currency: "eur", unitAmount: 1999, interval: "year",  name: "Wykta Pro Jährlich"  },
+    "pro-monthly": { currency: "eur", unitAmount: 299, interval: "month", name: "Wykta Pro Monatlich" },
+    "pro-annual":  { currency: "eur", unitAmount: 2199, interval: "year",  name: "Wykta Pro Jährlich"  },
   },
   zh: {
     // For zh/CNY, Alipay & WeChat Pay support one-time checkout mode.
     // Monthly uses card (Stripe subscription), annual uses one-time payment (Alipay/WeChat).
-    "pro-monthly": { currency: "cny", unitAmount: 990,  interval: "month", name: "Wykta 专业版 月付" },
-    "pro-annual":  { currency: "cny", unitAmount: 6800, interval: null,    name: "Wykta 专业版 年付" },
+    "pro-monthly": { currency: "cny", unitAmount: 1800, interval: "month", name: "Wykta 专业版 月付" },
+    "pro-annual":  { currency: "cny", unitAmount: 12800, interval: null,   name: "Wykta 专业版 年付" },
   },
 }
 

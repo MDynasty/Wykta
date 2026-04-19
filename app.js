@@ -513,17 +513,21 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
-// Industry-benchmarked pricing – calibrated against competitor public prices:
-// Yuka $13.99/yr (US), Think Dirty $39.99/yr (US), INCI Beauty €1.50/mo (EU)
-// Wykta is AI-powered (web + camera) → slight premium vs basic barcode scanners.
-// EN/USD: $2.99/mo, $24.99/yr  — between Yuka and Think Dirty annual
-// FR/DE/EUR: €2.49/mo, €19.99/yr — above Yuka, below Think Dirty; AI justifies premium
-// ZH/CNY: ¥9.9/mo, ¥68/yr — aligns with CN beauty-app mainstream ¥9.9-29.9/mo range
+// Industry-benchmarked pricing – verified against 2025 public App Store listings:
+// Yuka:        $15/yr (US App Store 2025), ~€14/yr (EU)
+// Think Dirty: $27.99–$29.99/yr Premium; $48.99/yr All Access (US App Store 2025)
+// INCI Beauty: €1.50/mo = €18/yr (official 2025)
+// CN market (成分扫描App): ¥15–38/月, ¥88–258/年 (主流 ¥18–28/月, ¥100–188/年)
+//
+// Wykta is AI-powered (web + camera OCR) — positioned above INCI/Yuka, matching Think Dirty Premium.
+// EN/USD: $3.99/mo, $27.99/yr  — matches Think Dirty Premium; above Yuka ($15/yr)
+// FR/DE/EUR: €2.99/mo, €21.99/yr — above INCI Beauty (€18/yr), below Think Dirty
+// ZH/CNY: ¥18/mo, ¥128/yr — mid-market of CN beauty-app range (¥15–38/月, ¥88–188/年)
 const marketPricing = {
-  en: { currency: "USD", monthly: 2.99, annual: 24.99, monthlySuffix: "/mo", annualSuffix: "/yr" },
-  fr: { currency: "EUR", monthly: 2.49, annual: 19.99, monthlySuffix: "/mois", annualSuffix: "/an" },
-  de: { currency: "EUR", monthly: 2.49, annual: 19.99, monthlySuffix: "/Monat", annualSuffix: "/Jahr" },
-  zh: { currency: "CNY", monthly: 9.9, annual: 68, monthlySuffix: "/月", annualSuffix: "/年" }
+  en: { currency: "USD", monthly: 3.99, annual: 27.99, monthlySuffix: "/mo", annualSuffix: "/yr" },
+  fr: { currency: "EUR", monthly: 2.99, annual: 21.99, monthlySuffix: "/mois", annualSuffix: "/an" },
+  de: { currency: "EUR", monthly: 2.99, annual: 21.99, monthlySuffix: "/Monat", annualSuffix: "/Jahr" },
+  zh: { currency: "CNY", monthly: 18, annual: 128, monthlySuffix: "/月", annualSuffix: "/年" }
 }
 
 const ocrLanguageCodes = {
