@@ -506,6 +506,66 @@ async function saveResult(input, result){
   }
 }
 
+/* -----------------------
+ANONYMOUS SESSION ID
+Returns a stable anonymous UUID stored in localStorage.
+No PII is attached; used only for grouping scan_events from the same session.
+----------------------- */
+
+function getOrCreateSessionId() {
+  try {
+    let id = localStorage.getItem("wykta_session_id")
+    if (!id) {
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        id = crypto.randomUUID()
+      } else {
+        // Fallback: build a v4 UUID using crypto.getRandomValues (available since IE11)
+        const b = new Uint8Array(16)
+        if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+          crypto.getRandomValues(b)
+        }
+        b[6] = (b[6] & 0x0f) | 0x40  // version 4
+        b[8] = (b[8] & 0x3f) | 0x80  // variant bits
+        id = [b.slice(0, 4), b.slice(4, 6), b.slice(6, 8), b.slice(8, 10), b.slice(10)]
+          .map(seg => Array.from(seg).map(x => x.toString(16).padStart(2, "0")).join(""))
+          .join("-")
+      }
+      localStorage.setItem("wykta_session_id", id)
+    }
+    return id
+  } catch (e) {
+    return "unknown"
+  }
+}
+
+/* -----------------------
+SCAN EVENT TELEMETRY
+Records an anonymous analysis signal to scan_events.
+No ingredient text or user identity is stored.
+----------------------- */
+
+async function recordScanEvent({ ingredientCount, inputLang, analysisSource, warningCount, allergenCount, lang }) {
+  if (!supabaseClient) return
+  try {
+    const sessionId = getOrCreateSessionId()
+    const { error } = await supabaseClient
+      .from("scan_events")
+      .insert([{
+        session_id:       sessionId,
+        ingredient_count: ingredientCount,
+        input_lang:       inputLang,
+        analysis_source:  analysisSource,
+        warning_count:    warningCount,
+        allergen_count:   allergenCount,
+        lang:             lang
+      }])
+    if (error) throw error
+  } catch (err) {
+    // Telemetry errors are non-fatal; swallow silently
+    console.debug("scan_event record failed:", err)
+  }
+}
+
 const languageNames = {
   en: "English",
   fr: "Français",
@@ -584,8 +644,8 @@ const uiMessages = {
     ctaJoinCommunity: "Join Community",
     workflowTitle: "How Wykta works",
     workflowSubtitle: "From scan to safety decision in seconds — completely free to start.",
-    workflowStep1Title: "Discover",
-    workflowStep1Body: "Find Wykta via social media, search, or a friend's recommendation.",
+    workflowStep1Title: "Start",
+    workflowStep1Body: "Paste ingredients or open the camera to begin your check immediately.",
     workflowStep2Title: "Scan & analyze",
     workflowStep2Body: "Open camera, point at any food or skincare label. AI reads it in seconds.",
     workflowStep3Title: "Get insights",
@@ -600,7 +660,6 @@ const uiMessages = {
     captureButton: "Capture Label",
     valueTitle: "Why users pay for Wykta",
     valueSubtitle: "Simple pricing that grows with you. Start free, upgrade when you're ready.",
-    pricingBenchmark: "Benchmarked against Yuka, Think Dirty, and INCI Beauty market ranges for each region.",
     billingMonthly: "Monthly",
     billingAnnual: "Annual",
     billingDiscount: "Save 20%",
@@ -608,11 +667,11 @@ const uiMessages = {
     starterTitle: "Starter (Free)",
     starterBody: "Quick scans, basic warnings, multilingual output.",
     proTitle: "Pro (Recommended)",
-    proBody: "Priority analysis, richer ingredient insights, premium trust reports.",
+    proBody: "Monthly or annual plans with priority analysis, richer ingredient insights, and premium trust reports.",
     proCtaButton: "Get Pro",
     enterpriseCtaButton: "Contact Sales",
     footerTagline: "Know what goes in and on your body.",
-    analysisTitle: "AI Ingredient Analysis",
+    aiDisclaimer: "For reference only — not medical or dietary advice. AI results may be inaccurate.",
     warningTitle: "Interaction Warnings",
     scanTitle: "Scan Ingredient Label",
     detectedTitle: "Detected Text",
@@ -648,10 +707,10 @@ const uiMessages = {
     proFeaturePdf: "Export PDF reports",
     enterpriseTitle: "Enterprise",
     enterprisePrice: "Custom",
-    enterprisePeriod: "contact us",
+    enterprisePeriod: "custom scope & quote",
     enterpriseFeaturePro: "Everything in Pro",
-    enterpriseFeatureApi: "REST API access",
-    enterpriseFeatureWhiteLabel: "White-label option",
+    enterpriseFeatureApi: "REST API and integration support",
+    enterpriseFeatureWhiteLabel: "White-label and workflow customization",
     enterpriseFeatureSla: "SLA guarantee",
     enterpriseFeatureSupport: "Dedicated support",
     exportBtn: "Export PDF",
@@ -675,7 +734,20 @@ const uiMessages = {
     metaDescription: "Scan food or skincare labels instantly. AI-powered ingredient analysis, allergen alerts, and interaction warnings.",
     exportEmptyError: "Run an analysis before exporting or sharing.",
     shareSuccess: "Result copied to clipboard.",
-    shareUnsupported: "Share is not available on this device."
+    shareUnsupported: "Share is not available on this device.",
+    scanBarcodeButton: "Scan Barcode",
+    stopBarcodeButton: "Stop",
+    barcodeScanning: "Point camera at a barcode…",
+    barcodeNotFound: "Product not found in the database.",
+    barcodeProductFound: "Product found",
+    barcodeIngredientsLoaded: "Ingredients loaded — analyzing…",
+    barcodeNoIngredients: "No ingredients found for this product.",
+    nutriScoreLabel: "Nutri-Score",
+    safetyScoreLabel: "Safety",
+    pwaInstallTitle: "Add Wykta to your home screen",
+    pwaInstallBody: "Install the app for quick access — no App Store needed.",
+    pwaInstallBtn: "Add to Home Screen",
+    pwaInstallDismiss: "Not now"
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -704,8 +776,8 @@ const uiMessages = {
     ctaJoinCommunity: "Rejoindre la communauté",
     workflowTitle: "Comment fonctionne Wykta",
     workflowSubtitle: "Du scan à la décision de sécurité en secondes — gratuit pour commencer.",
-    workflowStep1Title: "Découverte",
-    workflowStep1Body: "Trouvez Wykta via les réseaux sociaux, la recherche ou une recommandation.",
+    workflowStep1Title: "Démarrer",
+    workflowStep1Body: "Collez vos ingrédients ou ouvrez la caméra pour commencer immédiatement.",
     workflowStep2Title: "Scanner & analyser",
     workflowStep2Body: "Ouvrez la caméra, pointez sur une étiquette alimentaire ou skincare. L'IA la lit en secondes.",
     workflowStep3Title: "Obtenir des insights",
@@ -720,7 +792,6 @@ const uiMessages = {
     captureButton: "Capturer l'étiquette",
     valueTitle: "Pourquoi les utilisateurs paient Wykta",
     valueSubtitle: "Des tarifs simples qui évoluent avec vous. Commencez gratuitement, passez Pro quand vous êtes prêt.",
-    pricingBenchmark: "Tarifs calibrés selon les fourchettes de Yuka, Think Dirty et INCI Beauty par marché.",
     billingMonthly: "Mensuel",
     billingAnnual: "Annuel",
     billingDiscount: "Économisez 20 %",
@@ -728,11 +799,11 @@ const uiMessages = {
     starterTitle: "Starter (Gratuit)",
     starterBody: "Scans rapides, alertes de base, sortie multilingue.",
     proTitle: "Pro (Recommandé)",
-    proBody: "Analyse prioritaire, insights plus riches, rapports premium.",
+    proBody: "Abonnements mensuel ou annuel avec analyse prioritaire, insights plus riches et rapports premium.",
     proCtaButton: "Passer Pro",
     enterpriseCtaButton: "Contacter l'équipe commerciale",
     footerTagline: "Sachez ce que vous consommez et appliquez sur votre peau.",
-    analysisTitle: "Analyse IA des ingrédients",
+    aiDisclaimer: "À titre indicatif uniquement — pas de conseil médical ni diététique. Les résultats IA peuvent être inexacts.",
     warningTitle: "Avertissements d'interaction",
     scanTitle: "Scanner l'étiquette d'ingrédients",
     detectedTitle: "Texte détecté",
@@ -768,10 +839,10 @@ const uiMessages = {
     proFeaturePdf: "Export PDF des rapports",
     enterpriseTitle: "Entreprise",
     enterprisePrice: "Sur mesure",
-    enterprisePeriod: "contactez-nous",
+    enterprisePeriod: "périmètre et devis sur mesure",
     enterpriseFeaturePro: "Tout le contenu de Pro",
-    enterpriseFeatureApi: "Accès API REST",
-    enterpriseFeatureWhiteLabel: "Option marque blanche",
+    enterpriseFeatureApi: "Accès API REST et support d'intégration",
+    enterpriseFeatureWhiteLabel: "Marque blanche et adaptation du workflow",
     enterpriseFeatureSla: "Garantie SLA",
     enterpriseFeatureSupport: "Support dédié",
     exportBtn: "Exporter PDF",
@@ -795,7 +866,20 @@ const uiMessages = {
     metaDescription: "Scannez les étiquettes alimentaires ou skincare instantanément. Analyse IA des ingrédients, alertes allergènes et avertissements d'interaction.",
     exportEmptyError: "Lancez une analyse avant d'exporter ou partager.",
     shareSuccess: "Résultat copié dans le presse-papiers.",
-    shareUnsupported: "Le partage n'est pas disponible sur cet appareil."
+    shareUnsupported: "Le partage n'est pas disponible sur cet appareil.",
+    scanBarcodeButton: "Scanner le code-barres",
+    stopBarcodeButton: "Arrêter",
+    barcodeScanning: "Pointez la caméra sur un code-barres…",
+    barcodeNotFound: "Produit non trouvé dans la base de données.",
+    barcodeProductFound: "Produit trouvé",
+    barcodeIngredientsLoaded: "Ingrédients chargés — analyse en cours…",
+    barcodeNoIngredients: "Aucun ingrédient trouvé pour ce produit.",
+    nutriScoreLabel: "Nutri-Score",
+    safetyScoreLabel: "Sécurité",
+    pwaInstallTitle: "Ajoutez Wykta à votre écran d'accueil",
+    pwaInstallBody: "Installez l'app pour un accès rapide — sans App Store.",
+    pwaInstallBtn: "Ajouter à l'écran d'accueil",
+    pwaInstallDismiss: "Plus tard"
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -824,8 +908,8 @@ const uiMessages = {
     ctaJoinCommunity: "Community beitreten",
     workflowTitle: "Wie Wykta funktioniert",
     workflowSubtitle: "Vom Scan zur Sicherheitsentscheidung in Sekunden — kostenlos starten.",
-    workflowStep1Title: "Entdecken",
-    workflowStep1Body: "Finden Sie Wykta über Social Media, Suche oder eine Empfehlung.",
+    workflowStep1Title: "Starten",
+    workflowStep1Body: "Inhaltsstoffe einfügen oder Kamera öffnen und sofort prüfen.",
     workflowStep2Title: "Scannen & Analysieren",
     workflowStep2Body: "Kamera öffnen, auf ein Lebensmittel- oder Pflege-Etikett richten. KI liest es in Sekunden.",
     workflowStep3Title: "Einblicke erhalten",
@@ -840,7 +924,6 @@ const uiMessages = {
     captureButton: "Etikett erfassen",
     valueTitle: "Warum Nutzer für Wykta zahlen",
     valueSubtitle: "Einfache Preisgestaltung, die mit Ihnen wächst. Kostenlos starten, jederzeit upgraden.",
-    pricingBenchmark: "Preisniveau orientiert an Yuka, Think Dirty und INCI Beauty je Zielmarkt.",
     billingMonthly: "Monatlich",
     billingAnnual: "Jährlich",
     billingDiscount: "20 % sparen",
@@ -848,11 +931,11 @@ const uiMessages = {
     starterTitle: "Starter (Kostenlos)",
     starterBody: "Schnelle Scans, Basiswarnungen, mehrsprachige Ausgabe.",
     proTitle: "Pro (Empfohlen)",
-    proBody: "Priorisierte Analyse, tiefere Insights, Premium-Vertrauensberichte.",
+    proBody: "Monatlicher oder jährlicher Tarif mit priorisierter Analyse, tieferen Insights und Premium-Reports.",
     proCtaButton: "Pro holen",
     enterpriseCtaButton: "Vertrieb kontaktieren",
     footerTagline: "Wissen, was in und auf Ihren Körper gelangt.",
-    analysisTitle: "KI-Inhaltsstoffanalyse",
+    aiDisclaimer: "Nur zur Information — keine medizinische oder diätetische Beratung. KI-Ergebnisse können ungenau sein.",
     warningTitle: "Interaktionswarnungen",
     scanTitle: "Inhaltsstoffetikett scannen",
     detectedTitle: "Erkannter Text",
@@ -888,10 +971,10 @@ const uiMessages = {
     proFeaturePdf: "PDF-Berichte exportieren",
     enterpriseTitle: "Enterprise",
     enterprisePrice: "Individuell",
-    enterprisePeriod: "Kontakt aufnehmen",
+    enterprisePeriod: "individueller Umfang & Angebot",
     enterpriseFeaturePro: "Alles aus Pro",
-    enterpriseFeatureApi: "REST-API-Zugang",
-    enterpriseFeatureWhiteLabel: "White-Label-Option",
+    enterpriseFeatureApi: "REST-API-Zugang und Integrationssupport",
+    enterpriseFeatureWhiteLabel: "White-Label- und Workflow-Anpassung",
     enterpriseFeatureSla: "SLA-Garantie",
     enterpriseFeatureSupport: "Dedizierter Support",
     exportBtn: "PDF exportieren",
@@ -915,7 +998,20 @@ const uiMessages = {
     metaDescription: "Scannen Sie Lebensmittel- oder Hautpflegeetiketten sofort. KI-gestützte Inhaltsstoffanalyse, Allergenalarme und Interaktionswarnungen.",
     exportEmptyError: "Bitte zuerst analysieren, dann exportieren oder teilen.",
     shareSuccess: "Ergebnis in die Zwischenablage kopiert.",
-    shareUnsupported: "Teilen ist auf diesem Gerät nicht verfügbar."
+    shareUnsupported: "Teilen ist auf diesem Gerät nicht verfügbar.",
+    scanBarcodeButton: "Barcode scannen",
+    stopBarcodeButton: "Stopp",
+    barcodeScanning: "Kamera auf Barcode richten…",
+    barcodeNotFound: "Produkt nicht in der Datenbank gefunden.",
+    barcodeProductFound: "Produkt gefunden",
+    barcodeIngredientsLoaded: "Inhaltsstoffe geladen — Analyse läuft…",
+    barcodeNoIngredients: "Keine Inhaltsstoffe für dieses Produkt gefunden.",
+    nutriScoreLabel: "Nutri-Score",
+    safetyScoreLabel: "Sicherheit",
+    pwaInstallTitle: "Wykta zum Home-Screen hinzufügen",
+    pwaInstallBody: "App installieren für schnellen Zugriff — kein App Store nötig.",
+    pwaInstallBtn: "Zum Home-Screen hinzufügen",
+    pwaInstallDismiss: "Nicht jetzt"
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -944,8 +1040,8 @@ const uiMessages = {
     ctaJoinCommunity: "加入社区",
     workflowTitle: "Wykta 怎么用",
     workflowSubtitle: "从扫描到安全判断，只需几秒钟 — 免费开始使用。",
-    workflowStep1Title: "发现",
-    workflowStep1Body: "通过社交媒体、搜索或朋友推荐找到 Wykta。",
+    workflowStep1Title: "开始使用",
+    workflowStep1Body: "直接粘贴成分或打开相机，马上开始检测。",
     workflowStep2Title: "扫描 & 分析",
     workflowStep2Body: "打开相机，对准任何食品或护肤品标签，AI 几秒内完成识别。",
     workflowStep3Title: "获取洞察",
@@ -960,7 +1056,6 @@ const uiMessages = {
     captureButton: "拍摄标签",
     valueTitle: "用户愿意为 Wykta 付费的原因",
     valueSubtitle: "清晰透明的定价，随您需求成长。免费开始，随时升级。",
-    pricingBenchmark: "价格参考 Yuka、Think Dirty、INCI Beauty 的区域市场区间后制定。",
     billingMonthly: "按月",
     billingAnnual: "按年",
     billingDiscount: "节省 20%",
@@ -968,11 +1063,11 @@ const uiMessages = {
     starterTitle: "基础版（免费）",
     starterBody: "快速扫描、基础预警、多语言输出。",
     proTitle: "专业版（推荐）",
-    proBody: "优先分析、更丰富洞察、高级可信报告。",
+    proBody: "提供月付与年付两种专业版，含优先分析、更丰富洞察和高级可信报告。",
     proCtaButton: "升级专业版",
     enterpriseCtaButton: "联系销售团队",
     footerTagline: "了解进入和涂抹在身体上的每一种成分。",
-    analysisTitle: "AI 成分分析",
+    aiDisclaimer: "仅供参考，不构成医疗或饮食建议。AI分析结果可能存在误差。",
     warningTitle: "成分相互作用预警",
     scanTitle: "扫描成分标签",
     detectedTitle: "识别文本",
@@ -1008,10 +1103,10 @@ const uiMessages = {
     proFeaturePdf: "导出 PDF 报告",
     enterpriseTitle: "企业版",
     enterprisePrice: "定制",
-    enterprisePeriod: "联系我们",
+    enterprisePeriod: "按需求定制报价",
     enterpriseFeaturePro: "包含专业版全部功能",
-    enterpriseFeatureApi: "REST API 接入",
-    enterpriseFeatureWhiteLabel: "白标方案",
+    enterpriseFeatureApi: "REST API 接入与集成支持",
+    enterpriseFeatureWhiteLabel: "白标与业务流程定制",
     enterpriseFeatureSla: "SLA 服务保障",
     enterpriseFeatureSupport: "专属支持",
     exportBtn: "导出 PDF",
@@ -1035,7 +1130,20 @@ const uiMessages = {
     metaDescription: "即时扫描食品或护肤标签。AI 驱动的成分分析、过敏原警报和成分相互作用预警。",
     exportEmptyError: "请先完成一次分析，再导出或分享。",
     shareSuccess: "结果已复制到剪贴板。",
-    shareUnsupported: "当前设备不支持分享。"
+    shareUnsupported: "当前设备不支持分享。",
+    scanBarcodeButton: "扫描条形码",
+    stopBarcodeButton: "停止",
+    barcodeScanning: "将相机对准条形码…",
+    barcodeNotFound: "数据库中未找到该产品。",
+    barcodeProductFound: "已找到产品",
+    barcodeIngredientsLoaded: "成分已加载 — 正在分析…",
+    barcodeNoIngredients: "该产品暂无成分信息。",
+    nutriScoreLabel: "营养评级",
+    safetyScoreLabel: "安全",
+    pwaInstallTitle: "将 Wykta 添加到主屏幕",
+    pwaInstallBody: "安装应用快速访问 — 无需应用商店。",
+    pwaInstallBtn: "添加到主屏幕",
+    pwaInstallDismiss: "暂不"
   }
 }
 
@@ -1348,6 +1456,13 @@ function showResultsSummary(lang = currentLanguage()) {
   const dangerCount = resultEl.querySelectorAll(".ingredient-card.danger").length
   const flaggedCount = cautionCount + dangerCount
 
+  // Compute 0-100 safety score.
+  // Danger ingredients (allergens/avoid) are weighted 2.5× higher than caution
+  // ingredients because they pose immediate health risks (e.g. anaphylaxis)
+  // versus caution items which are merely inadvisable for some users.
+  const safetyScore = Math.max(0, Math.min(100, 100 - dangerCount * 25 - cautionCount * 10))
+  const scoreClass = safetyScore >= 75 ? "score-high" : safetyScore >= 45 ? "score-medium" : "score-low"
+
   const parts = [
     typeof t("resultsSummaryIngredients", lang) === "function"
       ? t("resultsSummaryIngredients", lang)(total)
@@ -1362,7 +1477,16 @@ function showResultsSummary(lang = currentLanguage()) {
   const detectedLanguageName = Object.hasOwn(languageNames, normalizedLang) ? languageNames[normalizedLang] : normalizedLang
   parts.push(`${t("languageDetectedLabel", lang)}: ${detectedLanguageName}`)
 
-  summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}`
+  // Build badges HTML (safety score + optional Nutri-Score)
+  const safetyBadgeHtml = `<span class="safety-score-badge ${escapeHtml(scoreClass)}"><span class="score-label">${escapeHtml(t("safetyScoreLabel", lang))}</span> ${safetyScore}</span>`
+
+  let nutriBadgeHtml = ""
+  if (currentNutriScore && /^[a-e]$/.test(currentNutriScore)) {
+    const grade = currentNutriScore.toUpperCase()
+    nutriBadgeHtml = `<span class="summary-nutri-score ns-${escapeHtml(currentNutriScore)}" title="${escapeHtml(t("nutriScoreLabel", lang))}">Nutri-Score ${escapeHtml(grade)}</span>`
+  }
+
+  summaryEl.innerHTML = `<span class="summary-icon">✓</span> ${parts.map(escapeHtml).join(" · ")}${safetyBadgeHtml}${nutriBadgeHtml}`
   summaryEl.className = `analysis-summary ${dangerCount > 0 ? "has-danger" : flaggedCount > 0 ? "has-caution" : "all-clear"}`
   summaryEl.style.display = ""
   if (exportEl) exportEl.style.display = ""
@@ -1372,7 +1496,8 @@ function buildAnalysisReportText(lang = currentLanguage()) {
   const summaryEl = document.getElementById("analysisSummary")
   const analysisEl = document.getElementById("ingredientResult")
   const warningsEl = document.getElementById("interactionWarnings")
-  const summaryText = summaryEl ? summaryEl.innerText.trim() : ""
+  // Strip HTML from summary to get plain text for export
+  const summaryText = summaryEl ? (summaryEl.innerText || summaryEl.textContent || "").trim() : ""
   const analysisText = analysisEl ? analysisEl.innerText.trim() : ""
   const warningsText = warningsEl ? warningsEl.innerText.trim() : ""
 
@@ -1775,7 +1900,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
   const normalizedAnalysisLang = normalizeSupportedLanguage(analysisLang)
   if(!Array.isArray(ingredients) || !ingredients.length){
     displayAIAnalysis(t("analysisPlaceholder", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
-    return
+    return "local"
   }
 
   displayAIAnalysis(t("analyzing", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang, isLoading: true })
@@ -1799,7 +1924,8 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
             ingredients: ingredientsForAI,
             lang: langLocale,
             targetLanguage: langName,
-            promptLanguage: langName
+            promptLanguage: langName,
+            sessionId: getOrCreateSessionId()
           }
         }
       )
@@ -1817,13 +1943,19 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
 
       console.log("AI result:", data)
 
-      if(data && data.analysis){
+      // Server indicated the free daily limit has been reached — fall through to
+      // open-database analysis and show an upgrade prompt.
+      if(data && data.limitReached){
+        console.warn("Daily AI limit reached for this session.")
+        showFreeLimitBanner(normalizedAnalysisLang)
+        // Continue to open-database fallback below (do not return "ai").
+      } else if(data && data.analysis){
         const lines = data.analysis.split("\n")
         displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
-        return
+        return "ai"
+      } else {
+        console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
       }
-
-      console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
     } catch(err){
       clearTimeout(invokeTimeoutId)
       console.error("AI function error, using open databases fallback:", err)
@@ -1837,11 +1969,39 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
     console.error("Public database lookup error:", err)
     displayAIAnalysis(t("failed", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
   }
+  return "local"
 }
 
 /* -----------------------
 ANALYZE BUTTON LOADING STATE
 ----------------------- */
+
+/* -----------------------
+FREE TIER LIMIT BANNER
+Shows when the server returns limitReached: true.
+Prompts the user to upgrade to Pro.
+----------------------- */
+
+function showFreeLimitBanner(lang) {
+  const bannerMessages = {
+    en: { text: "You've reached the daily limit of 5 AI analyses (free tier). Results below use open databases. Upgrade to Pro for unlimited AI scans.", cta: "Upgrade to Pro →", href: "checkout.html?plan=pro-monthly" },
+    fr: { text: "Vous avez atteint la limite quotidienne de 5 analyses IA (offre gratuite). Les résultats ci-dessous proviennent des bases ouvertes. Passez à Pro pour des analyses illimitées.", cta: "Passer à Pro →", href: "checkout.html?plan=pro-monthly" },
+    de: { text: "Sie haben das Tageslimit von 5 KI-Analysen (kostenloses Kontingent) erreicht. Die folgenden Ergebnisse stammen aus offenen Datenbanken. Upgraden Sie auf Pro für unbegrenzte Analysen.", cta: "Auf Pro upgraden →", href: "checkout.html?plan=pro-monthly" },
+    zh: { text: "您已达到每日5次AI分析的免费用量上限，以下结果来自开放数据库。升级专业版以获得无限次AI分析。", cta: "立即升级专业版 →", href: "checkout.html?plan=pro-monthly" },
+  }
+  const m = bannerMessages[lang] || bannerMessages.en
+  let banner = document.getElementById("freeLimitBanner")
+  if (!banner) {
+    banner = document.createElement("div")
+    banner.id = "freeLimitBanner"
+    banner.style.cssText = "background:rgba(255,200,0,0.13);border:1px solid rgba(220,160,0,0.35);border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13px;color:var(--text-2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;"
+    const resultsSection = document.getElementById("resultsSection")
+    if (resultsSection) resultsSection.prepend(banner)
+  }
+  banner.innerHTML = `<span>${m.text}</span><a href="${m.href}" style="white-space:nowrap;font-weight:700;color:var(--brand);text-decoration:none;">${m.cta}</a>`
+  banner.style.display = ""
+}
+
 
 function setAnalyzeBtnLoading(isLoading){
   const btn = document.getElementById("analyzeBtn")
@@ -1878,6 +2038,13 @@ async function analyzeIngredients(){
   const resultsSection = document.getElementById("resultsSection")
   if(resultsSection) resultsSection.style.display = ""
 
+  // Clear Nutri-Score if the product info banner is hidden
+  // (means this is a manual analysis, not from a barcode scan)
+  const productBanner = document.getElementById("productInfoBanner")
+  if (!productBanner || productBanner.style.display === "none" || !productBanner.innerHTML.trim()) {
+    currentNutriScore = null
+  }
+
   setAnalyzeBtnLoading(true)
 
   let analysisLanguage = currentLanguage()
@@ -1909,8 +2076,22 @@ async function analyzeIngredients(){
     displayInteractions(warnings, analysisLanguage)
 
     await saveResult(text, warnings.join("; "))
-    await analyzeWithAI(ingredients, analysisLanguage, displayNameMap)
+    const analysisSource = await analyzeWithAI(ingredients, analysisLanguage, displayNameMap)
     showResultsSummary(analysisLanguage)
+
+    // Record anonymous scan telemetry (no PII: no ingredient text stored)
+    const resultEl = document.getElementById("ingredientResult")
+    const allergenCount = resultEl
+      ? resultEl.querySelectorAll(".ingredient-card.danger").length
+      : 0
+    recordScanEvent({
+      ingredientCount: ingredients.length,
+      inputLang:       analysisLanguage,
+      analysisSource:  analysisSource || "local",
+      warningCount:    warnings.length,
+      allergenCount,
+      lang:            currentLanguage()
+    })
   } catch (err) {
     console.error("Analyze flow error:", err)
     displayAIAnalysis(t("failed", analysisLanguage), [])
@@ -1924,6 +2105,179 @@ CAMERA SCAN
 ----------------------- */
 
 let stream
+
+// Barcode scanning state
+let barcodeZxingControls = null
+let currentNutriScore = null
+
+/* -----------------------
+BARCODE PRODUCT LOOKUP
+Fetches product details from Open Food Facts by EAN/UPC barcode.
+Returns { name, ingredients, nutriScore } or null.
+----------------------- */
+
+async function lookupProductByBarcode(barcode) {
+  const url = `https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}.json`
+  try {
+    const data = await fetchJsonWithTimeout(url, 9000)
+    if (!data || data.status !== 1 || !data.product) return null
+    const p = data.product
+    const name = p.product_name_en || p.product_name || ""
+    const ingredients = p.ingredients_text_en || p.ingredients_text || ""
+    const nutriScore = (p.nutrition_grades || "").toLowerCase().trim() || null
+    return { name: name.trim(), ingredients: ingredients.trim(), nutriScore }
+  } catch (err) {
+    console.warn("Barcode OFF lookup failed:", err)
+    return null
+  }
+}
+
+/* -----------------------
+SHOW PRODUCT INFO BANNER
+Displays the product name + Nutri-Score badge after a barcode scan.
+----------------------- */
+
+function showProductInfoBanner(name, nutriScore, lang = currentLanguage()) {
+  currentNutriScore = nutriScore || null
+  const banner = document.getElementById("productInfoBanner")
+  if (!banner) return
+
+  let html = ""
+  if (name) {
+    html += `<span class="product-info-name">${escapeHtml(name)}</span>`
+  }
+  if (nutriScore && /^[a-e]$/.test(nutriScore)) {
+    const grade = nutriScore.toUpperCase()
+    html += `<span class="nutri-score-badge nutri-score-${nutriScore}" title="${escapeHtml(t("nutriScoreLabel", lang))}"><span class="ns-label">Nutri-Score</span> ${escapeHtml(grade)}</span>`
+  }
+
+  banner.innerHTML = html
+  banner.style.display = html ? "" : "none"
+}
+
+/* -----------------------
+STOP BARCODE SCANNING
+Stops any active ZXing reader and hides the overlay.
+----------------------- */
+
+function stopBarcodeScanning() {
+  if (barcodeZxingControls) {
+    try { barcodeZxingControls.stop() } catch (e) {}
+    barcodeZxingControls = null
+  }
+  const overlay = document.getElementById("barcodeOverlay")
+  if (overlay) overlay.style.display = "none"
+  const btn = document.getElementById("scanBarcodeBtn")
+  if (btn) btn.disabled = false
+}
+
+/* -----------------------
+BARCODE SCAN (ZXing)
+Starts camera + ZXing multi-format barcode reader.
+On detection: stops reader, looks up product on OFF, fills form, triggers analysis.
+----------------------- */
+
+async function scanBarcode() {
+  trackEvent('Barcode', 'Scan', 'barcode')
+  const lang = currentLanguage()
+
+  if (typeof ZXing === "undefined") {
+    const ocrEl = document.getElementById("ocrResult")
+    if (ocrEl) {
+      ocrEl.innerText = "ZXing library not loaded."
+      ocrEl.classList.add("visible")
+    }
+    return
+  }
+
+  // Stop any existing scan
+  stopBarcodeScanning()
+
+  // Start camera if not already running
+  if (!stream || stream.getTracks().every(track => track.readyState === "ended")) {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error(t("cameraAccessFailed", lang))
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+      })
+      const video = document.getElementById("camera")
+      video.srcObject = stream
+      await video.play()
+      const placeholder = document.getElementById("cameraPlaceholder")
+      if (placeholder) placeholder.style.display = "none"
+    } catch (err) {
+      console.error("Camera error for barcode scan:", err)
+      const ocrEl = document.getElementById("ocrResult")
+      if (ocrEl) {
+        ocrEl.innerText = t("cameraAccessFailed", lang)
+        ocrEl.classList.add("visible")
+      }
+      return
+    }
+  }
+
+  // Show barcode overlay
+  const overlay = document.getElementById("barcodeOverlay")
+  const scanningLabel = document.getElementById("barcodeScanningLabel")
+  if (overlay) overlay.style.display = ""
+  if (scanningLabel) scanningLabel.textContent = t("barcodeScanning", lang)
+
+  const btn = document.getElementById("scanBarcodeBtn")
+  if (btn) btn.disabled = true
+
+  const video = document.getElementById("camera")
+  const codeReader = new ZXing.BrowserMultiFormatReader()
+
+  try {
+    barcodeZxingControls = await codeReader.decodeFromVideoElement(video, async (result, err) => {
+      if (!result) return
+      const barcode = result.getText()
+      if (!barcode) return
+
+      // Stop scanning immediately on first result
+      stopBarcodeScanning()
+      trackEvent('Barcode', 'Detected', barcode)
+
+      const ocrEl = document.getElementById("ocrResult")
+      if (ocrEl) {
+        ocrEl.innerText = `${t("barcodeProductFound", lang)}: ${barcode}`
+        ocrEl.classList.add("visible")
+      }
+
+      // Look up product on OFF
+      const product = await lookupProductByBarcode(barcode)
+      if (!product || !product.ingredients) {
+        if (ocrEl) ocrEl.innerText = t("barcodeNotFound", lang)
+        showProductInfoBanner("", null, lang)
+        return
+      }
+
+      // Display product info and Nutri-Score
+      showProductInfoBanner(product.name, product.nutriScore, lang)
+
+      // Populate ingredients textarea
+      const textarea = document.getElementById("ingredients")
+      if (textarea) textarea.value = product.ingredients
+
+      if (ocrEl) {
+        ocrEl.innerText = t("barcodeIngredientsLoaded", lang)
+      }
+
+      // Auto-trigger analysis
+      await analyzeIngredients()
+    })
+  } catch (err) {
+    console.error("ZXing barcode scan error:", err)
+    stopBarcodeScanning()
+    const ocrEl = document.getElementById("ocrResult")
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed", lang)
+      ocrEl.classList.add("visible")
+    }
+  }
+}
 
 async function startScan(){
   trackEvent('Camera', 'Open', 'camera')
@@ -2066,6 +2420,33 @@ function getCheckoutHrefForPlan(plan, lang = currentLanguage()) {
   return `checkout.html?plan=${encodeURIComponent(plan)}&lang=${encodeURIComponent(normalizedLang)}`
 }
 
+function withLangQuery(href, lang = currentLanguage()) {
+  if (!href || href.startsWith("#")) return href
+  if (/^(mailto:|tel:|javascript:)/i.test(href)) return href
+  try {
+    const normalizedLang = normalizeSupportedLanguage(lang)
+    const url = new URL(href, window.location.origin)
+    if (url.origin !== window.location.origin) return href
+    const page = url.pathname.split("/").pop() || "index.html"
+    const localPages = new Set(["index.html", "checkout.html", "contact-sales.html", "community.html", "payment-success.html"])
+    if (!localPages.has(page)) return href
+    url.searchParams.set("lang", normalizedLang)
+    return `${url.pathname}${url.search}${url.hash}`
+  } catch (err) {
+    return href
+  }
+}
+
+function localizeInternalLinks(lang = currentLanguage()) {
+  document.querySelectorAll("a[href]").forEach((el) => {
+    const href = el.getAttribute("href")
+    const localizedHref = withLangQuery(href, lang)
+    if (localizedHref && localizedHref !== href) {
+      el.setAttribute("href", localizedHref)
+    }
+  })
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // UTM parameter capture + retention
   ;(function captureUTM() {
@@ -2090,13 +2471,20 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   })()
   const languageSelect = document.getElementById("language")
-  const storedLang = normalizeSupportedLanguage(localStorage.getItem("wykta_lang") || "")
-  if (languageSelect) languageSelect.value = storedLang
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlLangRaw = urlParams.get("lang")
+  const storedLangRaw = localStorage.getItem("wykta_lang")
+  const initialLang = normalizeSupportedLanguage(urlLangRaw || storedLangRaw || navigator.language || "en")
+  if (languageSelect) languageSelect.value = initialLang
+  localStorage.setItem("wykta_lang", initialLang)
   localizeStaticUI()
+  localizeInternalLinks(initialLang)
   if(languageSelect){
     languageSelect.addEventListener("change", () => {
-      localStorage.setItem("wykta_lang", currentLanguage())
+      const lang = normalizeSupportedLanguage(currentLanguage())
+      localStorage.setItem("wykta_lang", lang)
       localizeStaticUI()
+      localizeInternalLinks(lang)
       const isAnnual = annualBtn ? annualBtn.classList.contains("active") : false
       setBilling(isAnnual)
     })
@@ -2133,6 +2521,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkoutHref = getCheckoutHrefForPlan(isAnnual ? "pro-annual" : "pro-monthly", lang)
     if (planProCta) planProCta.setAttribute("href", checkoutHref)
     if (ctaGetProBtn) ctaGetProBtn.setAttribute("href", checkoutHref)
+    localizeInternalLinks(lang)
   }
 
   if (monthlyBtn) monthlyBtn.addEventListener("click", () => setBilling(false))
@@ -2145,4 +2534,39 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   })
   setBilling(false)
+
+  // PWA install prompt — capture the beforeinstallprompt event and show a non-intrusive banner
+  let deferredInstallPrompt = null
+  const pwaKey = "wykta_pwa_dismissed"
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault()
+    deferredInstallPrompt = e
+    try {
+      if (sessionStorage.getItem(pwaKey)) return
+    } catch (ex) {}
+    const lang = currentLanguage()
+    const banner = document.createElement("div")
+    banner.className = "pwa-install-banner"
+    banner.setAttribute("role", "banner")
+    banner.innerHTML = `
+      <p><strong>${escapeHtml(t("pwaInstallTitle", lang))}</strong><br>${escapeHtml(t("pwaInstallBody", lang))}</p>
+      <button class="btn btn-primary btn-sm" id="pwaInstallBtn">${escapeHtml(t("pwaInstallBtn", lang))}</button>
+      <button class="pwa-close" aria-label="${escapeHtml(t("pwaInstallDismiss", lang))}" id="pwaCloseBtn">×</button>
+    `
+    const main = document.querySelector(".main")
+    if (main) main.insertBefore(banner, main.firstChild)
+
+    document.getElementById("pwaInstallBtn")?.addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return
+      deferredInstallPrompt.prompt()
+      const { outcome } = await deferredInstallPrompt.userChoice
+      trackEvent("PWA", "Install", outcome)
+      deferredInstallPrompt = null
+      banner.remove()
+    })
+    document.getElementById("pwaCloseBtn")?.addEventListener("click", () => {
+      try { sessionStorage.setItem(pwaKey, "1") } catch (ex) {}
+      banner.remove()
+    })
+  })
 })

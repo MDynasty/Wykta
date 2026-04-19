@@ -13,14 +13,74 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Wykta – Ingredient Analyzer">
 <meta name="twitter:description" content="Scan food or skincare labels instantly. Detect allergens, flag risky ingredients, and make confident choices — free.">
-<meta property="og:image" content="https://mdynasty.github.io/Wykta/og-image.png">
-<meta name="twitter:image" content="https://mdynasty.github.io/Wykta/og-image.png">
-<link rel="canonical" href="https://mdynasty.github.io/Wykta/">
+<meta property="og:image" content="https://wykta.app/og-image.png">
+<meta name="twitter:image" content="https://wykta.app/og-image.png">
+<link rel="canonical" href="https://wykta.app/">
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2d8c52">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wykta">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Cdefs%3E%3ClinearGradient%20id='g1'%20x1='4'%20y1='2'%20x2='28'%20y2='30'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%232d8c52'/%3E%3Cstop%20offset='1'%20stop-color='%2340b870'/%3E%3C/linearGradient%3E%3ClinearGradient%20id='g2'%20x1='8'%20y1='14'%20x2='24'%20y2='24'%20gradientUnits='userSpaceOnUse'%3E%3Cstop%20stop-color='%23ffffff'/%3E%3Cstop%20offset='1'%20stop-color='%23d4f0de'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20x='1'%20y='1'%20width='30'%20height='30'%20rx='9.5'%20fill='%23f3f8f4'/%3E%3Cpath%20d='M16%204C16%204%207%2010%207%2017C7%2021.4%2011%2024%2016%2024C21%2024%2025%2021.4%2025%2017C25%2010%2016%204%2016%204Z'%20fill='url(%23g1)'%20opacity='0.18'%20stroke='url(%23g1)'%20stroke-width='1.6'%20stroke-linecap='round'/%3E%3Cpath%20d='M16%206.5V22'%20stroke='url(%23g1)'%20stroke-width='1.2'%20stroke-linecap='round'%20opacity='0.55'/%3E%3Cpath%20d='M10%2018L14%2022L22%2015'%20stroke='url(%23g2)'%20stroke-width='2.3'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E" type="image/svg+xml">
 <!-- Google Analytics: replace G-XXXXXXXX with your Measurement ID
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXX"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXX');</script>
 -->
+<!-- Analytics: loaded only after GDPR/cookie consent is given (wykta_consent=analytics).
+     Set gaId and/or plausibleDomain in config.js to activate. -->
+<script>
+  function loadAnalytics() {
+    if (typeof gaId !== 'undefined' && gaId) {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function() { dataLayer.push(arguments); };
+      gtag('js', new Date());
+      gtag('config', gaId);
+    }
+    if (typeof plausibleDomain !== 'undefined' && plausibleDomain) {
+      var ps = document.createElement('script');
+      ps.defer = true;
+      ps.setAttribute('data-domain', plausibleDomain);
+      ps.src = 'https://plausible.io/js/script.js';
+      document.head.appendChild(ps);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var consent = '';
+    try { consent = localStorage.getItem('wykta_consent') || ''; } catch(e) {}
+    if (consent === 'analytics') {
+      loadAnalytics();
+    } else if (!consent) {
+      // Show consent banner only if no choice has been recorded yet.
+      var banner = document.getElementById('cookieBanner');
+      if (banner) banner.style.display = '';
+    }
+  });
+
+  function acceptCookies() {
+    try { localStorage.setItem('wykta_consent', 'analytics'); } catch(e) {}
+    var banner = document.getElementById('cookieBanner');
+    if (banner) banner.style.display = 'none';
+    loadAnalytics();
+  }
+
+  function declineCookies() {
+    try { localStorage.setItem('wykta_consent', 'declined'); } catch(e) {}
+    var banner = document.getElementById('cookieBanner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function resetCookieConsent() {
+    try { localStorage.removeItem('wykta_consent'); } catch(e) {}
+    var banner = document.getElementById('cookieBanner');
+    if (banner) banner.style.display = '';
+  }
+</script>
 <link rel="stylesheet" href="style.css">
 <style>
 .footer-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 14px; }
@@ -33,10 +93,32 @@
 .social-btn:hover { color: var(--brand); border-color: rgba(45,140,82,0.35); }
 .footer-copyright { font-size: 12px; color: var(--text-3); border-top: 1px solid var(--border); padding-top: 14px; text-align: center; }
 @media (max-width: 600px) { .footer-inner { flex-direction: column; text-align: center; justify-content: center; } .footer-links { justify-content: center; } .footer-social { justify-content: center; } }
+/* Cookie consent banner */
+#cookieBanner { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 20px; box-shadow: 0 -4px 24px rgba(0,0,0,0.08); }
+.cookie-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+.cookie-text { font-size: 13px; color: var(--text-2); flex: 1; min-width: 220px; }
+.cookie-text a { color: var(--brand); }
+.cookie-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.cookie-btn { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-2); background: var(--surface-2); color: var(--text); }
+.cookie-btn-accept { background: var(--brand); color: #fff; border-color: var(--brand); }
 </style>
 </head>
 
 <body>
+
+<!-- ── COOKIE / GDPR CONSENT BANNER ────────────────────────── -->
+<div id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie consent">
+  <div class="cookie-inner">
+    <p class="cookie-text">
+      We use optional analytics cookies to improve Wykta. Your ingredient text is never stored.
+      See our <a href="privacy.html">Privacy Policy</a>.
+    </p>
+    <div class="cookie-actions">
+      <button class="cookie-btn" onclick="declineCookies()">Decline</button>
+      <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()">Accept analytics</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── NAVIGATION ───────────────────────────────────────── -->
 <nav class="nav">
@@ -82,13 +164,13 @@
       <span data-i18n="heroTitlePrefix">Know exactly what's</span> <span class="gradient-text" data-i18n="heroTitleHighlight">in your products</span>
     </h1>
     <p class="hero-sub" id="heroSubtitle" data-i18n="heroSubtitle">
-      Scan food or skincare labels instantly, reduce ingredient risk, and unlock confidence that users will pay for.
+      Scan food or skincare labels instantly, detect hidden allergens, and make confident choices about what goes in and on your body.
     </p>
     <div class="chips">
       <span class="chip" data-i18n="chipCoverage">Food + Skincare Coverage</span>
       <span class="chip" data-i18n="chipLanguage">4-Language Support</span>
       <span class="chip" data-i18n="chipSpeed">OCR-to-Analysis in Seconds</span>
-      <span class="chip" data-i18n="chipUpgrade">Upgrade-ready UX</span>
+      <span class="chip" data-i18n="chipUpgrade">Allergen &amp; Safety Alerts</span>
     </div>
     <a class="btn btn-primary hero-cta" href="#ingredients" data-i18n="heroCta">Try it now</a>
   </section>
@@ -110,29 +192,29 @@
 
   <section class="workflow-section" id="workflow">
     <div class="value-header">
-      <h2 data-i18n="workflowTitle">From discovery to paid community</h2>
-      <p data-i18n="workflowSubtitle">A complete growth + product workflow for acquisition, trial, payment, and retention.</p>
+      <h2 data-i18n="workflowTitle">How Wykta works</h2>
+      <p data-i18n="workflowSubtitle">From scan to safety decision in seconds — completely free to start.</p>
     </div>
     <div class="workflow-grid">
       <article class="workflow-card">
         <span class="workflow-step">01</span>
-        <h3 data-i18n="workflowStep1Title">Marketing acquisition</h3>
-        <p data-i18n="workflowStep1Body">Launch short videos, influencer demos, and SEO landing pages that send users to Wykta.</p>
+        <h3 data-i18n="workflowStep1Title">Start</h3>
+        <p data-i18n="workflowStep1Body">Paste ingredients or open the camera to begin your check immediately.</p>
       </article>
       <article class="workflow-card">
         <span class="workflow-step">02</span>
-        <h3 data-i18n="workflowStep2Title">Product trial</h3>
-        <p data-i18n="workflowStep2Body">Users open camera, scan labels, and receive instant AI + open-data ingredient analysis.</p>
+        <h3 data-i18n="workflowStep2Title">Scan &amp; analyze</h3>
+        <p data-i18n="workflowStep2Body">Open camera, point at any food or skincare label. AI reads it in seconds.</p>
       </article>
       <article class="workflow-card">
         <span class="workflow-step">03</span>
-        <h3 data-i18n="workflowStep3Title">Payment conversion</h3>
-        <p data-i18n="workflowStep3Body">Users choose card, wallet, or bank transfer in checkout and get activated immediately.</p>
+        <h3 data-i18n="workflowStep3Title">Get insights</h3>
+        <p data-i18n="workflowStep3Body">See ingredient safety ratings, allergen flags, and interaction warnings instantly.</p>
       </article>
       <article class="workflow-card">
         <span class="workflow-step">04</span>
-        <h3 data-i18n="workflowStep4Title">Community retention</h3>
-        <p data-i18n="workflowStep4Body">After payment, users join community channels and keep engagement through campaigns.</p>
+        <h3 data-i18n="workflowStep4Title">Stay informed</h3>
+        <p data-i18n="workflowStep4Body">Upgrade to Pro for unlimited scans, PDF exports, and join our community.</p>
       </article>
     </div>
   </section>
@@ -179,7 +261,23 @@
           </span>
           <span data-i18n="captureButton">Capture Label</span>
         </button>
+        <button class="btn btn-secondary" id="scanBarcodeBtn" onclick="scanBarcode()">
+          <span class="btn-icon btn-icon-svg" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none">
+              <rect x="2" y="4" width="2" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="5.5" y="4" width="1" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="7.5" y="4" width="2" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="11" y="4" width="1" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="13" y="4" width="1.5" height="12" rx="0.5" fill="currentColor"/>
+              <rect x="15.5" y="4" width="2.5" height="12" rx="0.5" fill="currentColor"/>
+            </svg>
+          </span>
+          <span data-i18n="scanBarcodeButton">Scan Barcode</span>
+        </button>
       </div>
+
+      <!-- Product info banner: shown after a successful barcode scan -->
+      <div id="productInfoBanner" class="product-info-banner" style="display:none;"></div>
     </div>
 
     <!-- Camera card -->
@@ -192,6 +290,14 @@
         <div class="camera-placeholder" id="cameraPlaceholder">
           <span class="cam-icon" data-i18n="cameraTag">Camera</span>
           <span data-i18n="cameraHint">Click "Open Camera" to start scanning</span>
+        </div>
+        <!-- Barcode scanning overlay -->
+        <div class="barcode-overlay" id="barcodeOverlay" style="display:none;">
+          <div class="barcode-viewfinder">
+            <div class="barcode-viewfinder-line"></div>
+          </div>
+          <span class="barcode-scanning-label" id="barcodeScanningLabel" data-i18n="barcodeScanning">Point camera at a barcode…</span>
+          <button class="btn btn-secondary btn-sm" onclick="stopBarcodeScanning()" id="barcodeStopBtn" data-i18n="stopBarcodeButton">Stop</button>
         </div>
       </div>
       <canvas id="snapshot" style="display:none;"></canvas>
@@ -211,6 +317,7 @@
 
       <div class="card">
         <h2 class="card-title"><span data-i18n="analysisTitle">AI Ingredient Analysis</span></h2>
+        <p style="font-size:11px;color:var(--text-3);margin:-4px 0 10px;"><span data-i18n="aiDisclaimer">For reference only — not medical or dietary advice. AI results may be inaccurate.</span></p>
         <div id="ingredientResult">
           <div class="empty-state">
             <span data-i18n="analysisPlaceholder">AI analysis will appear here</span>
@@ -246,7 +353,6 @@
       <button class="billing-btn" id="billingAnnualBtn" data-i18n="billingAnnual">Annual</button>
       <span class="billing-discount" id="billingDiscountBadge" data-i18n="billingDiscount">Save 20%</span>
     </div>
-    <p class="pricing-benchmark" data-i18n="pricingBenchmark">Benchmarked against Yuka, Think Dirty, and INCI Beauty market ranges for each region.</p>
 
     <div class="pricing-grid">
 
@@ -295,8 +401,8 @@
   </section>
 
   <section class="cta-band">
-    <h3 data-i18n="ctaTitle">Turn ingredient uncertainty into buying confidence</h3>
-    <p data-i18n="ctaBody">Wykta combines fast OCR, interaction checks, and open ingredient intelligence so users can decide what to buy faster.</p>
+    <h3 data-i18n="ctaTitle">Ready to know what's really in your products?</h3>
+    <p data-i18n="ctaBody">Join the community of conscious shoppers. Wykta delivers instant, science-backed ingredient insight — for free.</p>
     <div class="cta-actions">
       <a class="btn btn-primary" id="ctaGetProBtn" href="checkout.html?plan=pro-annual" data-i18n="ctaGetPro">Get Pro Annual</a>
       <a class="btn btn-secondary" href="contact-sales.html" data-i18n="ctaContactSales">Contact Sales</a>
@@ -315,6 +421,8 @@
         <a href="community.html" class="footer-link">Community</a>
         <a href="checkout.html" class="footer-link">Pricing</a>
         <a href="contact-sales.html" class="footer-link">Contact</a>
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="terms.html" class="footer-link">Terms</a>
         <a href="https://github.com/MDynasty/Wykta" class="footer-link" target="_blank" rel="noopener">GitHub</a>
       </div>
       <div class="footer-social">
@@ -329,7 +437,11 @@
         </a>
       </div>
     </div>
-    <p class="footer-copyright">Wykta &copy; 2026 &mdash; <span data-i18n="footerTagline">Know what goes in and on your body.</span></p>
+    <p class="footer-copyright">
+      Wykta &copy; 2026 &mdash; <span data-i18n="footerTagline">Know what goes in and on your body.</span>
+      &nbsp;&middot;&nbsp;
+      <button onclick="resetCookieConsent()" style="background:none;border:none;padding:0;font-size:inherit;color:inherit;cursor:pointer;text-decoration:underline;">Cookie settings</button>
+    </p>
   </footer>
 
 </main>
@@ -342,6 +454,9 @@
 
 <!-- OCR library -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+<!-- Barcode scanner library -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.20.0/umd/index.min.js"></script>
 
 <!-- Your application logic -->
 <script src="app.js"></script>

@@ -78,3 +78,11 @@ jobs:
           supabase functions deploy verify-session \
             --project-ref "${PROJECT_REF}" \
             --no-verify-jwt
+
+      - name: Deploy customer-portal
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy customer-portal \
+            --project-ref "${PROJECT_REF}" \
+            --no-verify-jwt

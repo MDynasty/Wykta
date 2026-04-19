@@ -56,7 +56,7 @@
           </div>
           <div class="field">
             <label class="field-label" for="needs" id="labelNeeds">Primary needs</label>
-            <textarea id="needs" placeholder="API, white-label, campaign channels, team workflow…"></textarea>
+            <textarea id="needs" placeholder="API integrations, white-label scope, team workflow, compliance requirements..."></textarea>
           </div>
           <div class="status-box" id="salesStatus"></div>
           <button class="btn btn-primary" type="submit" id="submitBtn">
@@ -78,19 +78,46 @@
     const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
 
     const params = new URLSearchParams(window.location.search);
-    const rawLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const rawLang = (params.get('lang') || localStorage.getItem('wykta_lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
     const lang = ['en', 'fr', 'de', 'zh'].includes(rawLang) ? rawLang : 'en';
     document.documentElement.lang = lang;
+    localStorage.setItem('wykta_lang', lang);
+
+    function withLang(href) {
+      if (!href || href.startsWith('#')) return href;
+      if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
+      try {
+        const url = new URL(href, window.location.origin);
+        if (url.origin !== window.location.origin) return href;
+        const page = url.pathname.split('/').pop() || 'index.html';
+        const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html']);
+        if (!localPages.has(page)) return href;
+        url.searchParams.set('lang', lang);
+        return `${url.pathname}${url.search}${url.hash}`;
+      } catch (err) {
+        return href;
+      }
+    }
+
+    document.querySelectorAll('a[href]').forEach((el) => {
+      const href = el.getAttribute('href');
+      const localizedHref = withLang(href);
+      if (localizedHref && localizedHref !== href) {
+        el.setAttribute('href', localizedHref);
+      }
+    });
 
     const copy = {
       en: {
         title: 'Contact sales', subtitle: 'Tell us your team size and goals. We will respond within 1 business day.',
         formTitle: 'Enterprise request', labelCompany: 'Company', labelEmail: 'Work email',
-        labelTeamSize: 'Team size', labelNeeds: 'Primary needs', submitLabel: 'Send request',
+        labelTeamSize: 'Team size', labelNeeds: 'Primary needs', needsPlaceholder: 'API integrations, white-label scope, team workflow, compliance requirements...',
+        submitLabel: 'Send request',
         nextTitle: 'What happens next',
         steps: [
           'Your lead is logged in our CRM queue and tagged by plan, team size, and channel.',
           'Response within 1 business day with pricing, implementation scope, and SLA.',
+          'Typical customization includes API integration, white-label flows, role permissions, and compliance requirements.',
           'If approved, payment invoice via Stripe Billing or wire transfer.',
           'After payment, your team receives onboarding and community access links.',
         ],
@@ -101,11 +128,13 @@
         title: 'Contacter l\'équipe commerciale',
         subtitle: 'Décrivez votre équipe et vos objectifs. Réponse sous 1 jour ouvré.',
         formTitle: 'Demande entreprise', labelCompany: 'Société', labelEmail: 'Email professionnel',
-        labelTeamSize: 'Taille de l\'équipe', labelNeeds: 'Besoins principaux', submitLabel: 'Envoyer la demande',
+        labelTeamSize: 'Taille de l\'équipe', labelNeeds: 'Besoins principaux', needsPlaceholder: 'Intégrations API, périmètre marque blanche, workflow équipe, conformité...',
+        submitLabel: 'Envoyer la demande',
         nextTitle: 'Prochaines étapes',
         steps: [
           'Votre demande est enregistrée dans notre CRM et qualifiée.',
           'Réponse sous 1 jour ouvré avec tarification et périmètre d\'implémentation.',
+          'Les besoins sur mesure couvrent souvent API, marque blanche, rôles/permissions et conformité.',
           'Si validé, facture via Stripe Billing ou virement bancaire.',
           'Après paiement, liens d\'onboarding et d\'accès communauté envoyés.',
         ],
@@ -116,11 +145,13 @@
         title: 'Vertrieb kontaktieren',
         subtitle: 'Beschreiben Sie Ihr Team und Ihre Ziele. Antwort innerhalb 1 Werktag.',
         formTitle: 'Enterprise-Anfrage', labelCompany: 'Unternehmen', labelEmail: 'Geschäftliche E-Mail',
-        labelTeamSize: 'Teamgröße', labelNeeds: 'Hauptbedürfnisse', submitLabel: 'Anfrage senden',
+        labelTeamSize: 'Teamgröße', labelNeeds: 'Hauptbedürfnisse', needsPlaceholder: 'API-Integrationen, White-Label-Umfang, Team-Workflow, Compliance-Anforderungen...',
+        submitLabel: 'Anfrage senden',
         nextTitle: 'Nächste Schritte',
         steps: [
           'Ihre Anfrage wird in unsere CRM-Warteschlange aufgenommen und qualifiziert.',
           'Antwort innerhalb 1 Werktags mit Preisangebot und Implementierungsumfang.',
+          'Typische Anpassungen umfassen API-Integration, White-Label, Rollenrechte und Compliance-Anforderungen.',
           'Bei Freigabe: Rechnung via Stripe Billing oder Banküberweisung.',
           'Nach Zahlung: Onboarding- und Community-Zugangsdaten werden gesendet.',
         ],
@@ -130,11 +161,13 @@
       zh: {
         title: '联系销售', subtitle: '告诉我们您的团队规模和需求，我们将在1个工作日内回复。',
         formTitle: '企业方案申请', labelCompany: '公司名称', labelEmail: '工作邮箱',
-        labelTeamSize: '团队规模', labelNeeds: '主要需求', submitLabel: '发送申请',
+        labelTeamSize: '团队规模', labelNeeds: '主要需求', needsPlaceholder: 'API 对接、白标范围、团队流程、合规要求等...',
+        submitLabel: '发送申请',
         nextTitle: '后续流程',
         steps: [
           '您的申请将进入我们的 CRM 队列，按套餐、规模、渠道分类跟进。',
           '1个工作日内回复定价方案、实施范围及 SLA 说明。',
+          '常见定制诉求包括 API 集成、白标化、角色权限和合规要求。',
           '通过 Stripe 发票或银行转账完成付款。',
           '付款后，发送团队 onboarding 链接及社区权限。',
         ],
@@ -151,6 +184,7 @@
     document.getElementById('labelEmail').textContent = c.labelEmail;
     document.getElementById('labelTeamSize').textContent = c.labelTeamSize;
     document.getElementById('labelNeeds').textContent = c.labelNeeds;
+    document.getElementById('needs').setAttribute('placeholder', c.needsPlaceholder);
     document.getElementById('submitLabel').textContent = c.submitLabel;
     document.getElementById('nextTitle').textContent = c.nextTitle;
     const ul = document.getElementById('nextSteps');

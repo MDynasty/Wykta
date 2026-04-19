@@ -1396,3 +1396,213 @@ body::after {
   .hero-sub  { font-size: 15px; }
   .cta-band  { padding: 32px 20px; }
 }
+
+/* ===================================================
+   BARCODE SCANNING OVERLAY
+   =================================================== */
+
+.barcode-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(15, 31, 22, 0.55);
+  border-radius: var(--radius);
+  z-index: 10;
+  animation: fadeSlideUp 0.3s ease;
+}
+
+.barcode-viewfinder {
+  width: min(220px, 72%);
+  height: min(140px, 40%);
+  border: 2.5px solid var(--brand-2);
+  border-radius: 10px;
+  position: relative;
+  box-shadow: 0 0 0 9999px rgba(15, 31, 22, 0.38);
+}
+
+.barcode-viewfinder::before,
+.barcode-viewfinder::after {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-color: var(--brand-vivid);
+  border-style: solid;
+  border-radius: 3px;
+}
+.barcode-viewfinder::before { top: -3px; left: -3px; border-width: 3px 0 0 3px; }
+.barcode-viewfinder::after  { bottom: -3px; right: -3px; border-width: 0 3px 3px 0; }
+
+/* Scanning line animation */
+@keyframes scanLine {
+  0%   { top: 8%; }
+  50%  { top: 88%; }
+  100% { top: 8%; }
+}
+.barcode-viewfinder-line {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--brand-2), var(--brand-vivid), var(--brand-2), transparent);
+  border-radius: 2px;
+  animation: scanLine 2s ease-in-out infinite;
+  box-shadow: 0 0 6px rgba(64, 184, 112, 0.7);
+}
+
+.barcode-scanning-label {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* ===================================================
+   PRODUCT INFO BANNER (after barcode scan)
+   =================================================== */
+
+.product-info-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: linear-gradient(135deg, rgba(45, 140, 82, 0.08), rgba(64, 184, 112, 0.06));
+  border: 1px solid rgba(45, 140, 82, 0.26);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-2);
+  animation: fadeSlideUp 0.32s ease;
+}
+
+.product-info-name {
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ===================================================
+   NUTRI-SCORE BADGE
+   =================================================== */
+
+.nutri-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 3px 9px 3px 7px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  border: 1.5px solid;
+}
+
+.nutri-score-badge .ns-label {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.8;
+  letter-spacing: 0.08em;
+}
+
+.nutri-score-a { background: #1a8c3e; color: #fff; border-color: #1a8c3e; }
+.nutri-score-b { background: #6aaf37; color: #fff; border-color: #6aaf37; }
+.nutri-score-c { background: #f5c400; color: #3a2e00; border-color: #e6b800; }
+.nutri-score-d { background: #e07b27; color: #fff; border-color: #c46b1e; }
+.nutri-score-e { background: #d7251b; color: #fff; border-color: #b81e15; }
+
+/* Inline nutri-score in summary banner */
+.summary-nutri-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 6px;
+  border: 1.5px solid;
+}
+.summary-nutri-score.ns-a { background: rgba(26, 140, 62, 0.15); color: #1a8c3e; border-color: rgba(26, 140, 62, 0.35); }
+.summary-nutri-score.ns-b { background: rgba(106, 175, 55, 0.15); color: #4a8d1e; border-color: rgba(106, 175, 55, 0.35); }
+.summary-nutri-score.ns-c { background: rgba(245, 196, 0, 0.18);  color: #7a5e00; border-color: rgba(245, 196, 0, 0.45); }
+.summary-nutri-score.ns-d { background: rgba(224, 123, 39, 0.15); color: #7a3b00; border-color: rgba(224, 123, 39, 0.35); }
+.summary-nutri-score.ns-e { background: rgba(215, 37, 27, 0.12);  color: #991b15; border-color: rgba(215, 37, 27, 0.30); }
+
+/* ===================================================
+   SAFETY SCORE BADGE
+   =================================================== */
+
+.safety-score-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-left: 4px;
+  flex-shrink: 0;
+  border: 1.5px solid;
+  letter-spacing: 0.02em;
+}
+
+.safety-score-badge.score-high   { background: rgba(39, 174, 96, 0.14); color: var(--green); border-color: rgba(39, 174, 96, 0.35); }
+.safety-score-badge.score-medium { background: rgba(217, 119, 6, 0.12); color: #92400e; border-color: rgba(217, 119, 6, 0.32); }
+.safety-score-badge.score-low    { background: rgba(220, 38, 38, 0.10); color: var(--red); border-color: rgba(220, 38, 38, 0.28); }
+
+.safety-score-badge .score-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  opacity: 0.75;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ===================================================
+   PWA INSTALL BANNER
+   =================================================== */
+
+.pwa-install-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(45, 140, 82, 0.10), rgba(64, 184, 112, 0.07));
+  border: 1px solid rgba(45, 140, 82, 0.28);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  animation: fadeSlideUp 0.4s ease;
+}
+
+.pwa-install-banner p { color: var(--text-2); flex: 1; }
+.pwa-install-banner strong { color: var(--text); }
+.pwa-install-banner .pwa-close {
+  background: none;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+.pwa-install-banner .pwa-close:hover { color: var(--text); background: rgba(0,0,0,0.05); }
+
+@media (max-width: 600px) {
+  .barcode-viewfinder { width: 85%; height: min(120px, 34%); }
+  .product-info-name  { font-size: 12px; }
+}
