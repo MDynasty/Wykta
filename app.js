@@ -584,8 +584,8 @@ const uiMessages = {
     ctaJoinCommunity: "Join Community",
     workflowTitle: "How Wykta works",
     workflowSubtitle: "From scan to safety decision in seconds — completely free to start.",
-    workflowStep1Title: "Discover",
-    workflowStep1Body: "Find Wykta via social media, search, or a friend's recommendation.",
+    workflowStep1Title: "Start",
+    workflowStep1Body: "Paste ingredients or open the camera to begin your check immediately.",
     workflowStep2Title: "Scan & analyze",
     workflowStep2Body: "Open camera, point at any food or skincare label. AI reads it in seconds.",
     workflowStep3Title: "Get insights",
@@ -608,7 +608,7 @@ const uiMessages = {
     starterTitle: "Starter (Free)",
     starterBody: "Quick scans, basic warnings, multilingual output.",
     proTitle: "Pro (Recommended)",
-    proBody: "Priority analysis, richer ingredient insights, premium trust reports.",
+    proBody: "Monthly or annual plans with priority analysis, richer ingredient insights, and premium trust reports.",
     proCtaButton: "Get Pro",
     enterpriseCtaButton: "Contact Sales",
     footerTagline: "Know what goes in and on your body.",
@@ -648,10 +648,10 @@ const uiMessages = {
     proFeaturePdf: "Export PDF reports",
     enterpriseTitle: "Enterprise",
     enterprisePrice: "Custom",
-    enterprisePeriod: "contact us",
+    enterprisePeriod: "custom scope & quote",
     enterpriseFeaturePro: "Everything in Pro",
-    enterpriseFeatureApi: "REST API access",
-    enterpriseFeatureWhiteLabel: "White-label option",
+    enterpriseFeatureApi: "REST API and integration support",
+    enterpriseFeatureWhiteLabel: "White-label and workflow customization",
     enterpriseFeatureSla: "SLA guarantee",
     enterpriseFeatureSupport: "Dedicated support",
     exportBtn: "Export PDF",
@@ -704,8 +704,8 @@ const uiMessages = {
     ctaJoinCommunity: "Rejoindre la communauté",
     workflowTitle: "Comment fonctionne Wykta",
     workflowSubtitle: "Du scan à la décision de sécurité en secondes — gratuit pour commencer.",
-    workflowStep1Title: "Découverte",
-    workflowStep1Body: "Trouvez Wykta via les réseaux sociaux, la recherche ou une recommandation.",
+    workflowStep1Title: "Démarrer",
+    workflowStep1Body: "Collez vos ingrédients ou ouvrez la caméra pour commencer immédiatement.",
     workflowStep2Title: "Scanner & analyser",
     workflowStep2Body: "Ouvrez la caméra, pointez sur une étiquette alimentaire ou skincare. L'IA la lit en secondes.",
     workflowStep3Title: "Obtenir des insights",
@@ -728,7 +728,7 @@ const uiMessages = {
     starterTitle: "Starter (Gratuit)",
     starterBody: "Scans rapides, alertes de base, sortie multilingue.",
     proTitle: "Pro (Recommandé)",
-    proBody: "Analyse prioritaire, insights plus riches, rapports premium.",
+    proBody: "Abonnements mensuel ou annuel avec analyse prioritaire, insights plus riches et rapports premium.",
     proCtaButton: "Passer Pro",
     enterpriseCtaButton: "Contacter l'équipe commerciale",
     footerTagline: "Sachez ce que vous consommez et appliquez sur votre peau.",
@@ -768,10 +768,10 @@ const uiMessages = {
     proFeaturePdf: "Export PDF des rapports",
     enterpriseTitle: "Entreprise",
     enterprisePrice: "Sur mesure",
-    enterprisePeriod: "contactez-nous",
+    enterprisePeriod: "périmètre et devis sur mesure",
     enterpriseFeaturePro: "Tout le contenu de Pro",
-    enterpriseFeatureApi: "Accès API REST",
-    enterpriseFeatureWhiteLabel: "Option marque blanche",
+    enterpriseFeatureApi: "Accès API REST et support d'intégration",
+    enterpriseFeatureWhiteLabel: "Marque blanche et adaptation du workflow",
     enterpriseFeatureSla: "Garantie SLA",
     enterpriseFeatureSupport: "Support dédié",
     exportBtn: "Exporter PDF",
@@ -824,8 +824,8 @@ const uiMessages = {
     ctaJoinCommunity: "Community beitreten",
     workflowTitle: "Wie Wykta funktioniert",
     workflowSubtitle: "Vom Scan zur Sicherheitsentscheidung in Sekunden — kostenlos starten.",
-    workflowStep1Title: "Entdecken",
-    workflowStep1Body: "Finden Sie Wykta über Social Media, Suche oder eine Empfehlung.",
+    workflowStep1Title: "Starten",
+    workflowStep1Body: "Inhaltsstoffe einfügen oder Kamera öffnen und sofort prüfen.",
     workflowStep2Title: "Scannen & Analysieren",
     workflowStep2Body: "Kamera öffnen, auf ein Lebensmittel- oder Pflege-Etikett richten. KI liest es in Sekunden.",
     workflowStep3Title: "Einblicke erhalten",
@@ -848,7 +848,7 @@ const uiMessages = {
     starterTitle: "Starter (Kostenlos)",
     starterBody: "Schnelle Scans, Basiswarnungen, mehrsprachige Ausgabe.",
     proTitle: "Pro (Empfohlen)",
-    proBody: "Priorisierte Analyse, tiefere Insights, Premium-Vertrauensberichte.",
+    proBody: "Monatlicher oder jährlicher Tarif mit priorisierter Analyse, tieferen Insights und Premium-Reports.",
     proCtaButton: "Pro holen",
     enterpriseCtaButton: "Vertrieb kontaktieren",
     footerTagline: "Wissen, was in und auf Ihren Körper gelangt.",
@@ -888,10 +888,10 @@ const uiMessages = {
     proFeaturePdf: "PDF-Berichte exportieren",
     enterpriseTitle: "Enterprise",
     enterprisePrice: "Individuell",
-    enterprisePeriod: "Kontakt aufnehmen",
+    enterprisePeriod: "individueller Umfang & Angebot",
     enterpriseFeaturePro: "Alles aus Pro",
-    enterpriseFeatureApi: "REST-API-Zugang",
-    enterpriseFeatureWhiteLabel: "White-Label-Option",
+    enterpriseFeatureApi: "REST-API-Zugang und Integrationssupport",
+    enterpriseFeatureWhiteLabel: "White-Label- und Workflow-Anpassung",
     enterpriseFeatureSla: "SLA-Garantie",
     enterpriseFeatureSupport: "Dedizierter Support",
     exportBtn: "PDF exportieren",
@@ -944,8 +944,8 @@ const uiMessages = {
     ctaJoinCommunity: "加入社区",
     workflowTitle: "Wykta 怎么用",
     workflowSubtitle: "从扫描到安全判断，只需几秒钟 — 免费开始使用。",
-    workflowStep1Title: "发现",
-    workflowStep1Body: "通过社交媒体、搜索或朋友推荐找到 Wykta。",
+    workflowStep1Title: "开始使用",
+    workflowStep1Body: "直接粘贴成分或打开相机，马上开始检测。",
     workflowStep2Title: "扫描 & 分析",
     workflowStep2Body: "打开相机，对准任何食品或护肤品标签，AI 几秒内完成识别。",
     workflowStep3Title: "获取洞察",
@@ -968,7 +968,7 @@ const uiMessages = {
     starterTitle: "基础版（免费）",
     starterBody: "快速扫描、基础预警、多语言输出。",
     proTitle: "专业版（推荐）",
-    proBody: "优先分析、更丰富洞察、高级可信报告。",
+    proBody: "提供月付与年付两种专业版，含优先分析、更丰富洞察和高级可信报告。",
     proCtaButton: "升级专业版",
     enterpriseCtaButton: "联系销售团队",
     footerTagline: "了解进入和涂抹在身体上的每一种成分。",
@@ -1008,10 +1008,10 @@ const uiMessages = {
     proFeaturePdf: "导出 PDF 报告",
     enterpriseTitle: "企业版",
     enterprisePrice: "定制",
-    enterprisePeriod: "联系我们",
+    enterprisePeriod: "按需求定制报价",
     enterpriseFeaturePro: "包含专业版全部功能",
-    enterpriseFeatureApi: "REST API 接入",
-    enterpriseFeatureWhiteLabel: "白标方案",
+    enterpriseFeatureApi: "REST API 接入与集成支持",
+    enterpriseFeatureWhiteLabel: "白标与业务流程定制",
     enterpriseFeatureSla: "SLA 服务保障",
     enterpriseFeatureSupport: "专属支持",
     exportBtn: "导出 PDF",
@@ -2066,6 +2066,33 @@ function getCheckoutHrefForPlan(plan, lang = currentLanguage()) {
   return `checkout.html?plan=${encodeURIComponent(plan)}&lang=${encodeURIComponent(normalizedLang)}`
 }
 
+function withLangQuery(href, lang = currentLanguage()) {
+  if (!href || href.startsWith("#")) return href
+  if (/^(mailto:|tel:|javascript:)/i.test(href)) return href
+  try {
+    const normalizedLang = normalizeSupportedLanguage(lang)
+    const url = new URL(href, window.location.origin)
+    if (url.origin !== window.location.origin) return href
+    const page = url.pathname.split("/").pop() || "index.html"
+    const localPages = new Set(["index.html", "checkout.html", "contact-sales.html", "community.html", "payment-success.html"])
+    if (!localPages.has(page)) return href
+    url.searchParams.set("lang", normalizedLang)
+    return `${url.pathname}${url.search}${url.hash}`
+  } catch (err) {
+    return href
+  }
+}
+
+function localizeInternalLinks(lang = currentLanguage()) {
+  document.querySelectorAll("a[href]").forEach((el) => {
+    const href = el.getAttribute("href")
+    const localizedHref = withLangQuery(href, lang)
+    if (localizedHref && localizedHref !== href) {
+      el.setAttribute("href", localizedHref)
+    }
+  })
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   // UTM parameter capture + retention
   ;(function captureUTM() {
@@ -2090,13 +2117,20 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   })()
   const languageSelect = document.getElementById("language")
-  const storedLang = normalizeSupportedLanguage(localStorage.getItem("wykta_lang") || "")
-  if (languageSelect) languageSelect.value = storedLang
+  const urlParams = new URLSearchParams(window.location.search)
+  const urlLangRaw = urlParams.get("lang")
+  const storedLangRaw = localStorage.getItem("wykta_lang")
+  const initialLang = normalizeSupportedLanguage(urlLangRaw || storedLangRaw || navigator.language || "en")
+  if (languageSelect) languageSelect.value = initialLang
+  localStorage.setItem("wykta_lang", initialLang)
   localizeStaticUI()
+  localizeInternalLinks(initialLang)
   if(languageSelect){
     languageSelect.addEventListener("change", () => {
-      localStorage.setItem("wykta_lang", currentLanguage())
+      const lang = normalizeSupportedLanguage(currentLanguage())
+      localStorage.setItem("wykta_lang", lang)
       localizeStaticUI()
+      localizeInternalLinks(lang)
       const isAnnual = annualBtn ? annualBtn.classList.contains("active") : false
       setBilling(isAnnual)
     })
@@ -2133,6 +2167,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkoutHref = getCheckoutHrefForPlan(isAnnual ? "pro-annual" : "pro-monthly", lang)
     if (planProCta) planProCta.setAttribute("href", checkoutHref)
     if (ctaGetProBtn) ctaGetProBtn.setAttribute("href", checkoutHref)
+    localizeInternalLinks(lang)
   }
 
   if (monthlyBtn) monthlyBtn.addEventListener("click", () => setBilling(false))

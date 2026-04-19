@@ -39,8 +39,8 @@
 
     <div class="community-stats">
       <div class="stat-item"><strong>2,400+</strong><span>Members</span></div>
-      <div class="stat-item"><strong>12</strong><span>Channels</span></div>
-      <div class="stat-item"><strong>5</strong><span>Languages</span></div>
+      <div class="stat-item"><strong>4</strong><span>Core Channels</span></div>
+      <div class="stat-item"><strong>4</strong><span>Languages</span></div>
       <div class="stat-item"><strong>Daily</strong><span>Active Q&amp;A</span></div>
     </div>
 
@@ -61,12 +61,9 @@
             <label class="field-label" for="channel" id="labelChannel">Primary channel</label>
             <select id="channel" required>
               <option value="discord">Discord</option>
-              <option value="telegram">Telegram</option>
               <option value="wechat">WeChat</option>
-              <option value="x">X / Twitter</option>
               <option value="github">GitHub</option>
-              <option value="youtube">YouTube</option>
-              <option value="xiaohongshu">小红书 (CN)</option>
+              <option value="email">Email Updates</option>
             </select>
           </div>
           <div class="field">
@@ -88,75 +85,92 @@
     const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
 
     const params = new URLSearchParams(window.location.search);
-    const rawLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const rawLang = (params.get('lang') || localStorage.getItem('wykta_lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
     const lang = ['en', 'fr', 'de', 'zh'].includes(rawLang) ? rawLang : 'en';
     document.documentElement.lang = lang;
+    localStorage.setItem('wykta_lang', lang);
+
+    function withLang(href) {
+      if (!href || href.startsWith('#')) return href;
+      if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
+      try {
+        const url = new URL(href, window.location.origin);
+        if (url.origin !== window.location.origin) return href;
+        const page = url.pathname.split('/').pop() || 'index.html';
+        const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html']);
+        if (!localPages.has(page)) return href;
+        url.searchParams.set('lang', lang);
+        return `${url.pathname}${url.search}${url.hash}`;
+      } catch (err) {
+        return href;
+      }
+    }
+
+    document.querySelectorAll('a[href]').forEach((el) => {
+      const href = el.getAttribute('href');
+      const localizedHref = withLang(href);
+      if (localizedHref && localizedHref !== href) {
+        el.setAttribute('href', localizedHref);
+      }
+    });
 
     const copy = {
       en: {
-        title: 'Join the Wykta community', subtitle: 'Pick your preferred channels for updates and product co-creation.',
+        title: 'Join the Wykta community', subtitle: 'Join the practical core channels for updates, support, and transparent product progress.',
         channelsTitle: 'Community channels', onboardTitle: 'Community onboarding',
         labelEmail: 'Email', labelChannel: 'Primary channel', labelWallet: 'Wallet (optional, for rewards)',
         submitLabel: 'Join now',
         success: 'Welcome to Wykta! Check your email for the invite link.',
         error: 'Something went wrong. Please try again.',
         channels: [
-          { label: 'Discord: product Q&A + release rooms', btn: 'Join Discord', url: 'https://discord.gg/wykta' },
-          { label: 'Telegram: quick support + growth drops', btn: 'Join Telegram', url: 'https://t.me/wykta_community' },
-          { label: 'WeChat: CN community and partnerships (WeChat ID: wykta_cn)', btn: 'Join WeChat', url: 'https://www.wechat.com' },
-          { label: 'X/Twitter: launch updates and campaigns', btn: 'Follow X', url: 'https://x.com/wykta_app' },
-          { label: 'GitHub: roadmap and issues', btn: 'Open GitHub', url: 'https://github.com/MDynasty/Wykta' },
-          { label: 'YouTube: tutorial videos and ingredient guides', btn: 'Watch on YouTube', url: 'https://youtube.com/@wykta' },
+          { label: 'Discord: product Q&A and release discussions', btn: 'Join Discord', url: 'https://discord.gg/wykta' },
+          { label: 'WeChat: CN user support and partnership contact (WeChat ID: wykta_cn)', btn: 'Join WeChat', url: 'https://www.wechat.com' },
+          { label: 'GitHub: transparent roadmap, issues, and release history', btn: 'Open GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: 'Email updates: major releases and service notices', btn: 'Contact Sales', url: 'contact-sales.html' },
         ],
       },
       fr: {
         title: 'Rejoindre la communauté Wykta',
-        subtitle: 'Choisissez vos canaux pour les mises à jour et la co-création produit.',
+        subtitle: 'Rejoignez les canaux principaux pour les mises à jour, le support et un suivi produit transparent.',
         channelsTitle: 'Canaux communautaires', onboardTitle: 'Rejoindre la communauté',
         labelEmail: 'Email', labelChannel: 'Canal principal', labelWallet: 'Wallet (facultatif, récompenses)',
         submitLabel: 'Rejoindre',
         success: 'Bienvenue sur Wykta ! Vérifiez vos emails pour le lien d\'invitation.',
         error: 'Une erreur s\'est produite. Veuillez réessayer.',
         channels: [
-          { label: 'Discord : Q&R produit + salles de sortie', btn: 'Discord', url: 'https://discord.gg/wykta' },
-          { label: 'Telegram : support rapide + veille', btn: 'Telegram', url: 'https://t.me/wykta_community' },
-          { label: 'WeChat : communauté CN et partenariats (WeChat ID : wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
-          { label: 'X/Twitter : sorties et campagnes', btn: 'Suivre X', url: 'https://x.com/wykta_app' },
-          { label: 'GitHub : feuille de route et issues', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
-          { label: 'YouTube : tutoriels vidéo et guides d\'ingrédients', btn: 'YouTube', url: 'https://youtube.com/@wykta' },
+          { label: 'Discord : Q&R produit et discussions de release', btn: 'Discord', url: 'https://discord.gg/wykta' },
+          { label: 'WeChat : support CN et partenariats (WeChat ID : wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
+          { label: 'GitHub : roadmap, issues et historique publics', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: 'Mises à jour email : releases majeures et annonces service', btn: 'Contacter Sales', url: 'contact-sales.html' },
         ],
       },
       de: {
         title: 'Der Wykta-Community beitreten',
-        subtitle: 'Wählen Sie Ihre bevorzugten Kanäle für Updates und Produkt-Mitgestaltung.',
+        subtitle: 'Nutzen Sie die wichtigsten Kanäle für Updates, Support und transparente Produktfortschritte.',
         channelsTitle: 'Community-Kanäle', onboardTitle: 'Community-Onboarding',
         labelEmail: 'E-Mail', labelChannel: 'Hauptkanal', labelWallet: 'Wallet (optional, für Prämien)',
         submitLabel: 'Jetzt beitreten',
         success: 'Willkommen bei Wykta! Prüfen Sie Ihre E-Mails für den Einladungslink.',
         error: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
         channels: [
-          { label: 'Discord: Produkt-Q&A + Release-Räume', btn: 'Discord', url: 'https://discord.gg/wykta' },
-          { label: 'Telegram: Support + Wachstums-Updates', btn: 'Telegram', url: 'https://t.me/wykta_community' },
-          { label: 'WeChat: CN-Community & Partnerschaften (WeChat ID: wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
-          { label: 'X/Twitter: Launch-Updates & Kampagnen', btn: 'X folgen', url: 'https://x.com/wykta_app' },
-          { label: 'GitHub: Roadmap & Issues', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
-          { label: 'YouTube: Tutorial-Videos und Zutaten-Guides', btn: 'YouTube', url: 'https://youtube.com/@wykta' },
+          { label: 'Discord: Produkt-Q&A und Release-Diskussionen', btn: 'Discord', url: 'https://discord.gg/wykta' },
+          { label: 'WeChat: CN-Support und Partnerschaften (WeChat ID: wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
+          { label: 'GitHub: öffentliche Roadmap, Issues und Releases', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: 'E-Mail-Updates: wichtige Releases und Service-Hinweise', btn: 'Sales kontaktieren', url: 'contact-sales.html' },
         ],
       },
       zh: {
-        title: '加入 Wykta 社区', subtitle: '选择您偏好的社群渠道，获取更新、参与产品共创。',
+        title: '加入 Wykta 社区', subtitle: '保留最实用的核心渠道：更新通知、使用支持、公开进展透明可见。',
         channelsTitle: '社群渠道', onboardTitle: '社区 Onboarding',
         labelEmail: '邮箱', labelChannel: '首选渠道', labelWallet: '钱包地址（可选，用于奖励发放）',
         submitLabel: '立即加入',
         success: '欢迎加入 Wykta！请查收邮件中的邀请链接。',
         error: '提交失败，请重试。',
         channels: [
-          { label: 'Discord：产品问答 + 版本发布频道', btn: '加入 Discord', url: 'https://discord.gg/wykta' },
-          { label: 'Telegram：快速支持 + 增长资讯', btn: '加入 Telegram', url: 'https://t.me/wykta_community' },
-          { label: '微信：CN 社区及合作伙伴（微信号：wykta_cn）', btn: '加入微信群', url: 'https://www.wechat.com' },
-          { label: 'X/Twitter：发布动态与营销活动', btn: '关注 X', url: 'https://x.com/wykta_app' },
-          { label: 'GitHub：产品路线图与 Issues', btn: '打开 GitHub', url: 'https://github.com/MDynasty/Wykta' },
-          { label: '小红书：成分解析视频 + 产品测评', btn: '关注小红书', url: 'https://www.xiaohongshu.com' },
+          { label: 'Discord：产品问答与版本讨论', btn: '加入 Discord', url: 'https://discord.gg/wykta' },
+          { label: '微信：中文用户支持与合作沟通（微信号：wykta_cn）', btn: '加入微信', url: 'https://www.wechat.com' },
+          { label: 'GitHub：公开路线图、Issue 与版本记录（透明化）', btn: '打开 GitHub', url: 'https://github.com/MDynasty/Wykta' },
+          { label: '邮件更新：重大功能发布与服务通知', btn: '联系销售', url: 'contact-sales.html' },
         ],
       },
     };
@@ -176,7 +190,7 @@
       chList.insertAdjacentHTML('beforeend', `
         <li class="channel-item">
           <span>${ch.label}</span>
-          <a class="btn btn-secondary btn-sm" href="${ch.url}" target="_blank" rel="noopener">${ch.btn}</a>
+          <a class="btn btn-secondary btn-sm" href="${withLang(ch.url)}" ${/^https?:/i.test(ch.url) ? 'target="_blank" rel="noopener"' : ''}>${ch.btn}</a>
         </li>
       `);
     });
