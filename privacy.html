@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy – Wykta</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .legal-main { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }
+    .legal-main h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .legal-main .last-updated { font-size: 13px; color: var(--text-3); margin-bottom: 36px; }
+    .legal-main h2 { font-size: 18px; font-weight: 700; margin: 32px 0 10px; }
+    .legal-main h3 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
+    .legal-main p, .legal-main li { font-size: 14px; line-height: 1.75; color: var(--text-2); }
+    .legal-main ul { padding-left: 22px; margin: 8px 0 16px; }
+    .legal-main a { color: var(--brand); }
+    .legal-main table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0; }
+    .legal-main th, .legal-main td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; color: var(--text-2); }
+    .legal-main th { background: var(--surface-2); font-weight: 700; }
+    .lang-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+    .lang-tab { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-2); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-2); }
+    .lang-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .lang-section { display: none; }
+    .lang-section.active { display: block; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#2d8c52"/><stop offset="1" stop-color="#40b870"/></linearGradient></defs>
+          <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+          <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+          <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="terms.html">Terms</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="legal-main">
+    <div class="lang-tabs" id="langTabs">
+      <button class="lang-tab active" onclick="showLang('en')">English</button>
+      <button class="lang-tab" onclick="showLang('fr')">Français</button>
+      <button class="lang-tab" onclick="showLang('de')">Deutsch</button>
+      <button class="lang-tab" onclick="showLang('zh')">中文</button>
+    </div>
+
+    <!-- ── ENGLISH ─────────────────────────────────────────── -->
+    <div class="lang-section active" id="lang-en">
+      <h1>Privacy Policy</h1>
+      <p class="last-updated">Last updated: April 2026 &nbsp;|&nbsp; Applies to: wykta.app and all sub-pages</p>
+
+      <h2>1. Who we are</h2>
+      <p>Wykta ("we", "our", "us") is an ingredient-analysis tool for food and skincare products. We are committed to protecting your privacy and handling your data transparently and lawfully.</p>
+
+      <h2>2. Data we collect and why</h2>
+      <table>
+        <tr><th>Data</th><th>Purpose</th><th>Legal basis (GDPR)</th><th>Retention</th></tr>
+        <tr><td>Anonymous session ID (random UUID, localStorage)</td><td>Group scan events from the same browser session; enforce free-tier daily limit</td><td>Legitimate interest</td><td>No server-side retention of the ID itself — only aggregate counts in scan_events (1 year)</td></tr>
+        <tr><td>Scan telemetry (ingredient count, language, source, warning/allergen count)</td><td>Product analytics; no text of actual ingredients stored</td><td>Legitimate interest</td><td>1 year</td></tr>
+        <tr><td>Billing email (subscribers only)</td><td>Subscription management, receipt delivery, customer support</td><td>Contract performance</td><td>Duration of subscription + 7 years (tax records)</td></tr>
+        <tr><td>Stripe session/customer/subscription ID</td><td>Verify payment, manage subscription lifecycle</td><td>Contract performance</td><td>Duration of subscription + 7 years</td></tr>
+        <tr><td>Analytics data (Google Analytics / Plausible — opt-in)</td><td>Understand usage patterns to improve the product</td><td>Consent</td><td>Per provider's data retention settings</td></tr>
+        <tr><td>Enterprise contact form (company, email, team size, needs)</td><td>Sales follow-up</td><td>Consent / Legitimate interest</td><td>2 years or until request for deletion</td></tr>
+        <tr><td>Community onboarding (email, channel, optional wallet)</td><td>Send community updates; reward contributors</td><td>Consent</td><td>Until unsubscribe or deletion request</td></tr>
+      </table>
+      <p><strong>We do not store ingredient text, product photos, or any health information.</strong></p>
+
+      <h2>3. Cookies and local storage</h2>
+      <p>We use browser <code>localStorage</code> for:</p>
+      <ul>
+        <li><code>wykta_session_id</code> — anonymous UUID for grouping scans (not linked to any identity)</li>
+        <li><code>wykta_lang</code> — your preferred display language</li>
+        <li><code>wykta_consent</code> — records your analytics consent choice</li>
+      </ul>
+      <p>We only load Google Analytics or Plausible <strong>after you explicitly accept</strong> via the consent banner. You can change your choice at any time by clicking "Cookie settings" in the footer.</p>
+
+      <h2>4. Third-party services</h2>
+      <ul>
+        <li><strong>Supabase</strong> — database and edge functions (EU region available; see <a href="https://supabase.com/privacy" target="_blank" rel="noopener">supabase.com/privacy</a>)</li>
+        <li><strong>Stripe</strong> — payment processing (<a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>)</li>
+        <li><strong>OpenAI</strong> — AI ingredient analysis; ingredient lists are sent to OpenAI API and subject to <a href="https://openai.com/policies/api-data-usage-policies" target="_blank" rel="noopener">OpenAI API data usage policy</a> (API data is not used for training by default)</li>
+        <li><strong>Open Food Facts / Open Beauty Facts</strong> — ingredient lookup via their open databases (CC BY-SA)</li>
+        <li><strong>Wikidata</strong> — ingredient descriptions (CC0)</li>
+        <li><strong>Google Analytics / Plausible</strong> — only if you opt in</li>
+      </ul>
+
+      <h2>5. Your rights (GDPR / CCPA / PIPL)</h2>
+      <p>Depending on your jurisdiction you have the right to:</p>
+      <ul>
+        <li>Access, correct, or delete your personal data</li>
+        <li>Object to or restrict processing</li>
+        <li>Data portability</li>
+        <li>Withdraw consent at any time</li>
+        <li>Lodge a complaint with your supervisory authority</li>
+      </ul>
+      <p>To exercise any right, email us at <a href="mailto:privacy@wykta.app">privacy@wykta.app</a>. We will respond within 30 days.</p>
+      <p>Free-tier users have no account — only the anonymous session UUID is associated with scan events. To delete that association simply clear your browser's localStorage for wykta.app.</p>
+
+      <h2>6. Data security</h2>
+      <ul>
+        <li>All data is transmitted over TLS 1.2+</li>
+        <li>Database rows are protected by Supabase Row Level Security (RLS) — anon keys cannot read subscription or community data</li>
+        <li>Stripe payments are processed entirely on Stripe's servers; we never see raw card data</li>
+      </ul>
+
+      <h2>7. Data transfers</h2>
+      <p>Supabase may process data in the US or EU depending on your project region. Stripe is subject to EU-US Data Privacy Framework. OpenAI is a US-based processor. We rely on Standard Contractual Clauses (SCCs) or equivalent safeguards for transfers outside the EEA.</p>
+
+      <h2>8. Children</h2>
+      <p>Wykta is not directed at children under 16. We do not knowingly collect personal data from minors.</p>
+
+      <h2>9. Changes to this policy</h2>
+      <p>We will update this page when our practices change. For material changes we will display a notice on the homepage for at least 30 days.</p>
+
+      <h2>10. Contact</h2>
+      <p>Wykta &mdash; <a href="mailto:privacy@wykta.app">privacy@wykta.app</a></p>
+    </div>
+
+    <!-- ── FRENCH ──────────────────────────────────────────── -->
+    <div class="lang-section" id="lang-fr">
+      <h1>Politique de confidentialité</h1>
+      <p class="last-updated">Dernière mise à jour : avril 2026</p>
+
+      <h2>1. Qui sommes-nous</h2>
+      <p>Wykta est un outil d'analyse des ingrédients pour les produits alimentaires et cosmétiques. Nous nous engageons à protéger votre vie privée conformément au RGPD.</p>
+
+      <h2>2. Données collectées</h2>
+      <table>
+        <tr><th>Donnée</th><th>Finalité</th><th>Base légale</th><th>Conservation</th></tr>
+        <tr><td>Identifiant de session anonyme (UUID aléatoire)</td><td>Grouper les analyses, appliquer la limite quotidienne gratuite</td><td>Intérêt légitime</td><td>1 an (événements agrégés)</td></tr>
+        <tr><td>Télémétrie d'analyse (comptages, langue, source)</td><td>Amélioration du produit</td><td>Intérêt légitime</td><td>1 an</td></tr>
+        <tr><td>Email de facturation (abonnés)</td><td>Gestion de l'abonnement, reçus</td><td>Exécution du contrat</td><td>Durée abonnement + 7 ans</td></tr>
+        <tr><td>Analytics (Google Analytics / Plausible — opt-in)</td><td>Statistiques d'utilisation</td><td>Consentement</td><td>Paramètres du prestataire</td></tr>
+      </table>
+      <p><strong>Nous ne stockons jamais le texte des ingrédients ni vos photos.</strong></p>
+
+      <h2>3. Vos droits (RGPD)</h2>
+      <p>Vous disposez des droits d'accès, rectification, effacement, portabilité, opposition et limitation. Contactez-nous : <a href="mailto:privacy@wykta.app">privacy@wykta.app</a></p>
+
+      <h2>4. Cookies et stockage local</h2>
+      <p>Nous utilisons <code>localStorage</code> pour enregistrer vos préférences de langue, un identifiant de session anonyme et votre consentement aux cookies analytiques. Aucun cookie tiers n'est déposé sans votre accord.</p>
+
+      <h2>5. Services tiers</h2>
+      <p>Supabase (BDD), Stripe (paiement), OpenAI (analyse IA — les listes d'ingrédients sont transmises à l'API OpenAI), Open Food Facts / Open Beauty Facts / Wikidata (bases ouvertes), Google Analytics / Plausible (sur consentement).</p>
+
+      <h2>6. Contact</h2>
+      <p><a href="mailto:privacy@wykta.app">privacy@wykta.app</a></p>
+    </div>
+
+    <!-- ── GERMAN ──────────────────────────────────────────── -->
+    <div class="lang-section" id="lang-de">
+      <h1>Datenschutzerklärung</h1>
+      <p class="last-updated">Stand: April 2026</p>
+
+      <h2>1. Verantwortlicher</h2>
+      <p>Wykta ist ein Inhaltsstoffanalyse-Tool für Lebensmittel- und Kosmetikprodukte. Wir verarbeiten Ihre Daten gemäß DSGVO.</p>
+
+      <h2>2. Erhobene Daten</h2>
+      <table>
+        <tr><th>Datum</th><th>Zweck</th><th>Rechtsgrundlage</th><th>Speicherdauer</th></tr>
+        <tr><td>Anonyme Sitzungs-ID (zufällige UUID)</td><td>Scans gruppieren, kostenloses Tageslimit durchsetzen</td><td>Berechtigtes Interesse</td><td>1 Jahr (aggregierte Ereignisse)</td></tr>
+        <tr><td>Scan-Telemetrie (Zählungen, Sprache, Quelle)</td><td>Produktverbesserung</td><td>Berechtigtes Interesse</td><td>1 Jahr</td></tr>
+        <tr><td>Rechnungs-E-Mail (Abonnenten)</td><td>Abonnementverwaltung, Belege</td><td>Vertragserfüllung</td><td>Laufzeit + 7 Jahre</td></tr>
+        <tr><td>Analytics (Google Analytics / Plausible — Opt-in)</td><td>Nutzungsstatistiken</td><td>Einwilligung</td><td>Gemäß Anbieter</td></tr>
+      </table>
+      <p><strong>Wir speichern niemals den Text der Inhaltsstoffe oder Ihre Fotos.</strong></p>
+
+      <h2>3. Ihre Rechte (DSGVO)</h2>
+      <p>Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Datenübertragbarkeit, Widerspruch und Einschränkung der Verarbeitung. Kontakt: <a href="mailto:privacy@wykta.app">privacy@wykta.app</a></p>
+
+      <h2>4. Cookies und lokaler Speicher</h2>
+      <p>Wir verwenden <code>localStorage</code> für Sprachpräferenz, eine anonyme Sitzungs-ID und Ihre Cookie-Einwilligung. Drittanbieter-Analytics werden nur nach Ihrer ausdrücklichen Einwilligung geladen.</p>
+
+      <h2>5. Drittanbieter</h2>
+      <p>Supabase (Datenbank), Stripe (Zahlung), OpenAI (KI-Analyse — Inhaltsstofflisten werden an die OpenAI API übermittelt), Open Food Facts / Open Beauty Facts / Wikidata (offene Datenbanken), Google Analytics / Plausible (nur mit Einwilligung).</p>
+
+      <h2>6. Kontakt</h2>
+      <p><a href="mailto:privacy@wykta.app">privacy@wykta.app</a></p>
+    </div>
+
+    <!-- ── CHINESE ─────────────────────────────────────────── -->
+    <div class="lang-section" id="lang-zh">
+      <h1>隐私政策</h1>
+      <p class="last-updated">最后更新：2026年4月 &nbsp;|&nbsp; 适用于：wykta.app 及所有子页面</p>
+
+      <h2>1. 我们是谁</h2>
+      <p>Wykta（"我们"）是一款食品及护肤品成分分析工具。我们承诺依法依规处理您的数据，符合《个人信息保护法》（PIPL）、欧盟GDPR及美国CCPA的要求。</p>
+
+      <h2>2. 我们收集的数据</h2>
+      <table>
+        <tr><th>数据</th><th>用途</th><th>法律依据</th><th>保留期限</th></tr>
+        <tr><td>匿名会话ID（随机UUID，存储于浏览器 localStorage）</td><td>归并同一会话的扫描事件；执行免费用量限制</td><td>正当利益</td><td>1年（聚合统计）</td></tr>
+        <tr><td>扫描遥测（成分数量、语言、来源、预警数）</td><td>产品改进；不存储成分文本</td><td>正当利益</td><td>1年</td></tr>
+        <tr><td>账单邮箱（仅付费用户）</td><td>订阅管理、收据发送、客户支持</td><td>履行合同</td><td>订阅期间+7年（税务留存）</td></tr>
+        <tr><td>Stripe 会话/客户/订阅ID</td><td>验证支付、管理订阅生命周期</td><td>履行合同</td><td>同上</td></tr>
+        <tr><td>分析数据（Google Analytics / Plausible，仅在您同意后）</td><td>了解用量规律，改善产品</td><td>同意</td><td>依服务商设置</td></tr>
+        <tr><td>企业联系表单（公司、邮箱、团队规模、需求）</td><td>商务跟进</td><td>同意/正当利益</td><td>2年或经您要求删除</td></tr>
+        <tr><td>社区注册（邮箱、频道、可选钱包地址）</td><td>发送社区更新、贡献奖励</td><td>同意</td><td>取消订阅或您提出删除请求时</td></tr>
+      </table>
+      <p><strong>我们不存储任何成分文本、产品照片或健康信息。</strong></p>
+
+      <h2>3. Cookie 与本地存储</h2>
+      <p>我们使用浏览器 <code>localStorage</code> 存储以下信息：</p>
+      <ul>
+        <li><code>wykta_session_id</code> — 匿名UUID，用于归并扫描事件（不关联任何身份）</li>
+        <li><code>wykta_lang</code> — 您的首选显示语言</li>
+        <li><code>wykta_consent</code> — 记录您对分析Cookie的同意选择</li>
+      </ul>
+      <p>仅在您通过同意横幅明确接受后，我们才会加载 Google Analytics 或 Plausible。</p>
+
+      <h2>4. 第三方服务</h2>
+      <ul>
+        <li><strong>Supabase</strong> — 数据库与边缘函数（可选EU区域）</li>
+        <li><strong>Stripe</strong> — 支付处理（支持支付宝、微信支付）</li>
+        <li><strong>OpenAI</strong> — AI成分分析；成分列表会发送至OpenAI API（API数据默认不用于训练）</li>
+        <li><strong>Open Food Facts / Open Beauty Facts</strong> — 开放成分数据库（CC BY-SA协议）</li>
+        <li><strong>Wikidata</strong> — 成分描述（CC0）</li>
+      </ul>
+
+      <h2>5. 您的权利（个保法 / GDPR / CCPA）</h2>
+      <p>您有权查阅、更正、删除、转移您的个人信息，以及撤回同意。请发送邮件至 <a href="mailto:privacy@wykta.app">privacy@wykta.app</a>，我们将在30天内回复。</p>
+      <p>免费用户无账户——仅匿名会话UUID与扫描事件关联。如需删除，直接清除浏览器中 wykta.app 的 localStorage 即可。</p>
+
+      <h2>6. 数据安全</h2>
+      <ul>
+        <li>所有数据通过TLS 1.2+加密传输</li>
+        <li>数据库行由Supabase行级安全（RLS）保护——匿名密钥无法读取订阅或社区数据</li>
+        <li>Stripe支付完全在Stripe服务器处理，我们不接触原始卡片信息</li>
+      </ul>
+
+      <h2>7. 政策变更</h2>
+      <p>当我们的数据实践发生变化时，我们将更新本页面。如有重大变更，我们将在首页显示通知至少30天。</p>
+
+      <h2>8. 联系方式</h2>
+      <p><a href="mailto:privacy@wykta.app">privacy@wykta.app</a></p>
+    </div>
+  </main>
+
+  <script>
+    function showLang(lang) {
+      document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.lang-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('lang-' + lang).classList.add('active');
+      event.target.classList.add('active');
+    }
+    // Auto-select language from localStorage or browser
+    const storedLang = localStorage.getItem('wykta_lang') || navigator.language.slice(0, 2);
+    const supported = ['en', 'fr', 'de', 'zh'];
+    const initialLang = supported.includes(storedLang) ? storedLang : 'en';
+    if (initialLang !== 'en') {
+      document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
+      document.getElementById('lang-' + initialLang).classList.add('active');
+      document.querySelectorAll('.lang-tab').forEach(el => {
+        el.classList.toggle('active', el.textContent.toLowerCase().startsWith(initialLang === 'zh' ? '中' : initialLang));
+      });
+    }
+  </script>
+  <script src="config.js"></script>
+</body>
+</html>

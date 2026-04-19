@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms of Service – Wykta</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .legal-main { max-width: 780px; margin: 0 auto; padding: 40px 20px 80px; }
+    .legal-main h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+    .legal-main .last-updated { font-size: 13px; color: var(--text-3); margin-bottom: 36px; }
+    .legal-main h2 { font-size: 18px; font-weight: 700; margin: 32px 0 10px; }
+    .legal-main h3 { font-size: 15px; font-weight: 700; margin: 20px 0 8px; }
+    .legal-main p, .legal-main li { font-size: 14px; line-height: 1.75; color: var(--text-2); }
+    .legal-main ul { padding-left: 22px; margin: 8px 0 16px; }
+    .legal-main a { color: var(--brand); }
+    .lang-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 32px; }
+    .lang-tab { padding: 6px 14px; border-radius: 8px; border: 1px solid var(--border-2); background: var(--surface); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--text-2); }
+    .lang-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .lang-section { display: none; }
+    .lang-section.active { display: block; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs><linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#2d8c52"/><stop offset="1" stop-color="#40b870"/></linearGradient></defs>
+          <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+          <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+          <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link" href="privacy.html">Privacy</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="legal-main">
+    <div class="lang-tabs" id="langTabs">
+      <button class="lang-tab active" onclick="showLang('en')">English</button>
+      <button class="lang-tab" onclick="showLang('fr')">Français</button>
+      <button class="lang-tab" onclick="showLang('de')">Deutsch</button>
+      <button class="lang-tab" onclick="showLang('zh')">中文</button>
+    </div>
+
+    <!-- ── ENGLISH ─────────────────────────────────────────── -->
+    <div class="lang-section active" id="lang-en">
+      <h1>Terms of Service</h1>
+      <p class="last-updated">Last updated: April 2026 &nbsp;|&nbsp; Applies to: wykta.app</p>
+
+      <h2>1. Acceptance</h2>
+      <p>By using Wykta ("the Service") you agree to these Terms. If you do not agree, do not use the Service.</p>
+
+      <h2>2. Description of service</h2>
+      <p>Wykta provides AI-assisted ingredient analysis for food and skincare products. Results are provided <strong>for informational purposes only</strong> and do not constitute medical, dietary, or professional advice. Always consult a qualified professional for health-related decisions.</p>
+
+      <h2>3. Free tier and subscriptions</h2>
+      <ul>
+        <li>Free-tier users may perform up to <strong>5 AI-powered analyses per day</strong> (per browser session). Additional analyses beyond this limit fall back to open-database results automatically.</li>
+        <li>Pro subscribers receive unlimited AI analyses for the duration of their active subscription.</li>
+        <li>Subscription fees are billed in advance on a monthly or annual basis via Stripe.</li>
+        <li>You may cancel your subscription at any time through the Stripe Customer Portal (accessible from your payment confirmation page). Cancellation takes effect at the end of the current billing period; no partial refunds are issued.</li>
+      </ul>
+
+      <h2>4. Acceptable use</h2>
+      <p>You agree not to:</p>
+      <ul>
+        <li>Automate requests to bypass per-session rate limits</li>
+        <li>Scrape, reproduce, or redistribute Wykta's AI-generated analysis at scale</li>
+        <li>Use the Service for commercial resale without an Enterprise license</li>
+        <li>Attempt to reverse-engineer or disrupt the Service</li>
+      </ul>
+
+      <h2>5. Third-party content and open databases</h2>
+      <p>Ingredient data from Open Food Facts and Open Beauty Facts is provided under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">ODbL license</a>. Wikidata content is CC0. Wykta's AI analysis is generated by OpenAI and is provided "as is".</p>
+
+      <h2>6. Intellectual property</h2>
+      <p>The Wykta brand, interface, and original code are owned by Wykta. Open-source components remain under their respective licenses.</p>
+
+      <h2>7. Disclaimer of warranties</h2>
+      <p>THE SERVICE IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. TO THE MAXIMUM EXTENT PERMITTED BY LAW, WYKTA DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.</p>
+
+      <h2>8. Limitation of liability</h2>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, WYKTA SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM USE OF THE SERVICE. OUR TOTAL LIABILITY SHALL NOT EXCEED THE FEES YOU PAID IN THE 12 MONTHS PRIOR TO THE CLAIM.</p>
+
+      <h2>9. Governing law</h2>
+      <p>These Terms are governed by the laws of the jurisdiction in which Wykta is incorporated. Disputes will be resolved by binding arbitration or the competent courts of that jurisdiction, except where local consumer protection law provides otherwise.</p>
+
+      <h2>10. Changes to these terms</h2>
+      <p>We may update these Terms. Material changes will be notified on the homepage at least 30 days before they take effect. Continued use constitutes acceptance.</p>
+
+      <h2>11. Contact</h2>
+      <p><a href="mailto:legal@wykta.app">legal@wykta.app</a></p>
+    </div>
+
+    <!-- ── FRENCH ──────────────────────────────────────────── -->
+    <div class="lang-section" id="lang-fr">
+      <h1>Conditions d'utilisation</h1>
+      <p class="last-updated">Dernière mise à jour : avril 2026</p>
+
+      <h2>1. Acceptation</h2>
+      <p>En utilisant Wykta, vous acceptez les présentes Conditions. Si vous n'êtes pas d'accord, n'utilisez pas le Service.</p>
+
+      <h2>2. Description du service</h2>
+      <p>Wykta fournit une analyse des ingrédients assistée par IA pour les produits alimentaires et cosmétiques. Les résultats sont fournis <strong>à titre informatif uniquement</strong> et ne constituent pas un avis médical, diététique ou professionnel.</p>
+
+      <h2>3. Offre gratuite et abonnements</h2>
+      <ul>
+        <li>Les utilisateurs gratuits peuvent effectuer jusqu'à <strong>5 analyses IA par jour</strong> (par session navigateur). Au-delà, les analyses sont réalisées via les bases de données ouvertes.</li>
+        <li>Les abonnés Pro bénéficient d'analyses IA illimitées pendant la durée de leur abonnement actif.</li>
+        <li>Vous pouvez annuler votre abonnement à tout moment via le portail client Stripe (accessible depuis votre page de confirmation de paiement). L'annulation prend effet à la fin de la période de facturation en cours.</li>
+      </ul>
+
+      <h2>4. Utilisation acceptable</h2>
+      <p>Vous vous engagez à ne pas automatiser les requêtes pour contourner les limites, revendre les analyses IA sans licence Enterprise, ni tenter de désorganiser le Service.</p>
+
+      <h2>5. Limitation de responsabilité</h2>
+      <p>Dans toute la mesure permise par la loi applicable, Wykta ne saurait être tenu responsable des dommages indirects découlant de l'utilisation du Service. Notre responsabilité totale est plafonnée aux sommes versées au cours des 12 mois précédant la réclamation.</p>
+
+      <h2>6. Contact</h2>
+      <p><a href="mailto:legal@wykta.app">legal@wykta.app</a></p>
+    </div>
+
+    <!-- ── GERMAN ──────────────────────────────────────────── -->
+    <div class="lang-section" id="lang-de">
+      <h1>Nutzungsbedingungen</h1>
+      <p class="last-updated">Stand: April 2026</p>
+
+      <h2>1. Zustimmung</h2>
+      <p>Mit der Nutzung von Wykta stimmen Sie diesen Bedingungen zu. Falls Sie nicht zustimmen, nutzen Sie den Dienst bitte nicht.</p>
+
+      <h2>2. Leistungsbeschreibung</h2>
+      <p>Wykta bietet KI-gestützte Inhaltsstoffanalysen für Lebensmittel- und Kosmetikprodukte. Die Ergebnisse dienen <strong>ausschließlich zu Informationszwecken</strong> und stellen keine medizinische, diätetische oder professionelle Beratung dar.</p>
+
+      <h2>3. Kostenloses Kontingent und Abonnements</h2>
+      <ul>
+        <li>Kostenlose Nutzer können täglich bis zu <strong>5 KI-gestützte Analysen</strong> (pro Browser-Sitzung) durchführen. Weitere Analysen werden über offene Datenbanken bereitgestellt.</li>
+        <li>Pro-Abonnenten erhalten unbegrenzte KI-Analysen für die Dauer ihres aktiven Abonnements.</li>
+        <li>Sie können Ihr Abonnement jederzeit über das Stripe-Kundenportal kündigen. Die Kündigung gilt ab Ende des aktuellen Abrechnungszeitraums.</li>
+      </ul>
+
+      <h2>4. Haftungsausschluss</h2>
+      <p>Der Dienst wird „wie besehen" ohne jegliche Gewährleistung bereitgestellt. Wykta haftet nicht für mittelbare Schäden. Unsere Gesamthaftung ist auf die in den letzten 12 Monaten gezahlten Gebühren begrenzt.</p>
+
+      <h2>5. Kontakt</h2>
+      <p><a href="mailto:legal@wykta.app">legal@wykta.app</a></p>
+    </div>
+
+    <!-- ── CHINESE ─────────────────────────────────────────── -->
+    <div class="lang-section" id="lang-zh">
+      <h1>服务条款</h1>
+      <p class="last-updated">最后更新：2026年4月 &nbsp;|&nbsp; 适用于：wykta.app</p>
+
+      <h2>1. 接受条款</h2>
+      <p>使用 Wykta（"本服务"）即表示您接受本条款。如不同意，请勿使用本服务。</p>
+
+      <h2>2. 服务说明</h2>
+      <p>Wykta 提供食品及护肤品成分的AI辅助分析。分析结果<strong>仅供参考</strong>，不构成医疗、饮食或专业建议。健康相关决策请咨询专业人士。</p>
+
+      <h2>3. 免费用量与订阅</h2>
+      <ul>
+        <li>免费用户每天可进行最多 <strong>5次AI分析</strong>（按浏览器会话计算）。超出后自动切换为开放数据库分析。</li>
+        <li>专业版订阅者在订阅有效期内可进行无限次AI分析。</li>
+        <li>订阅费用按月或按年通过Stripe预先收取（支持支付宝、微信支付）。</li>
+        <li>您可随时通过 Stripe 客户门户（从付款确认页面访问）取消订阅。取消在当前计费周期结束时生效，不退还已付费用。</li>
+      </ul>
+
+      <h2>4. 合理使用</h2>
+      <p>您同意不得：自动化请求以绕过用量限制；未获企业授权而商业转售AI分析内容；尝试反向工程或干扰本服务。</p>
+
+      <h2>5. 免责声明</h2>
+      <p>本服务按"现状"提供，不附任何明示或暗示保证。在法律允许的最大范围内，Wykta 对间接损失不承担责任。我们的总责任不超过您在索赔前12个月内支付的费用。</p>
+
+      <h2>6. 条款变更</h2>
+      <p>我们可能更新本条款。重大变更将在生效前至少30天在首页发出通知。继续使用即视为接受。</p>
+
+      <h2>7. 联系方式</h2>
+      <p><a href="mailto:legal@wykta.app">legal@wykta.app</a></p>
+    </div>
+  </main>
+
+  <script>
+    function showLang(lang) {
+      document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.lang-tab').forEach(el => el.classList.remove('active'));
+      document.getElementById('lang-' + lang).classList.add('active');
+      event.target.classList.add('active');
+    }
+    const storedLang = localStorage.getItem('wykta_lang') || navigator.language.slice(0, 2);
+    const supported = ['en', 'fr', 'de', 'zh'];
+    const initialLang = supported.includes(storedLang) ? storedLang : 'en';
+    if (initialLang !== 'en') {
+      document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
+      document.getElementById('lang-' + initialLang).classList.add('active');
+      document.querySelectorAll('.lang-tab').forEach(el => {
+        el.classList.toggle('active', el.textContent.toLowerCase().startsWith(initialLang === 'zh' ? '中' : initialLang));
+      });
+    }
+  </script>
+  <script src="config.js"></script>
+</body>
+</html>

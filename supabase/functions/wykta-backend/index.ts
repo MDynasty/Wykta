@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +8,46 @@ const corsHeaders = {
 }
 
 const FALLBACK_OPENAI_MODEL = "gpt-4o-mini"
+
+// ---------------------------------------------------------------------------
+// Free-tier daily AI analysis limit
+// Free users (no active Pro subscription) are limited to FREE_DAILY_AI_LIMIT
+// AI analyses per day per anonymous session_id.  This is enforced server-side
+// to prevent client-side bypasses.
+// ---------------------------------------------------------------------------
+const FREE_DAILY_AI_LIMIT = 5
+
+async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: boolean; remaining: number }> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")
+  if (!supabaseUrl || !supabaseServiceKey || !sessionId || sessionId === "unknown") {
+    // If we can't check (missing secrets or no session), allow the call.
+    return { allowed: true, remaining: FREE_DAILY_AI_LIMIT }
+  }
+
+  const db = createClient(supabaseUrl, supabaseServiceKey)
+
+  // Count today's successful AI analyses for this session_id.
+  const today = new Date()
+  today.setUTCHours(0, 0, 0, 0)
+
+  const { count, error } = await db
+    .from("scan_events")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", sessionId)
+    .eq("analysis_source", "ai")
+    .gte("created_at", today.toISOString())
+
+  if (error) {
+    // On DB error, fail open to avoid breaking the UX.
+    console.warn("rate-limit check error:", error.message)
+    return { allowed: true, remaining: FREE_DAILY_AI_LIMIT }
+  }
+
+  const usedToday = count ?? 0
+  const remaining = Math.max(0, FREE_DAILY_AI_LIMIT - usedToday)
+  return { allowed: usedToday < FREE_DAILY_AI_LIMIT, remaining }
+}
 
 // ---------------------------------------------------------------------------
 // OpenAI AI analysis
@@ -132,12 +173,12 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, lang, targetLanguage } = await req.json()
+    const { ingredients, lang, targetLanguage, sessionId } = await req.json()
     const normalizedLanguage = normalizeLanguage(lang)
     const languagePack = languageContent[normalizedLanguage] || languageContent.en
     const aiLanguage = targetLanguage || languagePack.aiLanguage || 'English'
 
-    console.log('Request:', { ingredients, lang, targetLanguage })
+    console.log('Request:', { ingredients, lang, targetLanguage, sessionId })
 
     const inputIngredients: string[] = Array.isArray(ingredients)
       ? ingredients.map((i) => String(i || '').trim()).filter(Boolean)
@@ -150,13 +191,30 @@ serve(async (req) => {
       )
     }
 
-    // 1. Try AI analysis (requires OPENAI_API_KEY secret)
+    // 1. Enforce daily free-tier AI limit (server-side, per session_id).
+    //    Pro subscribers bypass this check — they are identified by having an
+    //    active subscription in the DB (future: pass a verified token instead).
+    //    For now, every session is subject to the free limit; upgrading to Pro
+    //    is handled by the frontend redirecting to checkout.
+    const { allowed, remaining } = await checkAndRecordAiUsage(sessionId || "unknown")
+    if (!allowed) {
+      console.log(`Daily AI limit reached for session: ${sessionId}`)
+      return new Response(
+        JSON.stringify({ analysis: '', limitReached: true, remaining: 0 }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+      )
+    }
+
+    // 2. Try AI analysis (requires OPENAI_API_KEY secret)
     try {
       const aiAnalysis = await analyzeWithOpenAI(inputIngredients, aiLanguage)
       if (aiAnalysis) {
         console.log('Using AI analysis')
         return new Response(
-          JSON.stringify({ analysis: `${languagePack.title}:\n${aiAnalysis}` }),
+          JSON.stringify({
+            analysis: `${languagePack.title}:\n${aiAnalysis}`,
+            remaining: Math.max(0, remaining - 1),
+          }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
         )
       }
@@ -164,12 +222,12 @@ serve(async (req) => {
       console.warn('AI analysis failed:', aiErr)
     }
 
-    // 2. No AI key configured — return empty analysis so the frontend falls through
+    // 3. No AI key configured — return empty analysis so the frontend falls through
     // to its own rich open-data fallback chain (Open Food Facts, Open Beauty Facts,
     // Wikidata) which can resolve virtually any ingredient.
     console.log('OPENAI_API_KEY not set; deferring to frontend open-data fallback.')
     return new Response(
-      JSON.stringify({ analysis: '' }),
+      JSON.stringify({ analysis: '', remaining }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,

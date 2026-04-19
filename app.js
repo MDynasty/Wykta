@@ -671,7 +671,7 @@ const uiMessages = {
     proCtaButton: "Get Pro",
     enterpriseCtaButton: "Contact Sales",
     footerTagline: "Know what goes in and on your body.",
-    analysisTitle: "AI Ingredient Analysis",
+    aiDisclaimer: "For reference only — not medical or dietary advice. AI results may be inaccurate.",
     warningTitle: "Interaction Warnings",
     scanTitle: "Scan Ingredient Label",
     detectedTitle: "Detected Text",
@@ -803,7 +803,7 @@ const uiMessages = {
     proCtaButton: "Passer Pro",
     enterpriseCtaButton: "Contacter l'équipe commerciale",
     footerTagline: "Sachez ce que vous consommez et appliquez sur votre peau.",
-    analysisTitle: "Analyse IA des ingrédients",
+    aiDisclaimer: "À titre indicatif uniquement — pas de conseil médical ni diététique. Les résultats IA peuvent être inexacts.",
     warningTitle: "Avertissements d'interaction",
     scanTitle: "Scanner l'étiquette d'ingrédients",
     detectedTitle: "Texte détecté",
@@ -935,7 +935,7 @@ const uiMessages = {
     proCtaButton: "Pro holen",
     enterpriseCtaButton: "Vertrieb kontaktieren",
     footerTagline: "Wissen, was in und auf Ihren Körper gelangt.",
-    analysisTitle: "KI-Inhaltsstoffanalyse",
+    aiDisclaimer: "Nur zur Information — keine medizinische oder diätetische Beratung. KI-Ergebnisse können ungenau sein.",
     warningTitle: "Interaktionswarnungen",
     scanTitle: "Inhaltsstoffetikett scannen",
     detectedTitle: "Erkannter Text",
@@ -1067,7 +1067,7 @@ const uiMessages = {
     proCtaButton: "升级专业版",
     enterpriseCtaButton: "联系销售团队",
     footerTagline: "了解进入和涂抹在身体上的每一种成分。",
-    analysisTitle: "AI 成分分析",
+    aiDisclaimer: "仅供参考，不构成医疗或饮食建议。AI分析结果可能存在误差。",
     warningTitle: "成分相互作用预警",
     scanTitle: "扫描成分标签",
     detectedTitle: "识别文本",
@@ -1924,7 +1924,8 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
             ingredients: ingredientsForAI,
             lang: langLocale,
             targetLanguage: langName,
-            promptLanguage: langName
+            promptLanguage: langName,
+            sessionId: getOrCreateSessionId()
           }
         }
       )
@@ -1942,13 +1943,19 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
 
       console.log("AI result:", data)
 
-      if(data && data.analysis){
+      // Server indicated the free daily limit has been reached — fall through to
+      // open-database analysis and show an upgrade prompt.
+      if(data && data.limitReached){
+        console.warn("Daily AI limit reached for this session.")
+        showFreeLimitBanner(normalizedAnalysisLang)
+        // Continue to open-database fallback below (do not return "ai").
+      } else if(data && data.analysis){
         const lines = data.analysis.split("\n")
         displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
         return "ai"
+      } else {
+        console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
       }
-
-      console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
     } catch(err){
       clearTimeout(invokeTimeoutId)
       console.error("AI function error, using open databases fallback:", err)
@@ -1968,6 +1975,33 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
 /* -----------------------
 ANALYZE BUTTON LOADING STATE
 ----------------------- */
+
+/* -----------------------
+FREE TIER LIMIT BANNER
+Shows when the server returns limitReached: true.
+Prompts the user to upgrade to Pro.
+----------------------- */
+
+function showFreeLimitBanner(lang) {
+  const bannerMessages = {
+    en: { text: "You've reached the daily limit of 5 AI analyses (free tier). Results below use open databases. Upgrade to Pro for unlimited AI scans.", cta: "Upgrade to Pro →", href: "checkout.html?plan=pro-monthly" },
+    fr: { text: "Vous avez atteint la limite quotidienne de 5 analyses IA (offre gratuite). Les résultats ci-dessous proviennent des bases ouvertes. Passez à Pro pour des analyses illimitées.", cta: "Passer à Pro →", href: "checkout.html?plan=pro-monthly" },
+    de: { text: "Sie haben das Tageslimit von 5 KI-Analysen (kostenloses Kontingent) erreicht. Die folgenden Ergebnisse stammen aus offenen Datenbanken. Upgraden Sie auf Pro für unbegrenzte Analysen.", cta: "Auf Pro upgraden →", href: "checkout.html?plan=pro-monthly" },
+    zh: { text: "您已达到每日5次AI分析的免费用量上限，以下结果来自开放数据库。升级专业版以获得无限次AI分析。", cta: "立即升级专业版 →", href: "checkout.html?plan=pro-monthly" },
+  }
+  const m = bannerMessages[lang] || bannerMessages.en
+  let banner = document.getElementById("freeLimitBanner")
+  if (!banner) {
+    banner = document.createElement("div")
+    banner.id = "freeLimitBanner"
+    banner.style.cssText = "background:rgba(255,200,0,0.13);border:1px solid rgba(220,160,0,0.35);border-radius:10px;padding:12px 16px;margin:12px 0;font-size:13px;color:var(--text-2);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;"
+    const resultsSection = document.getElementById("resultsSection")
+    if (resultsSection) resultsSection.prepend(banner)
+  }
+  banner.innerHTML = `<span>${m.text}</span><a href="${m.href}" style="white-space:nowrap;font-weight:700;color:var(--brand);text-decoration:none;">${m.cta}</a>`
+  banner.style.display = ""
+}
+
 
 function setAnalyzeBtnLoading(isLoading){
   const btn = document.getElementById("analyzeBtn")

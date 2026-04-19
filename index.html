@@ -27,16 +27,17 @@
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXX"></script>
 <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-XXXXXXXX');</script>
 -->
-<!-- Analytics: set gaId and/or plausibleDomain in config.js to activate -->
+<!-- Analytics: loaded only after GDPR/cookie consent is given (wykta_consent=analytics).
+     Set gaId and/or plausibleDomain in config.js to activate. -->
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
+  function loadAnalytics() {
     if (typeof gaId !== 'undefined' && gaId) {
       var s = document.createElement('script');
       s.async = true;
       s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
       document.head.appendChild(s);
       window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
+      window.gtag = function() { dataLayer.push(arguments); };
       gtag('js', new Date());
       gtag('config', gaId);
     }
@@ -47,7 +48,38 @@
       ps.src = 'https://plausible.io/js/script.js';
       document.head.appendChild(ps);
     }
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    var consent = '';
+    try { consent = localStorage.getItem('wykta_consent') || ''; } catch(e) {}
+    if (consent === 'analytics') {
+      loadAnalytics();
+    } else if (!consent) {
+      // Show consent banner only if no choice has been recorded yet.
+      var banner = document.getElementById('cookieBanner');
+      if (banner) banner.style.display = '';
+    }
   });
+
+  function acceptCookies() {
+    try { localStorage.setItem('wykta_consent', 'analytics'); } catch(e) {}
+    var banner = document.getElementById('cookieBanner');
+    if (banner) banner.style.display = 'none';
+    loadAnalytics();
+  }
+
+  function declineCookies() {
+    try { localStorage.setItem('wykta_consent', 'declined'); } catch(e) {}
+    var banner = document.getElementById('cookieBanner');
+    if (banner) banner.style.display = 'none';
+  }
+
+  function resetCookieConsent() {
+    try { localStorage.removeItem('wykta_consent'); } catch(e) {}
+    var banner = document.getElementById('cookieBanner');
+    if (banner) banner.style.display = '';
+  }
 </script>
 <link rel="stylesheet" href="style.css">
 <style>
@@ -61,10 +93,32 @@
 .social-btn:hover { color: var(--brand); border-color: rgba(45,140,82,0.35); }
 .footer-copyright { font-size: 12px; color: var(--text-3); border-top: 1px solid var(--border); padding-top: 14px; text-align: center; }
 @media (max-width: 600px) { .footer-inner { flex-direction: column; text-align: center; justify-content: center; } .footer-links { justify-content: center; } .footer-social { justify-content: center; } }
+/* Cookie consent banner */
+#cookieBanner { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 20px; box-shadow: 0 -4px 24px rgba(0,0,0,0.08); }
+.cookie-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
+.cookie-text { font-size: 13px; color: var(--text-2); flex: 1; min-width: 220px; }
+.cookie-text a { color: var(--brand); }
+.cookie-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.cookie-btn { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-2); background: var(--surface-2); color: var(--text); }
+.cookie-btn-accept { background: var(--brand); color: #fff; border-color: var(--brand); }
 </style>
 </head>
 
 <body>
+
+<!-- ── COOKIE / GDPR CONSENT BANNER ────────────────────────── -->
+<div id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie consent">
+  <div class="cookie-inner">
+    <p class="cookie-text">
+      We use optional analytics cookies to improve Wykta. Your ingredient text is never stored.
+      See our <a href="privacy.html">Privacy Policy</a>.
+    </p>
+    <div class="cookie-actions">
+      <button class="cookie-btn" onclick="declineCookies()">Decline</button>
+      <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()">Accept analytics</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── NAVIGATION ───────────────────────────────────────── -->
 <nav class="nav">
@@ -263,6 +317,7 @@
 
       <div class="card">
         <h2 class="card-title"><span data-i18n="analysisTitle">AI Ingredient Analysis</span></h2>
+        <p style="font-size:11px;color:var(--text-3);margin:-4px 0 10px;"><span data-i18n="aiDisclaimer">For reference only — not medical or dietary advice. AI results may be inaccurate.</span></p>
         <div id="ingredientResult">
           <div class="empty-state">
             <span data-i18n="analysisPlaceholder">AI analysis will appear here</span>
@@ -366,6 +421,8 @@
         <a href="community.html" class="footer-link">Community</a>
         <a href="checkout.html" class="footer-link">Pricing</a>
         <a href="contact-sales.html" class="footer-link">Contact</a>
+        <a href="privacy.html" class="footer-link">Privacy</a>
+        <a href="terms.html" class="footer-link">Terms</a>
         <a href="https://github.com/MDynasty/Wykta" class="footer-link" target="_blank" rel="noopener">GitHub</a>
       </div>
       <div class="footer-social">
@@ -380,7 +437,11 @@
         </a>
       </div>
     </div>
-    <p class="footer-copyright">Wykta &copy; 2026 &mdash; <span data-i18n="footerTagline">Know what goes in and on your body.</span></p>
+    <p class="footer-copyright">
+      Wykta &copy; 2026 &mdash; <span data-i18n="footerTagline">Know what goes in and on your body.</span>
+      &nbsp;&middot;&nbsp;
+      <button onclick="resetCookieConsent()" style="background:none;border:none;padding:0;font-size:inherit;color:inherit;cursor:pointer;text-decoration:underline;">Cookie settings</button>
+    </p>
   </footer>
 
 </main>
