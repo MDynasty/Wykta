@@ -134,7 +134,12 @@ const LANGUAGE_SCORE_WEIGHTS = {
   diacriticBonus: 5,
   longTokenMatch: 2,
   shortTokenMatch: 1,
-  aliasMatch: 2
+  aliasMatch: 2,
+  // Per-token script vote: each ingredient token that is predominantly one script
+  // casts a vote of this weight.  Gives Latin-script tokens a fighting chance
+  // against per-character Chinese scoring in mixed-language inputs
+  // (e.g. "aqua, 芦荟, acid, retinol, peptide" → 4 Latin tokens vs 1 CJK token → English wins).
+  tokenScript: 2
 }
 const ingredientAliasLanguageHints = Object.keys(ingredientAliases).reduce((acc, alias) => {
   if(/[\u4e00-\u9fa5]/.test(alias)) acc.zh.add(alias)
@@ -971,6 +976,27 @@ function detectInputLanguage(text = "", ingredients = []){
   if(chineseCharCount) scores.zh += chineseCharCount * LANGUAGE_SCORE_WEIGHTS.chineseChar
   if(/[äöüß]/i.test(sample)) scores.de += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
   if(/[àâçéèêëîïôûùüÿœæ]/i.test(sample)) scores.fr += LANGUAGE_SCORE_WEIGHTS.diacriticBonus
+
+  // Token-script voting: split into individual ingredient tokens and count how many
+  // are predominantly Latin-script vs CJK.  This gives Latin tokens a fair weight
+  // against per-character Chinese scoring in mixed inputs
+  // (e.g. "aqua, 芦荟, acid, retinol, peptide" → 4 Latin tokens vs 1 CJK → English wins).
+  // Reuse ingredientSplitPunctuationPattern plus whitespace as delimiters.
+  const tokenWords = rawSample
+    .split(ingredientSplitPunctuationPattern)
+    .map(tok => tok.trim())
+    .filter(tok => tok.length >= 2)
+  let latinTokenCount = 0
+  let cjkTokenCount = 0
+  for (const tok of tokenWords) {
+    const cjkChars = (tok.match(/[\u4e00-\u9fa5]/g) || []).length
+    const latChars = (tok.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length
+    // Skip tokens with equal counts — no clear majority, so don't bias either language.
+    if (cjkChars > latChars) cjkTokenCount++
+    else if (latChars > cjkChars && latChars > 0) latinTokenCount++
+  }
+  if (latinTokenCount > 0) scores.en += latinTokenCount * LANGUAGE_SCORE_WEIGHTS.tokenScript
+  if (cjkTokenCount > 0) scores.zh += cjkTokenCount * LANGUAGE_SCORE_WEIGHTS.tokenScript
 
   Object.entries(languageSignalLexicon).forEach(([lang, tokens]) => {
     tokens.forEach((token) => {
