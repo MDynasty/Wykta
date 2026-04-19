@@ -15,6 +15,9 @@
   --text-3:        #72a882;
   --brand:         #2d8c52;
   --brand-2:       #40b870;
+  --brand-dark:    #1a7a3e;
+  --brand-light:   #6ed8a0;
+  --brand-vivid:   #27d96a;
   --green:         #27ae60;
   --green-bg:      rgba(39, 174, 96, 0.09);
   --green-border:  rgba(39, 174, 96, 0.28);
@@ -304,7 +307,7 @@ body::after {
 }
 
 .gradient-text {
-  background: linear-gradient(135deg, #1a7a3e 0%, #2d8c52 25%, #40b870 55%, #27d96a 80%, #40b870 100%);
+  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 25%, var(--brand-2) 55%, var(--brand-vivid) 80%, var(--brand-2) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -571,7 +574,7 @@ body::after {
   background: linear-gradient(90deg,
     var(--brand) 0%,
     var(--brand-2) 40%,
-    #6ed8a0 52%,
+    var(--brand-light) 52%,
     var(--brand-2) 64%,
     var(--brand) 100%
   );
