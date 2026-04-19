@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact Sales - Wykta</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">✓</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="checkout.html">Checkout</a>
+        <a class="nav-link" href="community.html">Community</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1>Contact sales</h1>
+      <p>Tell us your team size, channels, and growth goals. We will prepare an enterprise plan with rollout support.</p>
+    </section>
+
+    <section class="sub-grid">
+      <article class="card">
+        <h2 class="card-title">Enterprise request form</h2>
+        <form id="salesForm">
+          <div class="field">
+            <label class="field-label" for="company">Company</label>
+            <input id="company" type="text" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="workEmail">Work email</label>
+            <input id="workEmail" type="email" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="teamSize">Team size</label>
+            <select id="teamSize" required>
+              <option value="1-10">1-10</option>
+              <option value="11-50">11-50</option>
+              <option value="51-200">51-200</option>
+              <option value="200+">200+</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="needs">Primary needs</label>
+            <textarea id="needs" placeholder="API, white-label, campaign channels, team workflow..."></textarea>
+          </div>
+          <div class="status-box" id="salesStatus"></div>
+          <button class="btn btn-primary" type="submit">Send request</button>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title">What happens next</h2>
+        <ul style="padding-left:20px; color:var(--text-2); display:grid; gap:8px;">
+          <li>Sales lead is stored in CRM queue and tagged by plan, team size, and channel.</li>
+          <li>Response within 1 business day with pricing, implementation scope, and support SLA.</li>
+          <li>If approved, payment invoice is issued through Stripe Billing or wire transfer.</li>
+          <li>After payment, your team receives onboarding and community access links.</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('salesForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const payload = {
+        company: document.getElementById('company').value.trim(),
+        email: document.getElementById('workEmail').value.trim(),
+        teamSize: document.getElementById('teamSize').value,
+        needs: document.getElementById('needs').value.trim(),
+        submittedAt: new Date().toISOString()
+      };
+
+      const entries = JSON.parse(localStorage.getItem('wykta_sales_leads') || '[]');
+      entries.push(payload);
+      localStorage.setItem('wykta_sales_leads', JSON.stringify(entries));
+
+      const status = document.getElementById('salesStatus');
+      status.textContent = 'Request sent. We also opened your email app for direct follow-up.';
+      status.classList.add('visible');
+
+      const subject = encodeURIComponent(`Wykta Enterprise Inquiry - ${payload.company}`);
+      const body = encodeURIComponent(`Company: ${payload.company}\nEmail: ${payload.email}\nTeam Size: ${payload.teamSize}\nNeeds: ${payload.needs}`);
+      window.location.href = `mailto:sales@wykta.app?subject=${subject}&body=${body}`;
+    });
+  </script>
+</body>
+</html>

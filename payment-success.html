@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payment Success - Wykta</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">✓</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="community.html">Join Community</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1>Payment completed</h1>
+      <p>Your subscription is active. Next step: join community and start using premium workflows.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="card-title">Receipt</h2>
+      <div id="receipt" style="display:grid; gap:8px; color:var(--text-2);"></div>
+      <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn btn-primary" href="community.html">Join Community</a>
+        <a class="btn btn-secondary" href="index.html">Back to Home</a>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const paymentId = params.get('paymentId');
+    const receipt = document.getElementById('receipt');
+
+    if (!paymentId) {
+      receipt.innerHTML = '<p>No payment record was provided.</p>';
+    } else {
+      const raw = localStorage.getItem(`wykta_payment_${paymentId}`);
+      if (!raw) {
+        receipt.innerHTML = `<p>Payment ID: ${paymentId}</p><p>Record not found in this browser storage.</p>`;
+      } else {
+        const data = JSON.parse(raw);
+        receipt.innerHTML = `
+          <p><strong>Payment ID:</strong> ${data.paymentId}</p>
+          <p><strong>Plan:</strong> ${data.plan}</p>
+          <p><strong>Amount:</strong> ${data.amount}</p>
+          <p><strong>Method:</strong> ${data.method}</p>
+          <p><strong>Billing email:</strong> ${data.email}</p>
+          <p><strong>Paid at:</strong> ${new Date(data.paidAt).toLocaleString()}</p>
+          <p><strong>Settlement route:</strong> Payment gateway balance → merchant payout account.</p>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

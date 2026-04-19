@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wykta Checkout</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">✓</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="index.html#workflow">Workflow</a>
+        <a class="nav-link" href="community.html">Community</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1>Secure checkout</h1>
+      <p>Choose your plan and payment channel. After payment, funds settle to your connected merchant account (configured gateway destination).</p>
+    </section>
+
+    <section class="sub-grid">
+      <article class="card">
+        <h2 class="card-title">Plan & payment</h2>
+        <form id="checkoutForm">
+          <div class="field">
+            <label class="field-label" for="plan">Plan</label>
+            <select id="plan" required>
+              <option value="pro-monthly">Pro Monthly — $9/mo</option>
+              <option value="pro-annual">Pro Annual — $84/yr</option>
+              <option value="enterprise">Enterprise — Custom</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="paymentMethod">Payment method</label>
+            <select id="paymentMethod" required>
+              <option value="card">Credit / Debit Card (Stripe)</option>
+              <option value="paypal">PayPal</option>
+              <option value="alipay">Alipay</option>
+              <option value="wechat">WeChat Pay</option>
+              <option value="usdt">USDT (TRC20)</option>
+              <option value="bank">Wire Transfer</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="email">Billing email</label>
+            <input id="email" type="email" placeholder="name@company.com" required>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="cardholder">Payer name</label>
+            <input id="cardholder" type="text" placeholder="Your full name" required>
+          </div>
+
+          <div class="status-box" id="checkoutStatus"></div>
+          <button class="btn btn-primary" type="submit">Pay now</button>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title">Settlement destination & channels</h2>
+        <div class="pill-list" style="margin-bottom:12px;">
+          <span class="pill">Gateway: Stripe / PayPal / Wallet</span>
+          <span class="pill">Settlement: Merchant account</span>
+          <span class="pill">Payout cadence: Daily / Weekly</span>
+        </div>
+        <p style="color:var(--text-2); margin-bottom:10px;">Where does money go after payment?</p>
+        <p style="margin-bottom:10px;">Funds are routed through the selected payment gateway and automatically transferred to your configured payout account.</p>
+        <ul style="padding-left:20px; color:var(--text-2);">
+          <li>Card/Apple Pay/Google Pay → Stripe balance → connected bank account</li>
+          <li>PayPal → PayPal Business balance → linked bank payout</li>
+          <li>Alipay/WeChat Pay → configured PSP merchant settlement account</li>
+          <li>USDT (TRC20) → merchant wallet address: <code>TRC20_WYKTA_MERCHANT_WALLET</code></li>
+          <li>Wire transfer → business IBAN/SWIFT account configured by finance</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const planEl = document.getElementById('plan');
+    const params = new URLSearchParams(window.location.search);
+    const requestedPlan = params.get('plan');
+    if (requestedPlan && [...planEl.options].some(o => o.value === requestedPlan)) {
+      planEl.value = requestedPlan;
+    }
+
+    const planPrices = {
+      'pro-monthly': '$9/mo',
+      'pro-annual': '$84/yr',
+      'enterprise': 'Custom'
+    };
+
+    document.getElementById('checkoutForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const status = document.getElementById('checkoutStatus');
+      const plan = planEl.value;
+      const method = document.getElementById('paymentMethod').value;
+      const email = document.getElementById('email').value.trim();
+      const cardholder = document.getElementById('cardholder').value.trim();
+
+      const paymentId = `wykta_${Date.now()}`;
+      const record = {
+        paymentId,
+        plan,
+        amount: planPrices[plan] || 'Custom',
+        method,
+        email,
+        cardholder,
+        paidAt: new Date().toISOString()
+      };
+
+      localStorage.setItem(`wykta_payment_${paymentId}`, JSON.stringify(record));
+      status.textContent = 'Payment confirmed. Redirecting to receipt...';
+      status.classList.add('visible');
+
+      setTimeout(() => {
+        const url = `payment-success.html?paymentId=${encodeURIComponent(paymentId)}`;
+        window.location.href = url;
+      }, 800);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wykta Community</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">✓</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="checkout.html">Checkout</a>
+        <a class="nav-link" href="contact-sales.html">Contact Sales</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1>Join the Wykta community</h1>
+      <p>Pick your preferred channels for updates, support, campaign collaboration, and product co-creation.</p>
+    </section>
+
+    <section class="sub-grid">
+      <article class="card">
+        <h2 class="card-title">Community channels</h2>
+        <ul class="channel-list">
+          <li class="channel-item"><span>Discord: product Q&A + release rooms</span><a class="btn btn-secondary btn-sm" href="https://discord.com" target="_blank" rel="noopener">Join Discord</a></li>
+          <li class="channel-item"><span>Telegram: quick support + growth drops</span><a class="btn btn-secondary btn-sm" href="https://telegram.org" target="_blank" rel="noopener">Join Telegram</a></li>
+          <li class="channel-item"><span>WeChat: CN community and partnerships</span><a class="btn btn-secondary btn-sm" href="https://www.wechat.com" target="_blank" rel="noopener">Join WeChat</a></li>
+          <li class="channel-item"><span>X/Twitter: launch updates and campaigns</span><a class="btn btn-secondary btn-sm" href="https://x.com" target="_blank" rel="noopener">Follow X</a></li>
+          <li class="channel-item"><span>GitHub: roadmap and issues</span><a class="btn btn-secondary btn-sm" href="https://github.com/MDynasty/Wykta" target="_blank" rel="noopener">Open GitHub</a></li>
+        </ul>
+      </article>
+
+      <article class="card">
+        <h2 class="card-title">Community onboarding</h2>
+        <form id="communityForm">
+          <div class="field">
+            <label class="field-label" for="memberEmail">Email</label>
+            <input id="memberEmail" type="email" required>
+          </div>
+          <div class="field">
+            <label class="field-label" for="channel">Primary channel</label>
+            <select id="channel" required>
+              <option value="discord">Discord</option>
+              <option value="telegram">Telegram</option>
+              <option value="wechat">WeChat</option>
+              <option value="x">X/Twitter</option>
+              <option value="github">GitHub</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-label" for="wallet">Wallet (optional, for rewards)</label>
+            <input id="wallet" type="text" placeholder="TRC20 / ERC20 wallet address">
+          </div>
+          <div class="status-box" id="communityStatus"></div>
+          <button class="btn btn-primary" type="submit">Join now</button>
+        </form>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    document.getElementById('communityForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const entry = {
+        email: document.getElementById('memberEmail').value.trim(),
+        channel: document.getElementById('channel').value,
+        wallet: document.getElementById('wallet').value.trim(),
+        joinedAt: new Date().toISOString()
+      };
+
+      const members = JSON.parse(localStorage.getItem('wykta_community_members') || '[]');
+      members.push(entry);
+      localStorage.setItem('wykta_community_members', JSON.stringify(members));
+
+      const status = document.getElementById('communityStatus');
+      status.textContent = 'Community onboarding complete. Welcome to Wykta!';
+      status.classList.add('visible');
+    });
+  </script>
+</body>
+</html>

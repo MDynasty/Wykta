@@ -42,6 +42,8 @@
       <span>Wykta</span>
     </a>
     <div class="nav-right">
+      <a class="nav-link" href="#workflow" data-i18n="workflowNav">Workflow</a>
+      <a class="nav-link" href="community.html" data-i18n="communityNav">Community</a>
       <select id="language" class="lang-select" aria-label="Language">
         <option value="en">English</option>
         <option value="fr">Français</option>
@@ -84,6 +86,35 @@
     <div class="proof-item">
       <span class="proof-label" data-i18n="proofSpeed">Speed</span>
       <strong data-i18n="proofSpeedValue">Live lookup + instant warnings</strong>
+    </div>
+  </section>
+
+  <section class="workflow-section" id="workflow">
+    <div class="value-header">
+      <h2 data-i18n="workflowTitle">From discovery to paid community</h2>
+      <p data-i18n="workflowSubtitle">A complete growth + product workflow for acquisition, trial, payment, and retention.</p>
+    </div>
+    <div class="workflow-grid">
+      <article class="workflow-card">
+        <span class="workflow-step">01</span>
+        <h3 data-i18n="workflowStep1Title">Marketing acquisition</h3>
+        <p data-i18n="workflowStep1Body">Launch short videos, influencer demos, and SEO landing pages that send users to Wykta.</p>
+      </article>
+      <article class="workflow-card">
+        <span class="workflow-step">02</span>
+        <h3 data-i18n="workflowStep2Title">Product trial</h3>
+        <p data-i18n="workflowStep2Body">Users open camera, scan labels, and receive instant AI + open-data ingredient analysis.</p>
+      </article>
+      <article class="workflow-card">
+        <span class="workflow-step">03</span>
+        <h3 data-i18n="workflowStep3Title">Payment conversion</h3>
+        <p data-i18n="workflowStep3Body">Users choose card, wallet, or bank transfer in checkout and get activated immediately.</p>
+      </article>
+      <article class="workflow-card">
+        <span class="workflow-step">04</span>
+        <h3 data-i18n="workflowStep4Title">Community retention</h3>
+        <p data-i18n="workflowStep4Body">After payment, users join community channels and keep engagement through campaigns.</p>
+      </article>
     </div>
   </section>
 
@@ -167,8 +198,8 @@
           </div>
         </div>
         <div class="results-export" id="analysisExport" style="display:none;">
-          <button class="btn btn-secondary btn-sm" disabled title="Pro feature" data-i18n="exportBtn">Export PDF</button>
-          <button class="btn btn-secondary btn-sm" disabled title="Pro feature" data-i18n="shareBtn">Share</button>
+          <button class="btn btn-secondary btn-sm" id="exportPdfBtn" data-i18n="exportBtn">Export PDF</button>
+          <button class="btn btn-secondary btn-sm" id="shareResultBtn" data-i18n="shareBtn">Share</button>
         </div>
       </div>
 
@@ -223,7 +254,7 @@
           <li data-i18n="proFeatureUnlimited">Unlimited scans</li>
           <li data-i18n="proFeaturePdf">Export PDF reports</li>
         </ul>
-        <button class="btn btn-primary plan-cta" data-i18n="proCtaButton">Get Pro</button>
+        <a class="btn btn-primary plan-cta" id="planProCta" href="checkout.html?plan=pro-monthly" data-i18n="proCtaButton">Get Pro</a>
       </div>
 
       <div class="plan-card">
@@ -237,7 +268,7 @@
           <li data-i18n="enterpriseFeatureSla">SLA guarantee</li>
           <li data-i18n="enterpriseFeatureSupport">Dedicated support</li>
         </ul>
-        <button class="btn btn-secondary plan-cta" data-i18n="enterpriseCtaButton">Contact Sales</button>
+        <a class="btn btn-secondary plan-cta" href="contact-sales.html" data-i18n="enterpriseCtaButton">Contact Sales</a>
       </div>
 
     </div>
@@ -246,6 +277,11 @@
   <section class="cta-band">
     <h3 data-i18n="ctaTitle">Turn ingredient uncertainty into buying confidence</h3>
     <p data-i18n="ctaBody">Wykta combines fast OCR, interaction checks, and open ingredient intelligence so users can decide what to buy faster.</p>
+    <div class="cta-actions">
+      <a class="btn btn-primary" id="ctaGetProBtn" href="checkout.html?plan=pro-annual" data-i18n="ctaGetPro">Get Pro Annual</a>
+      <a class="btn btn-secondary" href="contact-sales.html" data-i18n="ctaContactSales">Contact Sales</a>
+      <a class="btn btn-secondary" href="community.html" data-i18n="ctaJoinCommunity">Join Community</a>
+    </div>
   </section>
 
   <!-- ── FOOTER ────────────────────────────────────────────── -->
