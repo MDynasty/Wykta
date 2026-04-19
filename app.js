@@ -1456,7 +1456,10 @@ function showResultsSummary(lang = currentLanguage()) {
   const dangerCount = resultEl.querySelectorAll(".ingredient-card.danger").length
   const flaggedCount = cautionCount + dangerCount
 
-  // Compute 0-100 safety score: start at 100, deduct for danger/caution cards
+  // Compute 0-100 safety score.
+  // Danger ingredients (allergens/avoid) are weighted 2.5× higher than caution
+  // ingredients because they pose immediate health risks (e.g. anaphylaxis)
+  // versus caution items which are merely inadvisable for some users.
   const safetyScore = Math.max(0, Math.min(100, 100 - dangerCount * 25 - cautionCount * 10))
   const scoreClass = safetyScore >= 75 ? "score-high" : safetyScore >= 45 ? "score-medium" : "score-low"
 
