@@ -38,10 +38,9 @@
     </section>
 
     <div class="community-stats">
-      <div class="stat-item"><strong>2,400+</strong><span>Members</span></div>
-      <div class="stat-item"><strong>4</strong><span>Core Channels</span></div>
-      <div class="stat-item"><strong>4</strong><span>Languages</span></div>
-      <div class="stat-item"><strong>Daily</strong><span>Active Q&amp;A</span></div>
+      <div class="stat-item"><strong>4</strong><span id="statChannelsLabel">Core Channels</span></div>
+      <div class="stat-item"><strong>4</strong><span id="statLangsLabel">Languages</span></div>
+      <div class="stat-item"><strong>Open</strong><span id="statGithubLabel">GitHub Roadmap</span></div>
     </div>
 
     <section class="sub-grid">
@@ -65,10 +64,6 @@
               <option value="github">GitHub</option>
               <option value="email">Email Updates</option>
             </select>
-          </div>
-          <div class="field">
-            <label class="field-label" for="wallet" id="labelWallet">Wallet (optional, for rewards)</label>
-            <input id="wallet" type="text" placeholder="TRC20 / ERC20 address">
           </div>
           <div class="status-box" id="communityStatus"></div>
           <button class="btn btn-primary" type="submit" id="submitBtn">
@@ -117,9 +112,10 @@
     const copy = {
       en: {
         title: 'Join the Wykta community', subtitle: 'Join the practical core channels for updates, support, and transparent product progress.',
-        channelsTitle: 'Community channels', onboardTitle: 'Community onboarding',
-        labelEmail: 'Email', labelChannel: 'Primary channel', labelWallet: 'Wallet (optional, for rewards)',
-        submitLabel: 'Join now',
+        channelsTitle: 'Community channels', onboardTitle: 'Get notified',
+        statChannels: 'Core Channels', statLangs: 'Languages', statGithub: 'GitHub Roadmap',
+        labelEmail: 'Email', labelChannel: 'Primary channel',
+        submitLabel: 'Notify me',
         success: 'Welcome to Wykta! Check your email for the invite link.',
         error: 'Something went wrong. Please try again.',
         channels: [
@@ -132,9 +128,10 @@
       fr: {
         title: 'Rejoindre la communauté Wykta',
         subtitle: 'Rejoignez les canaux principaux pour les mises à jour, le support et un suivi produit transparent.',
-        channelsTitle: 'Canaux communautaires', onboardTitle: 'Rejoindre la communauté',
-        labelEmail: 'Email', labelChannel: 'Canal principal', labelWallet: 'Wallet (facultatif, récompenses)',
-        submitLabel: 'Rejoindre',
+        channelsTitle: 'Canaux communautaires', onboardTitle: 'Être notifié',
+        statChannels: 'Canaux principaux', statLangs: 'Langues', statGithub: 'Roadmap GitHub',
+        labelEmail: 'Email', labelChannel: 'Canal principal',
+        submitLabel: 'Me notifier',
         success: 'Bienvenue sur Wykta ! Vérifiez vos emails pour le lien d\'invitation.',
         error: 'Une erreur s\'est produite. Veuillez réessayer.',
         channels: [
@@ -147,9 +144,10 @@
       de: {
         title: 'Der Wykta-Community beitreten',
         subtitle: 'Nutzen Sie die wichtigsten Kanäle für Updates, Support und transparente Produktfortschritte.',
-        channelsTitle: 'Community-Kanäle', onboardTitle: 'Community-Onboarding',
-        labelEmail: 'E-Mail', labelChannel: 'Hauptkanal', labelWallet: 'Wallet (optional, für Prämien)',
-        submitLabel: 'Jetzt beitreten',
+        channelsTitle: 'Community-Kanäle', onboardTitle: 'Benachrichtigt werden',
+        statChannels: 'Kernkanäle', statLangs: 'Sprachen', statGithub: 'GitHub-Roadmap',
+        labelEmail: 'E-Mail', labelChannel: 'Hauptkanal',
+        submitLabel: 'Benachrichtige mich',
         success: 'Willkommen bei Wykta! Prüfen Sie Ihre E-Mails für den Einladungslink.',
         error: 'Etwas ist schiefgelaufen. Bitte erneut versuchen.',
         channels: [
@@ -161,9 +159,10 @@
       },
       zh: {
         title: '加入 Wykta 社区', subtitle: '保留最实用的核心渠道：更新通知、使用支持、公开进展透明可见。',
-        channelsTitle: '社群渠道', onboardTitle: '社区 Onboarding',
-        labelEmail: '邮箱', labelChannel: '首选渠道', labelWallet: '钱包地址（可选，用于奖励发放）',
-        submitLabel: '立即加入',
+        channelsTitle: '社群渠道', onboardTitle: '订阅通知',
+        statChannels: '核心渠道', statLangs: '支持语言', statGithub: 'GitHub 路线图',
+        labelEmail: '邮箱', labelChannel: '首选渠道',
+        submitLabel: '订阅',
         success: '欢迎加入 Wykta！请查收邮件中的邀请链接。',
         error: '提交失败，请重试。',
         channels: [
@@ -180,9 +179,11 @@
     document.getElementById('communitySubtitle').textContent = c.subtitle;
     document.getElementById('channelsTitle').textContent = c.channelsTitle;
     document.getElementById('onboardTitle').textContent = c.onboardTitle;
+    document.getElementById('statChannelsLabel').textContent = c.statChannels;
+    document.getElementById('statLangsLabel').textContent = c.statLangs;
+    document.getElementById('statGithubLabel').textContent = c.statGithub;
     document.getElementById('labelEmail').textContent = c.labelEmail;
     document.getElementById('labelChannel').textContent = c.labelChannel;
-    document.getElementById('labelWallet').textContent = c.labelWallet;
     document.getElementById('submitLabel').textContent = c.submitLabel;
 
     function externalLinkAttrs(url) {
@@ -211,7 +212,6 @@
       const payload = {
         email: document.getElementById('memberEmail').value.trim(),
         channel: document.getElementById('channel').value,
-        wallet: document.getElementById('wallet').value.trim() || null,
         lang,
       };
 
