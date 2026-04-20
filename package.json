@@ -4,6 +4,7 @@
   "description": "AI-powered ingredient analyzer — food & skincare label scanner",
   "main": "app.js",
   "scripts": {
+    "test": "node --test domain-redirect.test.js",
     "cap:add:ios": "npx cap add ios",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync",
