@@ -281,8 +281,7 @@
               'Content-Type': 'application/json',
               'apikey': SUPABASE_ANON,
               'Authorization': `Bearer ${SUPABASE_ANON}`,
-              'Prefer': 'return=minimal,resolution=merge-duplicates',
-              'on-conflict': 'email',
+              'Prefer': 'return=minimal',
             },
             body: JSON.stringify({ email: pendingEmail, channel: pendingChannel, lang, confirmed: false }),
           });

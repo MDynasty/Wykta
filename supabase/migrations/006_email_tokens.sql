@@ -45,4 +45,15 @@ update community_members set confirmed = true where confirmed = false;
 --        where expires_at < now() - interval '1 day';
 --     $$
 --   );
+--
+-- Also clean up unconfirmed community_members rows older than 7 days:
+--   select cron.schedule(
+--     'cleanup-unconfirmed-community-members',
+--     '0 5 * * *',
+--     $$
+--       delete from community_members
+--        where confirmed = false
+--          and created_at < now() - interval '7 days';
+--     $$
+--   );
 -- ---------------------------------------------------------------------------

@@ -1,10 +1,15 @@
 // Wykta – send-otp Supabase Edge Function
-// Generates a 6-digit OTP, stores it in email_tokens, and sends it to the
-// user's email via Supabase's built-in SMTP relay (Dashboard → Auth → SMTP).
+// Triggers Supabase Auth's built-in email OTP (6-digit code) for the supplied
+// email address.  The code is delivered by Supabase's own SMTP relay so no
+// third-party email service is required.
 //
 // Required Supabase secrets:
 //   SUPABASE_URL              – injected automatically by Supabase runtime
-//   SUPABASE_SERVICE_ROLE_KEY – service-role key (writes email_tokens table)
+//   SUPABASE_SERVICE_ROLE_KEY – service-role key
+//
+// Supabase project setup (one-time, Supabase Dashboard):
+//   Authentication → Providers → Email → enable "Email OTP"
+//   Authentication → Email Templates → customise the "Magic Link" or "OTP" template.
 //
 // Request:  POST /functions/v1/send-otp
 //           Content-Type: application/json
@@ -13,6 +18,9 @@
 // Response: { "sent": true }
 //
 // Rate limit: 3 requests per email address per 10 minutes (anti-spam).
+// Note: the in-memory rate-limit map guards against burst abuse within a single
+// isolate cold-start window.  For stricter rate-limiting across scale-out isolates
+// consider using the email_tokens table to count recent requests (see comments below).
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
@@ -23,11 +31,15 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-const OTP_TTL_MINUTES = 15
 const RATE_WINDOW_MS  = 10 * 60 * 1000 // 10 minutes
 const MAX_PER_WINDOW  = 3
 
 // In-isolate rate-limit map: email → timestamps[]
+// Note: edge function isolates are ephemeral and may scale independently.
+// This guards against burst abuse within a single isolate's lifetime.
+// For stricter cross-isolate rate limiting, query the email_tokens table:
+//   SELECT count(*) FROM email_tokens
+//   WHERE email = $1 AND created_at > now() - interval '10 minutes'
 const rateLimitMap = new Map<string, number[]>()
 
 function isRateLimited(email: string): boolean {
@@ -36,30 +48,6 @@ function isRateLimited(email: string): boolean {
   list.push(now)
   rateLimitMap.set(email, list)
   return list.length > MAX_PER_WINDOW
-}
-
-// i18n email templates (subject + body)
-const templates: Record<string, { subject: string; body: (code: string, ttl: number) => string }> = {
-  en: {
-    subject: "Your Wykta verification code",
-    body: (code, ttl) =>
-      `Your Wykta verification code is: ${code}\n\nThis code expires in ${ttl} minutes.\n\nIf you did not request this, you can safely ignore this email.`,
-  },
-  fr: {
-    subject: "Votre code de vérification Wykta",
-    body: (code, ttl) =>
-      `Votre code de vérification Wykta est : ${code}\n\nCe code expire dans ${ttl} minutes.\n\nSi vous n'avez pas effectué cette demande, ignorez cet e-mail.`,
-  },
-  de: {
-    subject: "Ihr Wykta-Bestätigungscode",
-    body: (code, ttl) =>
-      `Ihr Wykta-Bestätigungscode lautet: ${code}\n\nDieser Code läuft in ${ttl} Minuten ab.\n\nFalls Sie diese Anfrage nicht gestellt haben, ignorieren Sie diese E-Mail.`,
-  },
-  zh: {
-    subject: "您的 Wykta 验证码",
-    body: (code, ttl) =>
-      `您的 Wykta 验证码是：${code}\n\n验证码将在 ${ttl} 分钟后过期。\n\n如果您未发起此请求，请忽略此邮件。`,
-  },
 }
 
 serve(async (req) => {
@@ -81,10 +69,9 @@ serve(async (req) => {
         { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 
-    const body = await req.json()
+    const body    = await req.json()
     const email   = (body.email   ?? "").trim().toLowerCase()
     const purpose = (body.purpose ?? "verify") as string
-    const lang    = (body.lang    ?? "en").slice(0, 2).toLowerCase()
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return new Response(JSON.stringify({ error: "A valid email address is required." }),
@@ -101,42 +88,41 @@ serve(async (req) => {
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 
-    // Generate a 6-digit OTP
-    const otp      = String(Math.floor(100000 + Math.random() * 900000))
-    const expiresAt = new Date(Date.now() + OTP_TTL_MINUTES * 60 * 1000).toISOString()
+    // Record that a verification was requested for tracking purposes (community only).
+    // For community members: this marks a pending confirmation without storing an OTP
+    // (the actual code is generated and sent by Supabase Auth).
+    // Note: the community_members insert happens before OTP verification to preserve
+    // channel/language preferences. Unconfirmed rows (confirmed=false) should be
+    // cleaned up periodically — see the cleanup cron in 006_email_tokens.sql.
+    if (purpose === "community") {
+      const db = createClient(supabaseUrl, supabaseServiceKey)
+      // Invalidate any previous community tracking entry
+      await db
+        .from("email_tokens")
+        .update({ used: true })
+        .eq("email", email)
+        .eq("purpose", "community")
+        .eq("used", false)
 
-    const db = createClient(supabaseUrl, supabaseServiceKey)
+      // Generate a cryptographically secure token as a nonce for tracking
+      // (this token is not sent to the user — Supabase Auth sends its own OTP)
+      const array = new Uint32Array(4)
+      crypto.getRandomValues(array)
+      const nonce = Array.from(array, v => v.toString(36)).join("")
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 
-    // Invalidate any existing unused tokens for this email+purpose
-    await db
-      .from("email_tokens")
-      .update({ used: true })
-      .eq("email", email)
-      .eq("purpose", purpose)
-      .eq("used", false)
-
-    // Insert new token
-    const { error: insertError } = await db.from("email_tokens").insert({
-      email,
-      token: otp,
-      purpose,
-      expires_at: expiresAt,
-    })
-
-    if (insertError) {
-      console.error("email_tokens insert error:", insertError)
-      return new Response(JSON.stringify({ error: "Could not create verification code." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } })
+      await db.from("email_tokens").insert({
+        email,
+        token: nonce,
+        purpose,
+        expires_at: expiresAt,
+      })
     }
 
-    // Send email via Supabase Auth admin API (uses the project's configured SMTP)
-    const tpl = templates[lang] ?? templates.en
-    const emailPayload = {
-      email,
-      data: {},
-    }
-
-    // Use Supabase Auth's magic OTP email endpoint
+    // Trigger Supabase Auth's built-in email OTP — Supabase sends the 6-digit
+    // code to the user via the project's configured SMTP / email provider.
+    // shouldCreateUser: false means only existing auth users get the code;
+    // set to true if you want Wykta to auto-create Auth accounts.
     const authRes = await fetch(`${supabaseUrl}/auth/v1/otp`, {
       method: "POST",
       headers: {
@@ -144,16 +130,16 @@ serve(async (req) => {
         "apikey": supabaseServiceKey,
         "Authorization": `Bearer ${supabaseServiceKey}`,
       },
-      body: JSON.stringify({ email, create_user: false }),
+      body: JSON.stringify({ email, create_user: true }),
     })
 
-    // Fall back to a direct SMTP send via Supabase's admin invite endpoint
-    // if the OTP endpoint isn't available, or log a warning.
     if (!authRes.ok) {
-      console.warn("Supabase auth OTP endpoint returned", authRes.status, "— falling back to custom email.")
+      const errText = await authRes.text()
+      console.warn("Supabase auth OTP returned", authRes.status, errText)
+      // Return success anyway to avoid email enumeration attacks
     }
 
-    // Always return success to avoid email enumeration attacks
+    // Always return success to avoid leaking whether an email exists
     return new Response(JSON.stringify({ sent: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
   } catch (err) {

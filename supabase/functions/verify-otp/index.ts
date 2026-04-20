@@ -1,9 +1,11 @@
 // Wykta – verify-otp Supabase Edge Function
-// Validates a 6-digit OTP against the email_tokens table.
+// Validates the 6-digit OTP delivered by Supabase Auth's built-in email OTP.
+// For community double-opt-in it also verifies against the email_tokens table
+// (used to track which community members have confirmed their email).
 //
 // Required Supabase secrets:
 //   SUPABASE_URL              – injected automatically by Supabase runtime
-//   SUPABASE_SERVICE_ROLE_KEY – service-role key (reads/updates email_tokens table)
+//   SUPABASE_SERVICE_ROLE_KEY – service-role key
 //
 // Request:  POST /functions/v1/verify-otp
 //           Content-Type: application/json
@@ -55,44 +57,37 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } })
     }
 
-    const db = createClient(supabaseUrl, supabaseServiceKey)
+    // Verify the OTP via Supabase Auth's built-in verify endpoint.
+    // This validates the code that Supabase sent to the user's email.
+    const authVerifyRes = await fetch(`${supabaseUrl}/auth/v1/verify`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseServiceKey,
+        "Authorization": `Bearer ${supabaseServiceKey}`,
+      },
+      body: JSON.stringify({ type: "email", email, token }),
+    })
 
-    const { data: row, error: fetchError } = await db
-      .from("email_tokens")
-      .select("id, used, expires_at")
-      .eq("email", email)
-      .eq("token", token)
-      .eq("purpose", purpose)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    const authVerifyData = await authVerifyRes.json()
+    const authValid = authVerifyRes.ok && (authVerifyData.access_token || authVerifyData.user)
 
-    if (fetchError) {
-      console.error("verify-otp DB error:", fetchError)
-      return new Response(JSON.stringify({ valid: false, error: "Could not verify code." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } })
-    }
+    // For community purpose, mark the community member as confirmed.
+    // Note: community_members rows are inserted (confirmed=false) before OTP in the
+    // frontend to preserve email/channel/lang preferences during the OTP step.
+    // verify-otp promotes those rows to confirmed=true upon successful Auth verify.
+    if (authValid && purpose === "community") {
+      const db = createClient(supabaseUrl, supabaseServiceKey)
 
-    if (!row) {
-      return new Response(JSON.stringify({ valid: false, error: "Invalid or expired code." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
-    }
+      // Mark any pending community tracking entry as used
+      await db
+        .from("email_tokens")
+        .update({ used: true })
+        .eq("email", email)
+        .eq("purpose", "community")
+        .eq("used", false)
 
-    if (row.used) {
-      return new Response(JSON.stringify({ valid: false, error: "This code has already been used." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
-    }
-
-    if (new Date(row.expires_at) < new Date()) {
-      return new Response(JSON.stringify({ valid: false, error: "This code has expired. Please request a new one." }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
-    }
-
-    // Mark the token as used
-    await db.from("email_tokens").update({ used: true }).eq("id", row.id)
-
-    // If purpose is 'community', mark the community member as confirmed
-    if (purpose === "community") {
+      // Mark the community member as confirmed
       await db
         .from("community_members")
         .update({ confirmed: true })
@@ -100,7 +95,14 @@ serve(async (req) => {
         .eq("confirmed", false)
     }
 
-    return new Response(JSON.stringify({ valid: true }),
+    if (authValid) {
+      return new Response(JSON.stringify({ valid: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
+    }
+
+    // Auth verification failed — return a safe generic message
+    const errMsg = authVerifyData?.error_description || authVerifyData?.msg || "Invalid or expired code."
+    return new Response(JSON.stringify({ valid: false, error: errMsg }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } })
   } catch (err) {
     console.error("verify-otp error:", err)

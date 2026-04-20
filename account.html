@@ -265,7 +265,7 @@
 
     let lastEmail = '';
 
-    function showLookupStatus(msg, isError) {
+    function showLookupStatusMsg(msg, isError) {
       const el = document.getElementById('lookupStatus');
       el.textContent = msg;
       el.style.display = '';
@@ -383,14 +383,14 @@
         } else {
           // OTP service not available — fall through to direct lookup
           const data = await doSubscriptionLookup(email);
-          if (data.error) { showLookupStatus(data.error, true); return; }
+          if (data.error) { showLookupStatusMsg(data.error, true); return; }
           if (data.found) showResult(data); else showNotFound();
         }
       } else {
         // No Supabase configured — look up directly (dev/demo mode)
         const data = await doSubscriptionLookup(email);
         btn.disabled = false; label.style.display = ''; spin.style.display = 'none';
-        if (data.error) { showLookupStatus(data.error, true); return; }
+        if (data.error) { showLookupStatusMsg(data.error, true); return; }
         if (data.found) showResult(data); else showNotFound();
       }
     });
@@ -452,7 +452,7 @@
         body: JSON.stringify({ email: lastEmail, purpose: 'verify', lang: uiLang }),
       }).catch(err => console.warn('resend-otp failed:', err));
       const status = document.getElementById('otpStatus');
-      status.textContent = c.otpSuccess || 'Code resent.';
+      status.textContent = c.otpSuccess;
       status.style.display = '';
     }
 
