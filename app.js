@@ -2583,8 +2583,10 @@ function syncCurrentUrlLanguage(lang = currentLanguage()) {
     const normalizedLang = normalizeSupportedLanguage(lang)
     const url = new URL(window.location.href)
     url.searchParams.set("lang", normalizedLang)
-    history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
-  } catch (err) {}
+    history.replaceState(history.state ?? null, "", `${url.pathname}${url.search}${url.hash}`)
+  } catch (err) {
+    // Best-effort URL sync only; ignore environments where History API is restricted.
+  }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
