@@ -1,2 +1,5 @@
 # Cloudflare Pages – redirect rules
 # https://developers.cloudflare.com/pages/platform/redirects/
+
+# Redirect www to apex domain
+https://www.wykta.app/* https://wykta.app/:splat 301
