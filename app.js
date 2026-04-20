@@ -653,6 +653,7 @@ const uiMessages = {
     proofTrustValue: "Community-maintained open databases",
     proofSpeed: "Speed",
     proofSpeedValue: "Live lookup + instant warnings",
+    analysisTitle: "AI Ingredient Analysis",
     analysisSubtitle: "Now enriched with free food and skincare databases for broader ingredient coverage.",
     scanSubtitle: "Use your camera to pull ingredients from labels in seconds.",
     ctaTitle: "Ready to know what's really in your products?",
@@ -792,6 +793,7 @@ const uiMessages = {
     proofTrustValue: "Bases ouvertes maintenues par la communauté",
     proofSpeed: "Vitesse",
     proofSpeedValue: "Recherche en direct + alertes instantanées",
+    analysisTitle: "Analyse IA des ingrédients",
     analysisSubtitle: "Désormais enrichi avec des bases alimentaires et skincare gratuites pour élargir la couverture.",
     scanSubtitle: "Utilisez votre caméra pour extraire les ingrédients en quelques secondes.",
     ctaTitle: "Prêt à savoir ce qui se cache vraiment dans vos produits ?",
@@ -931,6 +933,7 @@ const uiMessages = {
     proofTrustValue: "Community-gepflegte offene Datenbanken",
     proofSpeed: "Geschwindigkeit",
     proofSpeedValue: "Live-Abfrage + sofortige Warnungen",
+    analysisTitle: "KI-Inhaltsstoffanalyse",
     analysisSubtitle: "Jetzt mit kostenlosen Lebensmittel- und Hautpflege-Datenbanken für breitere Abdeckung.",
     scanSubtitle: "Nutzen Sie Ihre Kamera, um Inhaltsstoffe in Sekunden zu erfassen.",
     ctaTitle: "Bereit zu wissen, was wirklich in Ihren Produkten steckt?",
@@ -986,7 +989,7 @@ const uiMessages = {
     peroxideRetinol: "Benzoylperoxid kann Retinol deaktivieren.",
     analyzing: "Inhaltsstoffe werden analysiert...",
     ocrProcessing: "Bild wird verarbeitet und OCR läuft...",
-    cameraAccessFailed: "Kein Kamerazugriff möglich. Bitte Berechtigung in den Browsereinstellungen erteilen und erneut versuchen. Auf dem Handy können Sie auch die Option „Bild hochladen" verwenden.",
+    cameraAccessFailed: "Kein Kamerazugriff möglich. Bitte Berechtigung in den Browsereinstellungen erteilen und erneut versuchen. Auf dem Handy können Sie auch die Option „Bild hochladen“ verwenden.",
     aiUnavailable: "KI-Analyse nicht verfügbar. Ergebnisse unten stammen aus offenen Inhaltsstoffdatenbanken (OFF/OBF/Wikidata).",
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Nutze offene Datenbanken — Zutaten erneut einfügen oder anderes Etikett ausprobieren.`,
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
@@ -1070,6 +1073,7 @@ const uiMessages = {
     proofTrustValue: "社区维护的开放数据库",
     proofSpeed: "速度",
     proofSpeedValue: "实时查询 + 即时预警",
+    analysisTitle: "AI 成分分析",
     analysisSubtitle: "现已接入免费的食品与护肤数据库，成分覆盖更广。",
     scanSubtitle: "使用相机可在数秒内提取标签成分。",
     ctaTitle: "准备好了解您产品里真正含有什么了吗？",
@@ -1125,7 +1129,7 @@ const uiMessages = {
     peroxideRetinol: "过氧化苯甲酰可能使视黄醇失活。",
     analyzing: "正在分析成分...",
     ocrProcessing: "正在处理图像并执行 OCR...",
-    cameraAccessFailed: "无法访问相机。请在浏览器设置中允许相机权限后重试。在手机上，您也可以使用"上传图片"选项。",
+    cameraAccessFailed: "无法访问相机。请在浏览器设置中允许相机权限后重试。在手机上，您也可以使用“上传图片”选项。",
     aiUnavailable: "AI 分析不可用，以下结果来自开放成分数据库（OFF/OBF/Wikidata）。",
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果，正在切换至开放数据库——请重新粘贴成分，或尝试其他产品标签。`,
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
@@ -2555,7 +2559,7 @@ function withLangQuery(href, lang = currentLanguage()) {
     const url = new URL(href, window.location.href)
     if (url.origin !== window.location.origin) return href
     const page = url.pathname.split("/").pop() || "index.html"
-    const localPages = new Set(["index.html", "checkout.html", "contact-sales.html", "community.html", "payment-success.html"])
+    const localPages = new Set(["index.html", "checkout.html", "contact-sales.html", "community.html", "payment-success.html", "account.html", "privacy.html", "terms.html"])
     if (!localPages.has(page)) return href
     url.searchParams.set("lang", normalizedLang)
     return `${url.pathname}${url.search}${url.hash}`
@@ -2572,6 +2576,15 @@ function localizeInternalLinks(lang = currentLanguage()) {
       el.setAttribute("href", localizedHref)
     }
   })
+}
+
+function syncCurrentUrlLanguage(lang = currentLanguage()) {
+  try {
+    const normalizedLang = normalizeSupportedLanguage(lang)
+    const url = new URL(window.location.href)
+    url.searchParams.set("lang", normalizedLang)
+    history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`)
+  } catch (err) {}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2607,12 +2620,14 @@ document.addEventListener("DOMContentLoaded", () => {
   if (languageSelect) languageSelect.value = initialLang
   localStorage.setItem("wykta_lang", initialLang)
   localizeStaticUI()
+  syncCurrentUrlLanguage(initialLang)
   localizeInternalLinks(initialLang)
   if(languageSelect){
     languageSelect.addEventListener("change", () => {
       const lang = normalizeSupportedLanguage(currentLanguage())
       localStorage.setItem("wykta_lang", lang)
       localizeStaticUI()
+      syncCurrentUrlLanguage(lang)
       localizeInternalLinks(lang)
       const isAnnual = annualBtn ? annualBtn.classList.contains("active") : false
       setBilling(isAnnual)
