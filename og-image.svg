@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#e8f5ee"/>
+      <stop offset="100%" stop-color="#c9ebd8"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="80" y1="60" x2="340" y2="380" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2d8c52"/>
+      <stop offset="100%" stop-color="#40b870"/>
+    </linearGradient>
+    <linearGradient id="checkGrad" x1="100" y1="240" x2="320" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d4f0de"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="24" flood-color="#2d8c52" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)"/>
+
+  <!-- Subtle grid pattern -->
+  <g opacity="0.06">
+    <line x1="0" y1="105" x2="1200" y2="105" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="0" y1="210" x2="1200" y2="210" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="0" y1="315" x2="1200" y2="315" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="0" y1="420" x2="1200" y2="420" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="0" y1="525" x2="1200" y2="525" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="200" y1="0" x2="200" y2="630" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="400" y1="0" x2="400" y2="630" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="600" y1="0" x2="600" y2="630" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="800" y1="0" x2="800" y2="630" stroke="#2d8c52" stroke-width="1"/>
+    <line x1="1000" y1="0" x2="1000" y2="630" stroke="#2d8c52" stroke-width="1"/>
+  </g>
+
+  <!-- Logo mark (leaf + checkmark) -->
+  <g filter="url(#shadow)" transform="translate(100, 115)">
+    <path d="M110 20C110 20 30 72 30 142C30 186 68 214 110 214C152 214 190 186 190 142C190 72 110 20 110 20Z"
+          stroke="url(#leafGrad)" stroke-width="10" fill="rgba(45,140,82,0.12)" stroke-linecap="round"/>
+    <line x1="110" y1="38" x2="110" y2="200" stroke="url(#leafGrad)" stroke-width="6" stroke-linecap="round" opacity="0.45"/>
+    <polyline points="68,162 94,190 160,130"
+              stroke="url(#checkGrad)" stroke-width="16" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  </g>
+
+  <!-- Brand name -->
+  <text x="340" y="200" font-family="'Helvetica Neue', Arial, sans-serif" font-size="96"
+        font-weight="800" fill="#192d20" letter-spacing="-2">Wykta</text>
+
+  <!-- Tagline -->
+  <text x="340" y="268" font-family="'Helvetica Neue', Arial, sans-serif" font-size="36"
+        font-weight="400" fill="#2d8c52" letter-spacing="0.3">AI-Powered Ingredient Intelligence</text>
+
+  <!-- Divider line -->
+  <line x1="340" y1="310" x2="1080" y2="310" stroke="#2d8c52" stroke-width="2" opacity="0.25"/>
+
+  <!-- Feature chips -->
+  <g font-family="'Helvetica Neue', Arial, sans-serif" font-size="22" font-weight="500" fill="#2d5c3a">
+    <!-- Food + Skincare -->
+    <rect x="340" y="336" width="248" height="48" rx="24" fill="rgba(45,140,82,0.10)" stroke="#2d8c52" stroke-width="1.5" opacity="0.7"/>
+    <text x="364" y="366">🍃 Food + Skincare</text>
+
+    <!-- Allergen Alerts -->
+    <rect x="608" y="336" width="218" height="48" rx="24" fill="rgba(45,140,82,0.10)" stroke="#2d8c52" stroke-width="1.5" opacity="0.7"/>
+    <text x="632" y="366">🛡 Allergen Alerts</text>
+
+    <!-- 4 Languages -->
+    <rect x="848" y="336" width="192" height="48" rx="24" fill="rgba(45,140,82,0.10)" stroke="#2d8c52" stroke-width="1.5" opacity="0.7"/>
+    <text x="872" y="366">🌐 4 Languages</text>
+  </g>
+
+  <!-- Subtext -->
+  <text x="340" y="448" font-family="'Helvetica Neue', Arial, sans-serif" font-size="28"
+        font-weight="400" fill="#3a6b4a" letter-spacing="0.1">
+    Scan labels instantly · Detect allergens · Make confident choices
+  </text>
+
+  <!-- URL badge -->
+  <rect x="340" y="496" width="200" height="52" rx="26" fill="#2d8c52"/>
+  <text x="440" y="528" font-family="'Helvetica Neue', Arial, sans-serif" font-size="24"
+        font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">wykta.app</text>
+
+  <!-- Free badge -->
+  <rect x="562" y="496" width="152" height="52" rx="26" fill="rgba(45,140,82,0.12)" stroke="#2d8c52" stroke-width="2"/>
+  <text x="638" y="528" font-family="'Helvetica Neue', Arial, sans-serif" font-size="24"
+        font-weight="700" fill="#2d8c52" text-anchor="middle">Free to start</text>
+</svg>

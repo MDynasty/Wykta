@@ -31,6 +31,7 @@ jobs:
           STRIPE_SECRET_KEY:     ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           SITE_URL:              ${{ secrets.SITE_URL }}
+          CLEANUP_SECRET:        ${{ secrets.CLEANUP_SECRET }}
         run: |
           set_secret() {
             local name="$1"; local value="$2"
@@ -46,6 +47,7 @@ jobs:
           set_secret STRIPE_SECRET_KEY     "${STRIPE_SECRET_KEY}"
           set_secret STRIPE_WEBHOOK_SECRET "${STRIPE_WEBHOOK_SECRET}"
           set_secret SITE_URL              "${SITE_URL}"
+          set_secret CLEANUP_SECRET        "${CLEANUP_SECRET}"
 
       - name: Deploy wykta-backend
         env:
@@ -84,5 +86,21 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase functions deploy customer-portal \
+            --project-ref "${PROJECT_REF}" \
+            --no-verify-jwt
+
+      - name: Deploy check-subscription
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy check-subscription \
+            --project-ref "${PROJECT_REF}" \
+            --no-verify-jwt
+
+      - name: Deploy cleanup-scan-events
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy cleanup-scan-events \
             --project-ref "${PROJECT_REF}" \
             --no-verify-jwt

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Account - Wykta</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+.plan-chip { display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; }
+.plan-chip-free     { background:rgba(100,116,139,0.12); color:#475569; }
+.plan-chip-pro      { background:rgba(45,140,82,0.12); color:#2d8c52; border:1px solid rgba(45,140,82,0.3); }
+.plan-chip-cancelled{ background:rgba(180,83,9,0.10); color:#b45309; }
+.status-row { display:grid; gap:8px; color:var(--text-2); margin:16px 0; }
+.status-row p { margin:0; }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a class="brand" href="index.html"><div class="brand-mark">
+  <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <defs><linearGradient id="leafGrad" x1="3" y1="2" x2="19" y2="20" gradientUnits="userSpaceOnUse"><stop stop-color="#2d8c52"/><stop offset="1" stop-color="#40b870"/></linearGradient></defs>
+    <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(45,140,82,0.10)"/>
+    <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
+    <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div><span>Wykta</span></a>
+      <div class="nav-right">
+        <a class="nav-link" href="index.html#workflow" id="navWorkflow">How It Works</a>
+        <a class="nav-link" href="community.html" id="navCommunity">Community</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="sub-main">
+    <section class="sub-hero">
+      <h1 id="pageTitle">My Account</h1>
+      <p id="pageSubtitle">Check your subscription status or manage billing.</p>
+    </section>
+
+    <!-- Email lookup form -->
+    <section class="card" id="lookupCard">
+      <h2 class="card-title" id="formTitle">Look up your subscription</h2>
+      <form id="lookupForm">
+        <div class="field">
+          <label class="field-label" for="email" id="labelEmail">Billing email</label>
+          <input id="email" type="email" placeholder="name@example.com" required autocomplete="email">
+        </div>
+        <div id="lookupStatus" class="status-box" style="display:none; margin-bottom:12px;"></div>
+        <button class="btn btn-primary" type="submit" id="lookupBtn">
+          <span id="lookupLabel">Check status</span>
+          <span id="lookupSpinner" class="spinner" style="display:none;" aria-hidden="true"></span>
+        </button>
+      </form>
+    </section>
+
+    <!-- Subscription result -->
+    <section class="card" id="resultCard" style="display:none;">
+      <h2 class="card-title" id="resultTitle">Subscription</h2>
+      <div class="status-row" id="statusRows"></div>
+      <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" id="manageBtn" style="display:none;">Manage Subscription</button>
+        <a class="btn btn-secondary" href="checkout.html" id="upgradeBtn" style="display:none;">Upgrade to Pro</a>
+        <a class="btn btn-secondary" href="index.html" id="backBtn">Back to Home</a>
+      </div>
+      <p id="manageNote" style="font-size:12px;color:var(--text-3);margin-top:10px;display:none;"></p>
+    </section>
+
+    <!-- Not found result -->
+    <section class="card" id="notFoundCard" style="display:none;">
+      <h2 class="card-title" id="notFoundTitle">No subscription found</h2>
+      <p id="notFoundBody" style="color:var(--text-2); margin-bottom:16px;">
+        No active subscription was found for this email address.
+      </p>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a class="btn btn-primary" href="checkout.html" id="notFoundCheckout">Get Pro</a>
+        <a class="btn btn-secondary" href="index.html" id="notFoundHome">Back to Home</a>
+      </div>
+    </section>
+  </main>
+
+  <footer style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);margin-top:40px;">
+    Wykta &copy; 2026 &nbsp;&middot;&nbsp;
+    <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="terms.html" style="color:var(--brand);">Terms of Service</a>
+  </footer>
+
+  <script src="config.js"></script>
+  <script>
+    const SUPABASE_URL  = typeof supabaseUrl  !== 'undefined' ? supabaseUrl  : '';
+    const SUPABASE_ANON = typeof supabaseKey  !== 'undefined' ? supabaseKey  : '';
+
+    const params = new URLSearchParams(window.location.search);
+    const lang = (params.get('lang') || localStorage.getItem('wykta_lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+    const uiLang = ['en', 'fr', 'de', 'zh'].includes(lang) ? lang : 'en';
+    document.documentElement.lang = uiLang;
+    localStorage.setItem('wykta_lang', uiLang);
+
+    function withLang(href) {
+      if (!href || href.startsWith('#')) return href;
+      if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
+      try {
+        const url = new URL(href, window.location.href);
+        if (url.origin !== window.location.origin) return href;
+        const page = url.pathname.split('/').pop() || 'index.html';
+        const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html']);
+        if (!localPages.has(page)) return href;
+        url.searchParams.set('lang', uiLang);
+        return `${url.pathname}${url.search}${url.hash}`;
+      } catch { return href; }
+    }
+
+    document.querySelectorAll('a[href]').forEach((el) => {
+      const href = el.getAttribute('href');
+      const loc = withLang(href);
+      if (loc && loc !== href) el.setAttribute('href', loc);
+    });
+
+    const copy = {
+      en: {
+        pageTitle: 'My Account', pageSubtitle: 'Check your subscription status or manage billing.',
+        formTitle: 'Look up your subscription', labelEmail: 'Billing email',
+        lookupBtn: 'Check status', lookupBtnLoading: 'Checking…',
+        resultTitle: 'Your subscription',
+        plan: 'Plan', status: 'Status', since: 'Active since',
+        cancelledAt: 'Cancelled at', amount: 'Amount',
+        statusActive: 'Active ✓', statusCancelled: 'Cancelled',
+        manageBtn: 'Manage Subscription', upgradeBtn: 'Upgrade to Pro', backBtn: 'Back to Home',
+        manageNote: 'Cancel, change plan, or download invoices via the Stripe Customer Portal.',
+        notFoundTitle: 'No subscription found',
+        notFoundBody: 'No active subscription was found for this email. Check the address or get started with Pro.',
+        notFoundCheckout: 'Get Pro', notFoundHome: 'Back to Home',
+        navWorkflow: 'How It Works', navCommunity: 'Community',
+        errRequired: 'Please enter a valid email address.',
+        errServer: 'Could not check subscription. Please try again.',
+      },
+      fr: {
+        pageTitle: 'Mon compte', pageSubtitle: 'Vérifiez votre abonnement ou gérez la facturation.',
+        formTitle: 'Consulter votre abonnement', labelEmail: 'Email de facturation',
+        lookupBtn: 'Vérifier', lookupBtnLoading: 'Vérification…',
+        resultTitle: 'Votre abonnement',
+        plan: 'Offre', status: 'Statut', since: 'Actif depuis',
+        cancelledAt: 'Annulé le', amount: 'Montant',
+        statusActive: 'Actif ✓', statusCancelled: 'Annulé',
+        manageBtn: 'Gérer l\'abonnement', upgradeBtn: 'Passer Pro', backBtn: 'Accueil',
+        manageNote: 'Annulez, changez d\'offre ou téléchargez vos factures via le portail Stripe.',
+        notFoundTitle: 'Aucun abonnement trouvé',
+        notFoundBody: 'Aucun abonnement actif trouvé pour cet email. Vérifiez l\'adresse ou passez Pro.',
+        notFoundCheckout: 'Passer Pro', notFoundHome: 'Accueil',
+        navWorkflow: 'Fonctionnement', navCommunity: 'Communauté',
+        errRequired: 'Veuillez saisir une adresse email valide.',
+        errServer: 'Impossible de vérifier l\'abonnement. Veuillez réessayer.',
+      },
+      de: {
+        pageTitle: 'Mein Konto', pageSubtitle: 'Abostatus prüfen oder Abrechnung verwalten.',
+        formTitle: 'Abonnement nachschlagen', labelEmail: 'Rechnungs-E-Mail',
+        lookupBtn: 'Status prüfen', lookupBtnLoading: 'Prüfen…',
+        resultTitle: 'Ihr Abonnement',
+        plan: 'Tarif', status: 'Status', since: 'Aktiv seit',
+        cancelledAt: 'Gekündigt am', amount: 'Betrag',
+        statusActive: 'Aktiv ✓', statusCancelled: 'Gekündigt',
+        manageBtn: 'Abonnement verwalten', upgradeBtn: 'Auf Pro upgraden', backBtn: 'Zur Startseite',
+        manageNote: 'Kündigen, Tarif wechseln oder Rechnungen herunterladen über das Stripe-Kundenportal.',
+        notFoundTitle: 'Kein Abonnement gefunden',
+        notFoundBody: 'Für diese E-Mail-Adresse wurde kein aktives Abonnement gefunden. Adresse prüfen oder Pro holen.',
+        notFoundCheckout: 'Pro holen', notFoundHome: 'Zur Startseite',
+        navWorkflow: 'Funktionsweise', navCommunity: 'Community',
+        errRequired: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
+        errServer: 'Abonnement konnte nicht geprüft werden. Bitte erneut versuchen.',
+      },
+      zh: {
+        pageTitle: '我的账户', pageSubtitle: '查看订阅状态或管理账单。',
+        formTitle: '查询您的订阅', labelEmail: '账单邮箱',
+        lookupBtn: '查询状态', lookupBtnLoading: '查询中…',
+        resultTitle: '您的订阅',
+        plan: '套餐', status: '状态', since: '激活时间',
+        cancelledAt: '取消时间', amount: '金额',
+        statusActive: '有效 ✓', statusCancelled: '已取消',
+        manageBtn: '管理订阅', upgradeBtn: '升级到专业版', backBtn: '返回首页',
+        manageNote: '通过 Stripe 客户门户取消、更改套餐或下载发票。',
+        notFoundTitle: '未找到订阅',
+        notFoundBody: '此邮箱未找到有效订阅。请检查邮箱地址，或开始使用专业版。',
+        notFoundCheckout: '获取专业版', notFoundHome: '返回首页',
+        navWorkflow: '使用方法', navCommunity: '社区',
+        errRequired: '请输入有效的电子邮件地址。',
+        errServer: '无法查询订阅，请重试。',
+      },
+    };
+    const c = copy[uiLang] || copy.en;
+
+    // Apply translations
+    document.getElementById('pageTitle').textContent     = c.pageTitle;
+    document.getElementById('pageSubtitle').textContent  = c.pageSubtitle;
+    document.getElementById('formTitle').textContent     = c.formTitle;
+    document.getElementById('labelEmail').textContent    = c.labelEmail;
+    document.getElementById('lookupLabel').textContent   = c.lookupBtn;
+    document.getElementById('resultTitle').textContent   = c.resultTitle;
+    document.getElementById('manageBtn').textContent     = c.manageBtn;
+    document.getElementById('upgradeBtn').textContent    = c.upgradeBtn;
+    document.getElementById('backBtn').textContent       = c.backBtn;
+    document.getElementById('manageNote').textContent    = c.manageNote;
+    document.getElementById('notFoundTitle').textContent = c.notFoundTitle;
+    document.getElementById('notFoundBody').textContent  = c.notFoundBody;
+    document.getElementById('notFoundCheckout').textContent = c.notFoundCheckout;
+    document.getElementById('notFoundHome').textContent  = c.notFoundHome;
+    document.getElementById('navWorkflow').textContent   = c.navWorkflow;
+    document.getElementById('navCommunity').textContent  = c.navCommunity;
+
+    let lastEmail = '';
+
+    function showStatus(msg, isError) {
+      const el = document.getElementById('lookupStatus');
+      el.textContent = msg;
+      el.style.display = '';
+      el.style.color = isError ? 'var(--text-error, #b45309)' : 'var(--text-2)';
+    }
+
+    function hideAll() {
+      document.getElementById('resultCard').style.display   = 'none';
+      document.getElementById('notFoundCard').style.display = 'none';
+    }
+
+    function showResult(data) {
+      hideAll();
+      const rows = document.getElementById('statusRows');
+      const amountFormatted = data.amount_cents
+        ? new Intl.NumberFormat(navigator.language || uiLang, {
+            style: 'currency',
+            currency: (data.currency || 'usd').toUpperCase(),
+            maximumFractionDigits: 2,
+          }).format(data.amount_cents / 100)
+        : '—';
+
+      const isCancelled = data.status === 'cancelled';
+      const planLabel = data.plan ? data.plan.replace('-', ' ') : 'Pro';
+      const chipClass = isCancelled ? 'plan-chip-cancelled' : 'plan-chip-pro';
+      const statusText = isCancelled ? c.statusCancelled : c.statusActive;
+
+      rows.innerHTML = `
+        <p><strong>${c.plan}:</strong> <span class="plan-chip ${chipClass}">${planLabel}</span></p>
+        <p><strong>${c.status}:</strong> ${statusText}</p>
+        <p><strong>${c.amount}:</strong> ${amountFormatted}</p>
+        <p><strong>${c.since}:</strong> ${data.activated_at ? new Date(data.activated_at).toLocaleDateString() : '—'}</p>
+        ${data.cancelled_at ? `<p><strong>${c.cancelledAt}:</strong> ${new Date(data.cancelled_at).toLocaleDateString()}</p>` : ''}
+      `;
+
+      const manageBtn = document.getElementById('manageBtn');
+      const upgradeBtn = document.getElementById('upgradeBtn');
+      const manageNote = document.getElementById('manageNote');
+
+      if (data.status === 'active' && data.plan !== 'free') {
+        manageBtn.style.display = '';
+        manageNote.style.display = '';
+      } else {
+        upgradeBtn.style.display = '';
+      }
+
+      document.getElementById('resultCard').style.display = '';
+    }
+
+    function showNotFound() {
+      hideAll();
+      document.getElementById('notFoundCard').style.display = '';
+    }
+
+    // Lookup form submit
+    document.getElementById('lookupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim().toLowerCase();
+      const btn   = document.getElementById('lookupBtn');
+      const label = document.getElementById('lookupLabel');
+      const spin  = document.getElementById('lookupSpinner');
+      const status = document.getElementById('lookupStatus');
+
+      status.style.display = 'none';
+      btn.disabled = true;
+      label.style.display = 'none';
+      spin.style.display  = '';
+      lastEmail = email;
+
+      try {
+        const endpoint = SUPABASE_URL
+          ? `${SUPABASE_URL}/functions/v1/check-subscription?email=${encodeURIComponent(email)}`
+          : `/functions/v1/check-subscription?email=${encodeURIComponent(email)}`;
+
+        const res  = await fetch(endpoint, {
+          headers: SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {},
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.error) {
+          showStatus(data.error || c.errServer, true);
+          return;
+        }
+
+        if (data.found) {
+          showResult(data);
+        } else {
+          showNotFound();
+        }
+      } catch (err) {
+        console.error('check-subscription error:', err);
+        showStatus(c.errServer, true);
+      } finally {
+        btn.disabled = false;
+        label.style.display = '';
+        spin.style.display  = 'none';
+      }
+    });
+
+    // Manage subscription → open Stripe Customer Portal
+    document.getElementById('manageBtn').addEventListener('click', async () => {
+      const btn = document.getElementById('manageBtn');
+      if (!lastEmail || !SUPABASE_URL) {
+        alert(c.errServer);
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = '…';
+      try {
+        const returnUrl  = new URL('account.html', window.location.href).href;
+        const endpoint   = `${SUPABASE_URL}/functions/v1/customer-portal`;
+        const res        = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
+          },
+          body: JSON.stringify({ email: lastEmail, return_url: returnUrl }),
+        });
+        const result = await res.json();
+        if (result.url) {
+          window.location.href = result.url;
+        } else {
+          alert(result.error || c.errServer);
+          btn.disabled = false;
+          btn.textContent = c.manageBtn;
+        }
+      } catch (err) {
+        console.error('customer-portal error:', err);
+        btn.disabled = false;
+        btn.textContent = c.manageBtn;
+      }
+    });
+  </script>
+</body>
+</html>

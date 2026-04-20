@@ -1,2 +1,7 @@
 # Cloudflare Pages – redirect rules
 # https://developers.cloudflare.com/pages/platform/redirects/
+#
+# Note: Cloudflare Workers Static Assets only supports relative destination URLs
+# in this file. The www → apex redirect must be configured via a Cloudflare
+# Redirect Rule in the dashboard (Rules → Redirect Rules) or via a Page Rule,
+# not here.
