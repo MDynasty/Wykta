@@ -122,7 +122,7 @@ serve(async (req) => {
       )
     }
 
-    const defaultSiteUrl = validateAndNormalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://mdynasty.github.io/Wykta"
+    const defaultSiteUrl = validateAndNormalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://wykta.pages.dev"
     const body = await req.json()
     const { plan, lang, email, site_url } = body as { plan: string; lang: string; email?: string; site_url?: string }
 
