@@ -130,7 +130,7 @@ Build and archive from within the respective IDE.
 
 1. Enrol in the [Apple Developer Program](https://developer.apple.com/programs/) ($99/yr).
 2. Create an **App ID** `com.wykta.app` in [App Store Connect](https://appstoreconnect.apple.com/).
-3. Configure the app record: name, subtitle, category (Health & Fitness or Food & Drink), age rating (4+), privacy policy URL (`https://mdynasty.github.io/Wykta/privacy.html`).
+3. Configure the app record: name, subtitle, category (Health & Fitness or Food & Drink), age rating (4+), privacy policy URL (`https://wykta.pages.dev/privacy.html`).
 4. Upload a build via Xcode Organizer or Transporter.
 5. Complete **App Privacy** questionnaire (data types, tracking, etc.).
 6. Add at least 3 screenshots per device size (iPhone 6.7", iPad Pro 12.9").
@@ -147,7 +147,7 @@ Build and archive from within the respective IDE.
 3. Complete **Store listing**: title, short description (max 80 chars), long description, feature graphic (1024×500), screenshots (phone + 7" + 10" tablet).
 4. Fill out **Content rating** questionnaire (Violence: None, Sexual content: None, Substances: None → likely Everyone rating).
 5. Complete **Data safety** section (camera access, no data sold to third parties).
-6. Set **Privacy policy URL**: `https://mdynasty.github.io/Wykta/privacy.html`.
+6. Set **Privacy policy URL**: `https://wykta.pages.dev/privacy.html`.
 7. Upload `.aab` in **Testing → Internal testing** first, then **Production**.
 8. Staged rollout: release to 10% → 50% → 100% over 7 days.
 
@@ -254,7 +254,7 @@ Use this checklist for every production release.
 ### Pre-build
 - [ ] `npm install` — dependencies up to date
 - [ ] All `supabase` secrets synced (`OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `SITE_URL`)
-- [ ] `config.js` `siteUrl` matches the deployed domain (`https://mdynasty.github.io/Wykta`)
+- [ ] `config.js` `siteUrl` matches the deployed domain (`https://wykta.pages.dev`)
 - [ ] Version number bumped in `capacitor.config.json` → `version` field (if present)
 - [ ] Privacy policy and Terms pages updated if required
 - [ ] All i18n keys present and correct for all 4 languages (en/fr/de/zh)
