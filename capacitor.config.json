@@ -1,0 +1,20 @@
+{
+  "appId": "com.wykta.app",
+  "appName": "Wykta",
+  "webDir": ".",
+  "plugins": {
+    "Camera": {
+      "presentationStyle": "fullscreen"
+    },
+    "Preferences": {
+      "group": "wykta"
+    }
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "backgroundColor": "#f3f8f4"
+  },
+  "android": {
+    "backgroundColor": "#f3f8f4"
+  }
+}

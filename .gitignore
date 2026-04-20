@@ -1,0 +1,14 @@
+# Node / npm
+node_modules/
+
+# Capacitor native platform build folders
+# Run `npm run cap:add:ios` / `npm run cap:add:android` to regenerate locally
+ios/
+android/
+
+# macOS
+.DS_Store
+
+# Editor directories
+.vscode/
+.idea/

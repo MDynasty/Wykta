@@ -9,13 +9,13 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Wykta – Ingredient Analyzer">
 <meta property="og:description" content="Scan food or skincare labels instantly. Detect allergens, flag risky ingredients, and make confident choices — free.">
-<meta property="og:url" content="https://wykta.app">
+<meta property="og:url" content="https://wykta.pages.dev/">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Wykta – Ingredient Analyzer">
 <meta name="twitter:description" content="Scan food or skincare labels instantly. Detect allergens, flag risky ingredients, and make confident choices — free.">
-<meta property="og:image" content="https://wykta.app/og-image.svg">
-<meta name="twitter:image" content="https://wykta.app/og-image.svg">
-<link rel="canonical" href="https://wykta.app/">
+<meta property="og:image" content="https://wykta.pages.dev/og-image.svg">
+<meta name="twitter:image" content="https://wykta.pages.dev/og-image.svg">
+<link rel="canonical" href="https://wykta.pages.dev/">
 <!-- PWA -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2d8c52">
@@ -452,6 +452,15 @@
 
 <!-- App config (ignored in GitHub repo) -->
 <script src="config.js"></script>
+
+<!-- Capacitor runtime bridge – injected automatically in native iOS/Android WebViews.
+     On web this script is a no-op; window.Capacitor remains undefined so the app
+     continues to use the standard getUserMedia camera path. -->
+<script>
+  // Capacitor injects capacitor.js before any page scripts when running inside the
+  // native WebView. No explicit <script> tag is needed — this comment is here to
+  // document that fact. The window.Capacitor guard in app.js handles both contexts.
+</script>
 
 <!-- OCR library -->
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
