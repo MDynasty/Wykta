@@ -10,6 +10,9 @@
 // Stripe Dashboard webhook setup:
 //   URL:    https://<project-ref>.supabase.co/functions/v1/stripe-webhook
 //   Events: checkout.session.completed, customer.subscription.deleted
+//
+// Idempotency: each Stripe event ID is recorded in processed_stripe_events.
+// If Stripe retries delivery, the duplicate event is detected and safely skipped.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
@@ -74,7 +77,7 @@ serve(async (req) => {
     return new Response("Invalid signature", { status: 400 })
   }
 
-  let event: { type: string; data: { object: Record<string, unknown> } }
+  let event: { id: string; type: string; data: { object: Record<string, unknown> } }
   try {
     event = JSON.parse(rawBody)
   } catch {
@@ -82,6 +85,26 @@ serve(async (req) => {
   }
 
   const db = createClient(supabaseUrl, supabaseServiceKey)
+
+  // ── Idempotency check ───────────────────────────────────────────────────
+  // Insert a row for this event ID. If the row already exists the insert
+  // will fail with a unique-key violation, meaning we already processed it.
+  const { error: dedupError } = await db
+    .from("processed_stripe_events")
+    .insert({ stripe_event_id: event.id, event_type: event.type })
+
+  if (dedupError) {
+    if (dedupError.code === "23505") {
+      // Duplicate — Stripe is retrying an already-processed event; ack it.
+      console.log(`Duplicate event skipped: ${event.id}`)
+      return new Response(JSON.stringify({ received: true, skipped: true }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+    console.error("Idempotency insert error:", dedupError)
+    return new Response("DB error", { status: 500 })
+  }
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object
