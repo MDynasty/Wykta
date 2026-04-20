@@ -6,9 +6,9 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 // Canonical site URL — used for OG tags and Stripe redirect URLs.
 // Must match the SITE_URL Supabase secret set in deploy-edge-function.yml.
-// After binding your custom domain on Cloudflare Pages, update this value
+// After binding a custom domain on Cloudflare Pages, update this value
 // and set the matching SITE_URL secret in your Supabase project.
-const siteUrl = "https://mdynasty.github.io/Wykta"
+const siteUrl = "https://wykta.pages.dev"
 
 // Analytics (optional — leave empty to disable)
 // gaId:            Google Analytics 4 Measurement ID, e.g. "G-XXXXXXXXXX"

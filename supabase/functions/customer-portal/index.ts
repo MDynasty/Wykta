@@ -9,7 +9,7 @@
 //
 // Stripe Dashboard setup (one-time):
 //   Stripe Dashboard → Settings → Customer portal → Activate
-//   Set your return URL to https://mdynasty.github.io/Wykta/ (or your domain)
+//   Set your return URL to https://wykta.pages.dev/ (or your custom domain)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
@@ -76,7 +76,7 @@ serve(async (req) => {
     // Create a Stripe Customer Portal session
     const portalBody = new URLSearchParams({
       customer: sub.stripe_customer_id,
-      return_url: return_url || "https://mdynasty.github.io/Wykta/",
+      return_url: return_url || "https://wykta.pages.dev/",
     })
 
     const portalRes = await fetch(

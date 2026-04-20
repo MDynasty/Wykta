@@ -1,5 +1,22 @@
 console.log("Wykta app started")
 
+/* -----------------------
+CAPACITOR NATIVE DETECTION
+On iOS/Android the Capacitor bridge is injected into the WebView before the
+page loads, making window.Capacitor available. On the web (Cloudflare Pages /
+GitHub Pages) window.Capacitor is undefined, so isNativeApp() returns false
+and all camera code falls through to the standard getUserMedia path.
+----------------------- */
+function isNativeApp() {
+  return !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+}
+
+function getCapacitorCamera() {
+  return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Camera
+    ? window.Capacitor.Plugins.Camera
+    : null
+}
+
 function trackEvent(category, action, label) {
   try {
     if (window.gtag) window.gtag('event', action, { event_category: category, event_label: label })
@@ -2285,6 +2302,13 @@ async function scanBarcode() {
 
 async function startScan(){
   trackEvent('Camera', 'Open', 'camera')
+
+  // On iOS/Android use the native Capacitor camera sheet (no getUserMedia needed)
+  if (isNativeApp()) {
+    await captureNative()
+    return
+  }
+
 try{
 if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
   throw new Error(t("cameraAccessFailed"))
@@ -2325,6 +2349,10 @@ CAPTURE IMAGE
 
 async function capture(){
 
+  // On iOS/Android the native camera sheet has already delivered the image
+  // via captureNative(); tapping the in-page "Capture" button is a no-op.
+  if (isNativeApp()) return
+
 const video = document.getElementById("camera")
 const canvas = document.getElementById("snapshot")
 const ocrEl = document.getElementById("ocrResult")
@@ -2356,6 +2384,77 @@ if(ocrEl){
 runOCR(canvas)
 
 }
+
+/* -----------------------
+NATIVE CAMERA CAPTURE (iOS / Android via Capacitor)
+Uses @capacitor/camera getPhoto() which opens the system camera sheet,
+then decodes the returned base64 JPEG into a canvas and passes it to runOCR().
+Falls back to cameraAccessFailed message if the plugin is unavailable.
+----------------------- */
+async function captureNative() {
+  const ocrEl = document.getElementById("ocrResult")
+  const CapCamera = getCapacitorCamera()
+
+  if (!CapCamera) {
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed")
+      ocrEl.classList.add("visible")
+    }
+    return
+  }
+
+  try {
+    // CameraSource enum maps to the string "CAMERA". Since this app has no
+    // bundler the @capacitor/camera ES-module cannot be imported directly, so
+    // we use the underlying string value that CameraSource.Camera resolves to.
+    // See: https://capacitorjs.com/docs/apis/camera#camerasource
+    const photo = await CapCamera.getPhoto({
+      quality: 90,
+      allowEditing: false,
+      resultType: "base64",
+      source: "CAMERA",
+      correctOrientation: true,
+      width: 1920,
+      height: 1080
+    })
+
+    const base64 = photo.base64String
+    if (!base64) throw new Error("No image data returned")
+
+    if (ocrEl) {
+      ocrEl.innerText = t("ocrProcessing")
+      ocrEl.classList.add("visible")
+    }
+
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.getElementById("snapshot")
+      if (!canvas) return
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext("2d")
+      ctx.drawImage(img, 0, 0)
+      runOCR(canvas)
+    }
+    img.onerror = () => {
+      if (ocrEl) {
+        ocrEl.innerText = t("cameraAccessFailed")
+        ocrEl.classList.add("visible")
+      }
+    }
+    img.src = `data:image/jpeg;base64,${base64}`
+  } catch (err) {
+    // User cancelled the camera picker — silently ignore; any other error shows message
+    if (err && err.message && err.message.toLowerCase().includes("cancel")) return
+    console.error("Native camera error:", err)
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed")
+      ocrEl.classList.add("visible")
+    }
+  }
+}
+
+
 
 /* -----------------------
 OCR TEXT RECOGNITION

@@ -1,0 +1,34 @@
+{
+  "name": "wykta",
+  "version": "1.0.0",
+  "description": "AI-powered ingredient analyzer — food & skincare label scanner",
+  "main": "app.js",
+  "scripts": {
+    "cap:add:ios": "npx cap add ios",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "cap:open:ios": "npx cap open ios",
+    "cap:open:android": "npx cap open android"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MDynasty/Wykta.git"
+  },
+  "keywords": ["ingredients", "allergens", "food", "skincare", "ocr", "ai"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MDynasty/Wykta/issues"
+  },
+  "homepage": "https://wykta.pages.dev",
+  "dependencies": {
+    "@capacitor/camera": "^8.1.0",
+    "@capacitor/core": "^8.3.1",
+    "@capacitor/preferences": "^8.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.3.1",
+    "@capacitor/cli": "^8.3.1",
+    "@capacitor/ios": "^8.3.1"
+  }
+}

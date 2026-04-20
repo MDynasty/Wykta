@@ -3,7 +3,7 @@
 //
 // Required Supabase secrets:
 //   STRIPE_SECRET_KEY       – your Stripe secret key (sk_live_... or sk_test_...)
-//   SITE_URL                – your deployed site URL, e.g. https://mdynasty.github.io/Wykta
+//   SITE_URL                – your deployed site URL, e.g. https://wykta.pages.dev
 //
 // Enable via GitHub Actions secret:   STRIPE_SECRET_KEY=sk_...
 //
@@ -122,7 +122,7 @@ serve(async (req) => {
       )
     }
 
-    const defaultSiteUrl = validateAndNormalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://mdynasty.github.io/Wykta"
+    const defaultSiteUrl = validateAndNormalizeSiteUrl(Deno.env.get("SITE_URL")) || "https://wykta.pages.dev"
     const body = await req.json()
     const { plan, lang, email, site_url } = body as { plan: string; lang: string; email?: string; site_url?: string }
 
