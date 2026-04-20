@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://wykta.pages.dev/sitemap.xml
+Sitemap: https://mdynasty.github.io/Wykta/sitemap.xml

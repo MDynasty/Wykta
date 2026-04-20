@@ -76,7 +76,7 @@ serve(async (req) => {
     // Create a Stripe Customer Portal session
     const portalBody = new URLSearchParams({
       customer: sub.stripe_customer_id,
-      return_url: return_url || "https://wykta.pages.dev/",
+      return_url: return_url || "https://mdynasty.github.io/Wykta/",
     })
 
     const portalRes = await fetch(

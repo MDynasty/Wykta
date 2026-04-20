@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://wykta.pages.dev/</loc>
+    <loc>https://mdynasty.github.io/Wykta/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://wykta.pages.dev/checkout.html</loc>
+    <loc>https://mdynasty.github.io/Wykta/checkout.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://wykta.pages.dev/community.html</loc>
+    <loc>https://mdynasty.github.io/Wykta/community.html</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://wykta.pages.dev/contact-sales.html</loc>
+    <loc>https://mdynasty.github.io/Wykta/contact-sales.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://wykta.pages.dev/account.html</loc>
+    <loc>https://mdynasty.github.io/Wykta/account.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://wykta.pages.dev/privacy.html</loc>
+    <loc>https://mdynasty.github.io/Wykta/privacy.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://wykta.pages.dev/terms.html</loc>
+    <loc>https://mdynasty.github.io/Wykta/terms.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

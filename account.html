@@ -54,6 +54,30 @@
       </form>
     </section>
 
+    <!-- OTP verification step (hidden until email submitted) -->
+    <section class="card" id="otpCard" style="display:none;">
+      <h2 class="card-title" id="otpTitle">Verify your email</h2>
+      <p id="otpHint" style="font-size:13px;color:var(--text-2);margin-bottom:16px;">
+        We sent a 6-digit code to your email. Enter it below to view your subscription.
+      </p>
+      <form id="otpForm">
+        <div class="field">
+          <label class="field-label" for="otpInput" id="labelOtp">Verification code</label>
+          <input id="otpInput" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                 placeholder="123456" required autocomplete="one-time-code"
+                 style="letter-spacing:0.25em;font-size:18px;text-align:center;">
+        </div>
+        <div id="otpStatus" class="status-box" style="display:none; margin-bottom:12px;"></div>
+        <button class="btn btn-primary" type="submit" id="otpBtn">
+          <span id="otpLabel">Verify</span>
+          <span id="otpSpinner" class="spinner" style="display:none;" aria-hidden="true"></span>
+        </button>
+        <button type="button" class="btn btn-secondary" style="margin-top:8px;" onclick="resendAccountOtp()">
+          <span id="resendLabel">Resend code</span>
+        </button>
+      </form>
+    </section>
+
     <!-- Subscription result -->
     <section class="card" id="resultCard" style="display:none;">
       <h2 class="card-title" id="resultTitle">Subscription</h2>
@@ -120,7 +144,14 @@
       en: {
         pageTitle: 'My Account', pageSubtitle: 'Check your subscription status or manage billing.',
         formTitle: 'Look up your subscription', labelEmail: 'Billing email',
-        lookupBtn: 'Check status', lookupBtnLoading: 'Checking…',
+        lookupBtn: 'Check status', lookupBtnLoading: 'Sending code…',
+        otpTitle: 'Verify your email',
+        otpHint: 'We sent a 6-digit code to your email. Enter it to view your subscription.',
+        labelOtp: 'Verification code',
+        otpLabel: 'Verify', otpBtnLoading: 'Verifying…',
+        resendLabel: 'Resend code',
+        otpSuccess: 'Email verified.',
+        otpError: 'Invalid or expired code. Please try again.',
         resultTitle: 'Your subscription',
         plan: 'Plan', status: 'Status', since: 'Active since',
         cancelledAt: 'Cancelled at', amount: 'Amount',
@@ -137,7 +168,14 @@
       fr: {
         pageTitle: 'Mon compte', pageSubtitle: 'Vérifiez votre abonnement ou gérez la facturation.',
         formTitle: 'Consulter votre abonnement', labelEmail: 'Email de facturation',
-        lookupBtn: 'Vérifier', lookupBtnLoading: 'Vérification…',
+        lookupBtn: 'Vérifier', lookupBtnLoading: 'Envoi du code…',
+        otpTitle: 'Vérifiez votre e-mail',
+        otpHint: 'Nous avons envoyé un code à 6 chiffres à votre e-mail. Saisissez-le pour consulter votre abonnement.',
+        labelOtp: 'Code de vérification',
+        otpLabel: 'Vérifier', otpBtnLoading: 'Vérification…',
+        resendLabel: 'Renvoyer le code',
+        otpSuccess: 'E-mail vérifié.',
+        otpError: 'Code invalide ou expiré. Veuillez réessayer.',
         resultTitle: 'Votre abonnement',
         plan: 'Offre', status: 'Statut', since: 'Actif depuis',
         cancelledAt: 'Annulé le', amount: 'Montant',
@@ -154,7 +192,14 @@
       de: {
         pageTitle: 'Mein Konto', pageSubtitle: 'Abostatus prüfen oder Abrechnung verwalten.',
         formTitle: 'Abonnement nachschlagen', labelEmail: 'Rechnungs-E-Mail',
-        lookupBtn: 'Status prüfen', lookupBtnLoading: 'Prüfen…',
+        lookupBtn: 'Status prüfen', lookupBtnLoading: 'Code wird gesendet…',
+        otpTitle: 'E-Mail bestätigen',
+        otpHint: 'Wir haben einen 6-stelligen Code an Ihre E-Mail gesendet. Geben Sie ihn ein, um Ihr Abonnement anzuzeigen.',
+        labelOtp: 'Bestätigungscode',
+        otpLabel: 'Bestätigen', otpBtnLoading: 'Wird geprüft…',
+        resendLabel: 'Code erneut senden',
+        otpSuccess: 'E-Mail bestätigt.',
+        otpError: 'Ungültiger oder abgelaufener Code. Bitte erneut versuchen.',
         resultTitle: 'Ihr Abonnement',
         plan: 'Tarif', status: 'Status', since: 'Aktiv seit',
         cancelledAt: 'Gekündigt am', amount: 'Betrag',
@@ -171,7 +216,14 @@
       zh: {
         pageTitle: '我的账户', pageSubtitle: '查看订阅状态或管理账单。',
         formTitle: '查询您的订阅', labelEmail: '账单邮箱',
-        lookupBtn: '查询状态', lookupBtnLoading: '查询中…',
+        lookupBtn: '查询状态', lookupBtnLoading: '正在发送验证码…',
+        otpTitle: '验证您的邮箱',
+        otpHint: '我们已向您的邮箱发送了一个 6 位数验证码，请填写以查看您的订阅。',
+        labelOtp: '验证码',
+        otpLabel: '验证', otpBtnLoading: '验证中…',
+        resendLabel: '重新发送验证码',
+        otpSuccess: '邮箱已验证。',
+        otpError: '验证码无效或已过期，请重试。',
         resultTitle: '您的订阅',
         plan: '套餐', status: '状态', since: '激活时间',
         cancelledAt: '取消时间', amount: '金额',
@@ -194,6 +246,11 @@
     document.getElementById('formTitle').textContent     = c.formTitle;
     document.getElementById('labelEmail').textContent    = c.labelEmail;
     document.getElementById('lookupLabel').textContent   = c.lookupBtn;
+    document.getElementById('otpTitle').textContent      = c.otpTitle;
+    document.getElementById('otpHint').textContent       = c.otpHint;
+    document.getElementById('labelOtp').textContent      = c.labelOtp;
+    document.getElementById('otpLabel').textContent      = c.otpLabel;
+    document.getElementById('resendLabel').textContent   = c.resendLabel;
     document.getElementById('resultTitle').textContent   = c.resultTitle;
     document.getElementById('manageBtn').textContent     = c.manageBtn;
     document.getElementById('upgradeBtn').textContent    = c.upgradeBtn;
@@ -208,7 +265,7 @@
 
     let lastEmail = '';
 
-    function showStatus(msg, isError) {
+    function showLookupStatus(msg, isError) {
       const el = document.getElementById('lookupStatus');
       el.textContent = msg;
       el.style.display = '';
@@ -222,6 +279,7 @@
 
     function showResult(data) {
       hideAll();
+      document.getElementById('otpCard').style.display = 'none';
       const rows = document.getElementById('statusRows');
       const amountFormatted = data.amount_cents
         ? new Intl.NumberFormat(navigator.language || uiLang, {
@@ -260,24 +318,11 @@
 
     function showNotFound() {
       hideAll();
+      document.getElementById('otpCard').style.display = 'none';
       document.getElementById('notFoundCard').style.display = '';
     }
 
-    // Lookup form submit
-    document.getElementById('lookupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('email').value.trim().toLowerCase();
-      const btn   = document.getElementById('lookupBtn');
-      const label = document.getElementById('lookupLabel');
-      const spin  = document.getElementById('lookupSpinner');
-      const status = document.getElementById('lookupStatus');
-
-      status.style.display = 'none';
-      btn.disabled = true;
-      label.style.display = 'none';
-      spin.style.display  = '';
-      lastEmail = email;
-
+    async function doSubscriptionLookup(email) {
       try {
         const endpoint = SUPABASE_URL
           ? `${SUPABASE_URL}/functions/v1/check-subscription?email=${encodeURIComponent(email)}`
@@ -288,25 +333,128 @@
         });
         const data = await res.json();
 
-        if (!res.ok || data.error) {
-          showStatus(data.error || c.errServer, true);
-          return;
-        }
-
-        if (data.found) {
-          showResult(data);
-        } else {
-          showNotFound();
-        }
+        if (!res.ok || data.error) return { error: data.error || c.errServer };
+        return data;
       } catch (err) {
         console.error('check-subscription error:', err);
-        showStatus(c.errServer, true);
-      } finally {
-        btn.disabled = false;
-        label.style.display = '';
-        spin.style.display  = 'none';
+        return { error: c.errServer };
+      }
+    }
+
+    // Step 1: Submit email → send OTP (if backend available) or look up directly
+    document.getElementById('lookupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email  = document.getElementById('email').value.trim().toLowerCase();
+      const btn    = document.getElementById('lookupBtn');
+      const label  = document.getElementById('lookupLabel');
+      const spin   = document.getElementById('lookupSpinner');
+      const status = document.getElementById('lookupStatus');
+
+      status.style.display = 'none';
+      btn.disabled = true;
+      label.style.display = 'none';
+      spin.style.display  = '';
+      lastEmail = email;
+
+      if (SUPABASE_URL) {
+        // Send OTP and transition to OTP step
+        let otpSent = false;
+        try {
+          label.textContent = c.lookupBtnLoading;
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/send-otp`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
+            },
+            body: JSON.stringify({ email, purpose: 'verify', lang: uiLang }),
+          });
+          const result = await res.json();
+          otpSent = result.sent === true;
+        } catch (err) {
+          console.warn('send-otp failed:', err);
+        }
+
+        btn.disabled = false; label.textContent = c.lookupBtn; label.style.display = ''; spin.style.display = 'none';
+
+        if (otpSent) {
+          document.getElementById('lookupCard').style.display = 'none';
+          document.getElementById('otpCard').style.display = '';
+        } else {
+          // OTP service not available — fall through to direct lookup
+          const data = await doSubscriptionLookup(email);
+          if (data.error) { showLookupStatus(data.error, true); return; }
+          if (data.found) showResult(data); else showNotFound();
+        }
+      } else {
+        // No Supabase configured — look up directly (dev/demo mode)
+        const data = await doSubscriptionLookup(email);
+        btn.disabled = false; label.style.display = ''; spin.style.display = 'none';
+        if (data.error) { showLookupStatus(data.error, true); return; }
+        if (data.found) showResult(data); else showNotFound();
       }
     });
+
+    // Step 2: Verify OTP → look up subscription
+    document.getElementById('otpForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const token  = document.getElementById('otpInput').value.trim();
+      const btn    = document.getElementById('otpBtn');
+      const label  = document.getElementById('otpLabel');
+      const spin   = document.getElementById('otpSpinner');
+      const status = document.getElementById('otpStatus');
+
+      status.style.display = 'none';
+      btn.disabled = true; label.style.display = 'none'; spin.style.display = '';
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/verify-otp`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
+          },
+          body: JSON.stringify({ email: lastEmail, token, purpose: 'verify' }),
+        });
+        const result = await res.json();
+
+        if (result.valid) {
+          // OTP verified — now do the subscription lookup
+          const data = await doSubscriptionLookup(lastEmail);
+          btn.disabled = false; label.style.display = ''; spin.style.display = 'none';
+          if (data.error) {
+            status.textContent = data.error; status.style.display = '';
+          } else if (data.found) {
+            showResult(data);
+          } else {
+            showNotFound();
+          }
+        } else {
+          status.textContent = result.error || c.otpError;
+          status.style.display = '';
+          btn.disabled = false; label.style.display = ''; spin.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('verify-otp error:', err);
+        status.textContent = c.errServer; status.style.display = '';
+        btn.disabled = false; label.style.display = ''; spin.style.display = 'none';
+      }
+    });
+
+    function resendAccountOtp() {
+      if (!lastEmail || !SUPABASE_URL) return;
+      fetch(`${SUPABASE_URL}/functions/v1/send-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(SUPABASE_ANON ? { 'apikey': SUPABASE_ANON } : {}),
+        },
+        body: JSON.stringify({ email: lastEmail, purpose: 'verify', lang: uiLang }),
+      }).catch(err => console.warn('resend-otp failed:', err));
+      const status = document.getElementById('otpStatus');
+      status.textContent = c.otpSuccess || 'Code resent.';
+      status.style.display = '';
+    }
 
     // Manage subscription → open Stripe Customer Portal
     document.getElementById('manageBtn').addEventListener('click', async () => {
