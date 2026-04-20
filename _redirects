@@ -5,3 +5,8 @@
 # in this file. The www → apex redirect must be configured via a Cloudflare
 # Redirect Rule in the dashboard (Rules → Redirect Rules) or via a Page Rule,
 # not here.
+
+# Legacy GitHub Pages project-path URLs -> Cloudflare Pages root URLs
+/Wykta            /            301
+/Wykta/           /            301
+/Wykta/*          /:splat      301

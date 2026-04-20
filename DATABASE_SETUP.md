@@ -28,31 +28,28 @@ The site is a fully static frontend deployed to **Cloudflare Pages**.
 | Build command     | *(none – static site)*        |
 | Output directory  | *(repository root)*           |
 
-### Custom domain
+### Production domain
 
-1. In the Cloudflare Pages project go to **Custom domains → Add domain**.
-2. Enter `wykta.app` (apex) and follow the DNS verification steps.
-3. Optionally add `www.wykta.app` — Cloudflare automatically issues an SSL certificate.
-4. Ensure DNS records are **Proxied (orange-cloud)** in Cloudflare DNS.
-5. `_redirects` already contains a `www → apex` redirect so both hostnames resolve correctly.
+Use the Cloudflare Pages default production domain:
+- `https://wykta.pages.dev`
 
-### After binding the domain
+### After setting the production domain
 
-1. Update `SITE_URL` in GitHub Secrets to `https://wykta.app` (no trailing slash).
+1. Update `SITE_URL` in GitHub Secrets to `https://wykta.pages.dev` (no trailing slash).
 2. Run the **Sync Supabase Secrets** workflow (`Actions → Sync Supabase Secrets → Run workflow`).
    This pushes `SITE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `OPENAI_API_KEY`,
    and `OPENAI_MODEL` to the live Supabase project in a single step.
 3. Verify the Stripe webhook endpoint URL in Stripe Dashboard → Webhooks still points to:
    `https://<project-ref>.supabase.co/functions/v1/stripe-webhook`
 4. Run one end-to-end test payment in Stripe test mode to confirm success/cancel redirects
-   land on `https://wykta.app/payment-success.html` and `https://wykta.app/checkout.html`.
+   land on `https://wykta.pages.dev/payment-success.html` and `https://wykta.pages.dev/checkout.html`.
 
 ### Cloudflare-specific files
 
 | File        | Purpose                                              |
 |-------------|------------------------------------------------------|
 | `_headers`  | Cache-Control, CSP, and security response headers    |
-| `_redirects`| www → apex redirect (301)                            |
+| `_redirects`| Legacy `/Wykta/*` path redirects to root (301)       |
 
 ---
 
@@ -125,7 +122,7 @@ supabase functions deploy verify-session   --project-ref $PROJECT --no-verify-jw
 # Sync secrets
 supabase secrets set STRIPE_SECRET_KEY=sk_live_...     --project-ref $PROJECT
 supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...   --project-ref $PROJECT
-supabase secrets set SITE_URL=https://wykta.app        --project-ref $PROJECT
+supabase secrets set SITE_URL=https://wykta.pages.dev  --project-ref $PROJECT
 supabase secrets set OPENAI_API_KEY=sk-...             --project-ref $PROJECT
 ```
 
