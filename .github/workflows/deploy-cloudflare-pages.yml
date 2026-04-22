@@ -21,6 +21,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3.14.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: whoami
 
       - name: Deploy to Cloudflare Pages
@@ -28,6 +29,7 @@ jobs:
         uses: cloudflare/wrangler-action@v3.14.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy . --project-name=wykta --commit-dirty=true
 
       - name: Skip deploy when Cloudflare auth fails
