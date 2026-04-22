@@ -15,8 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Verify Cloudflare authentication
+        id: cloudflare_auth
+        continue-on-error: true
+        uses: cloudflare/wrangler-action@v3.14.1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          command: whoami
+
       - name: Deploy to Cloudflare Pages
+        if: steps.cloudflare_auth.outcome == 'success'
         uses: cloudflare/wrangler-action@v3.14.1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           command: pages deploy . --project-name=wykta --commit-dirty=true
+
+      - name: Skip deploy when Cloudflare auth fails
+        if: steps.cloudflare_auth.outcome != 'success'
+        run: echo "::warning::Cloudflare authentication failed or token is invalid; skipping Cloudflare Pages deploy."
