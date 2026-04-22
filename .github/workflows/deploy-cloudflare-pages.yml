@@ -23,14 +23,16 @@ jobs:
         uses: cloudflare/wrangler-action@v3.15.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
-          command: pages project list
+          command: whoami
 
       - name: Deploy to Cloudflare Pages
         if: steps.cloudflare_auth.outcome == 'success'
         uses: cloudflare/wrangler-action@v3.15.0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: "4"
           command: pages deploy . --project-name=wykta --commit-dirty=true
 
