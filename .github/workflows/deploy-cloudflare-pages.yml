@@ -61,7 +61,7 @@ jobs:
               process.exit(2)
             }
           })
-NODE
+          NODE
           then
             echo "Cloudflare Pages project '$CF_PAGES_PROJECT' exists."
           else
