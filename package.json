@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "node --test domain-redirect.test.js",
+    "deploy": "echo \"Static site deployed by Cloudflare Pages\"",
     "cap:add:ios": "npx cap add ios",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync",
