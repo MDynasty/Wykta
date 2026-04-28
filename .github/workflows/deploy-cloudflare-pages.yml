@@ -38,7 +38,6 @@ jobs:
         if: steps.cloudflare_auth.outcome == 'success'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           if wrangler pages project list --json | node <<'NODE'
           const target = process.env.CF_PAGES_PROJECT
