@@ -1,6 +1,43 @@
 console.log("Wykta app started")
 
 /* -----------------------
+MOBILE NAV TOGGLE
+----------------------- */
+function toggleNav() {
+  const navRight = document.getElementById("navRight")
+  const btn = document.getElementById("navHamburger")
+  if (!navRight || !btn) return
+  const isOpen = navRight.classList.toggle("open")
+  btn.setAttribute("aria-expanded", isOpen ? "true" : "false")
+}
+
+// Close nav when a link is tapped on mobile
+document.addEventListener("DOMContentLoaded", function() {
+  const navLinks = document.querySelectorAll(".nav-right .nav-link")
+  navLinks.forEach(function(link) {
+    link.addEventListener("click", function() {
+      const navRight = document.getElementById("navRight")
+      const btn = document.getElementById("navHamburger")
+      if (navRight) navRight.classList.remove("open")
+      if (btn) btn.setAttribute("aria-expanded", "false")
+    })
+  })
+})
+
+/* -----------------------
+TESSERACT WORKER CACHE
+Pre-initialize workers to speed up OCR on first use.
+----------------------- */
+const _tesseractWorkerCache = {}
+async function getTesseractWorker(lang) {
+  if (!_tesseractWorkerCache[lang]) {
+    const worker = await Tesseract.createWorker(lang)
+    _tesseractWorkerCache[lang] = worker
+  }
+  return _tesseractWorkerCache[lang]
+}
+
+/* -----------------------
 CAPACITOR NATIVE DETECTION
 On iOS/Android the Capacitor bridge is injected into the WebView before the
 page loads, making window.Capacitor available. On the web (Cloudflare Pages /
@@ -2280,7 +2317,7 @@ async function scanBarcode() {
   const codeReader = new ZXing.BrowserMultiFormatReader()
 
   try {
-    barcodeZxingControls = await codeReader.decodeFromVideoElement(video, async (result, err) => {
+    barcodeZxingControls = await codeReader.decodeFromVideoElementContinuously(video, async (result, err) => {
       if (!result) return
       const barcode = result.getText()
       if (!barcode) return
@@ -2501,12 +2538,15 @@ async function runOCR(canvas) {
     const selectedLang = currentLanguage()
     const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
     const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
-    const { data } = await Tesseract.recognize(processedCanvas, primaryOcrLang)
+
+    const primaryWorker = await getTesseractWorker(primaryOcrLang)
+    const { data } = await primaryWorker.recognize(processedCanvas)
     let text = data.text || ""
 
     const primaryIngredientCount = extractIngredients(text).length
     if(primaryIngredientCount < 2 && backupOcrLang !== primaryOcrLang){
-      const { data: backupData } = await Tesseract.recognize(processedCanvas, backupOcrLang)
+      const backupWorker = await getTesseractWorker(backupOcrLang)
+      const { data: backupData } = await backupWorker.recognize(processedCanvas)
       const backupText = backupData.text || ""
       const backupIngredientCount = extractIngredients(backupText).length
       if(
