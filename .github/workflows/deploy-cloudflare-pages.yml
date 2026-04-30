@@ -24,7 +24,7 @@ jobs:
           node-version: "24"
 
       - name: Install Wrangler CLI
-        run: npm install --global wrangler@4
+        run: npm install --global wrangler@3
 
       - name: Verify Cloudflare authentication
         id: cloudflare_auth
