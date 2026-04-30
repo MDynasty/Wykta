@@ -2374,6 +2374,19 @@ async function startScan(){
     return
   }
 
+  // If camera is already active, treat click as a capture action
+  if (stream && stream.getTracks().some(t => t.readyState === "live")) {
+    await capture()
+    return
+  }
+
+  const openBtn = document.querySelector('[onclick="startScan()"]')
+  if (openBtn) {
+    const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+    if (span) span.textContent = "…"
+    openBtn.disabled = true
+  }
+
 try{
 if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
   throw new Error(t("cameraAccessFailed"))
@@ -2395,6 +2408,22 @@ await video.play()
 const placeholder = document.getElementById("cameraPlaceholder")
 if(placeholder) placeholder.style.display = "none"
 
+// Show snapshot if previously hidden
+const snapshot = document.getElementById("snapshot")
+if (snapshot) snapshot.style.display = "none"
+
+// Update button to show it's now live → click again to capture
+if (openBtn) {
+  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+  if (span) span.textContent = t("captureButton")
+  openBtn.disabled = false
+  openBtn.title = t("captureButton")
+}
+
+// Enable the dedicated Capture button
+const captureBtn = document.querySelector('[onclick="capture()"]')
+if (captureBtn) captureBtn.disabled = false
+
 }catch(err){
 
 console.error("Camera error:", err)
@@ -2402,6 +2431,13 @@ const ocrEl = document.getElementById("ocrResult")
 if(ocrEl){
   ocrEl.innerText = t("cameraAccessFailed")
   ocrEl.classList.add("visible")
+}
+
+// Reset button
+if (openBtn) {
+  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+  if (span) span.textContent = t("openCameraButton")
+  openBtn.disabled = false
 }
 
 }
@@ -2417,6 +2453,12 @@ async function capture(){
   // On iOS/Android the native camera sheet has already delivered the image
   // via captureNative(); tapping the in-page "Capture" button is a no-op.
   if (isNativeApp()) return
+
+  // If camera not active, start it first
+  if (!stream || !stream.getTracks || stream.getTracks().every(t => t.readyState !== "live")) {
+    await startScan()
+    return
+  }
 
 const video = document.getElementById("camera")
 const canvas = document.getElementById("snapshot")
@@ -2439,6 +2481,20 @@ ctx.drawImage(video, 0, 0)
 
 if(stream){
 stream.getTracks().forEach(track => track.stop())
+}
+
+// Show snapshot preview so user sees what was captured
+canvas.style.display = "block"
+canvas.style.width = "100%"
+canvas.style.borderRadius = "var(--radius)"
+canvas.style.marginBottom = "10px"
+
+// Reset the open-camera button back to its original label
+const openBtn = document.querySelector('[onclick="startScan()"]')
+if (openBtn) {
+  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+  if (span) span.textContent = t("openCameraButton")
+  openBtn.title = ""
 }
 
 if(ocrEl){
@@ -2499,6 +2555,11 @@ async function captureNative() {
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext("2d")
       ctx.drawImage(img, 0, 0)
+      // Show snapshot preview
+      canvas.style.display = "block"
+      canvas.style.width = "100%"
+      canvas.style.borderRadius = "var(--radius)"
+      canvas.style.marginBottom = "10px"
       runOCR(canvas)
     }
     img.onerror = () => {
