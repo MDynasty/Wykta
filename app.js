@@ -2455,7 +2455,7 @@ async function capture(){
   if (isNativeApp()) return
 
   // If camera not active, start it first
-  if (!stream || stream.getTracks().every(t => t.readyState !== "live")) {
+  if (!stream || !stream.getTracks || stream.getTracks().every(t => t.readyState !== "live")) {
     await startScan()
     return
   }
