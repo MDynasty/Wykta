@@ -27,14 +27,14 @@ document.addEventListener("DOMContentLoaded", function() {
 /* -----------------------
 TESSERACT WORKER CACHE
 Pre-initialize workers to speed up OCR on first use.
+Stores Promises to avoid race-condition double-init.
 ----------------------- */
-const _tesseractWorkerCache = {}
+const tesseractWorkerCache = {}
 async function getTesseractWorker(lang) {
-  if (!_tesseractWorkerCache[lang]) {
-    const worker = await Tesseract.createWorker(lang)
-    _tesseractWorkerCache[lang] = worker
+  if (!tesseractWorkerCache[lang]) {
+    tesseractWorkerCache[lang] = Tesseract.createWorker(lang)
   }
-  return _tesseractWorkerCache[lang]
+  return tesseractWorkerCache[lang]
 }
 
 /* -----------------------
