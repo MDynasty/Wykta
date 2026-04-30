@@ -755,7 +755,7 @@ body::after {
   display: inline-block;
 }
 .ingredient-category.food     { background: rgba(52, 211, 153, 0.12); color: var(--brand); }
-.ingredient-category.skincare { background: rgba(56, 189, 248, 0.16); color: #f9a8d4; }
+.ingredient-category.skincare { background: rgba(56, 189, 248, 0.16); color: #7dd3fc; }
 .ingredient-category.general  { background: rgba(74, 122, 88, 0.09);  color: var(--text-2); }
 
 .ingredient-detail {
@@ -1574,7 +1574,7 @@ body::after {
 
 .nutri-score-a { background: #1a8c3e; color: #fff; border-color: #1a8c3e; }
 .nutri-score-b { background: #6aaf37; color: #fff; border-color: #6aaf37; }
-.nutri-score-c { background: #f5c400; color: #1a1000; border-color: #e6b800; }
+.nutri-score-c { background: #f5c400; color: #3a2e00; border-color: #e6b800; }
 .nutri-score-d { background: #e07b27; color: #fff; border-color: #c46b1e; }
 .nutri-score-e { background: #d7251b; color: #fff; border-color: #b81e15; }
 
