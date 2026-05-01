@@ -1402,6 +1402,9 @@ body::after {
 /* === RESPONSIVE === */
 @media (max-width: 920px) {
   .tool-grid      { grid-template-columns: 1fr; }
+  /* Camera card floats above the input card on tablet/mobile so the preview
+     appears before the action buttons in the reading/scrolling flow. */
+  .camera-card    { order: -1; }
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
     grid-template-columns: repeat(3, minmax(240px, 1fr));
@@ -1411,7 +1414,8 @@ body::after {
     padding-bottom: 12px;
   }
   .plan-card      { scroll-snap-align: start; }
-  .proof-strip    { grid-template-columns: 1fr 1fr; }
+  /* Keep proof-strip as 3 columns on tablet — horizontal not vertical */
+  .proof-strip    { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   .workflow-grid  { grid-template-columns: 1fr 1fr; }
   .workflow-grid::before { display: none; }
   .sub-grid       { grid-template-columns: 1fr; }
@@ -1447,7 +1451,10 @@ body::after {
   .nav-right .lang-select { margin-top: 10px; width: 100%; padding: 10px 12px; }
   .btn-row   { flex-direction: column; }
   .btn-row .btn, .btn-row label.btn { width: 100%; justify-content: center; }
-  .proof-strip { grid-template-columns: 1fr; }
+  /* Keep proof-strip horizontal (3 columns) on mobile — compact sizes */
+  .proof-strip    { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .proof-item     { padding: 12px 10px; }
+  .proof-item strong { font-size: 11px; }
   .main { gap: 32px; }
   .hero { padding: 48px 0 0; }
   .analysis-summary { flex-wrap: wrap; }
@@ -1459,6 +1466,11 @@ body::after {
   .hero      { padding: 32px 0 0; }
   .card,
   .plan-card { padding: 20px; }
+  /* Proof-strip stays horizontal on small mobile with tighter spacing */
+  .proof-strip    { gap: 6px; }
+  .proof-item     { padding: 10px 8px; }
+  .proof-label    { font-size: 9px; margin-bottom: 5px; }
+  .proof-item strong { font-size: 10px; line-height: 1.35; }
   .workflow-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .workflow-grid::before { display: none; }
   .workflow-card { padding: 14px 12px; }
