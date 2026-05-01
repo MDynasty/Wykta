@@ -502,7 +502,7 @@ body::after {
 /* === TOOL GRID === */
 .tool-grid {
   display: grid;
-  grid-template-columns: 1.6fr 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   align-items: start;
 }
@@ -1407,7 +1407,6 @@ body::after {
 
 /* === RESPONSIVE === */
 @media (max-width: 920px) {
-  .tool-grid      { grid-template-columns: 1fr; }
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
     grid-template-columns: repeat(3, minmax(240px, 1fr));
@@ -1469,12 +1468,6 @@ body::after {
   .hero      { padding: 32px 0 0; }
   .card,
   .plan-card { padding: 20px; }
-  /* Single-column pricing on small mobile */
-  .pricing-grid {
-    grid-template-columns: 1fr;
-    overflow-x: unset;
-    scroll-snap-type: unset;
-  }
   /* Proof-strip stays horizontal on small mobile with tighter spacing */
   .proof-strip    { gap: 6px; }
   .proof-item     { padding: 10px 8px; }
