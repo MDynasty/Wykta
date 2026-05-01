@@ -2219,8 +2219,6 @@ function stopCamera() {
   }
   const video = document.getElementById("camera")
   if (video) video.srcObject = null
-  const placeholder = document.getElementById("cameraPlaceholder")
-  if (placeholder) placeholder.style.display = ""
   setCameraLiveMode(false)
   // Reset the Open Camera button label
   const openBtn = document.querySelector('[onclick="startScan()"]')
@@ -2335,8 +2333,6 @@ async function scanBarcode() {
       const video = document.getElementById("camera")
       video.srcObject = stream
       await video.play()
-      const placeholder = document.getElementById("cameraPlaceholder")
-      if (placeholder) placeholder.style.display = "none"
     } catch (err) {
       console.error("Camera error for barcode scan:", err)
       const ocrEl = document.getElementById("ocrResult")
@@ -2344,19 +2340,22 @@ async function scanBarcode() {
         ocrEl.innerText = t("cameraAccessFailed", lang)
         ocrEl.classList.add("visible")
       }
+      // Show camera panel to display error
+      const cameraPanel = document.getElementById("cameraPanel")
+      if (cameraPanel) cameraPanel.style.display = ""
       return
     }
   }
+
+  // Show camera panel
+  const cameraPanel = document.getElementById("cameraPanel")
+  if (cameraPanel) cameraPanel.style.display = ""
 
   // Show barcode overlay
   const overlay = document.getElementById("barcodeOverlay")
   const scanningLabel = document.getElementById("barcodeScanningLabel")
   if (overlay) overlay.style.display = ""
   if (scanningLabel) scanningLabel.textContent = t("barcodeScanning", lang)
-
-  // Scroll camera card into view on mobile
-  const cameraCard = document.querySelector(".camera-card")
-  if (cameraCard) cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
 
   const btn = document.getElementById("scanBarcodeBtn")
   if (btn) btn.disabled = true
@@ -2425,8 +2424,8 @@ async function startScan(){
   // If camera is already active, show the capture button and do nothing else
   if (stream && stream.getTracks().some(t => t.readyState === "live")) {
     setCameraLiveMode(true)
-    const cameraCard = document.querySelector(".camera-card")
-    if (cameraCard) cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    const cameraPanel = document.getElementById("cameraPanel")
+    if (cameraPanel) cameraPanel.style.display = ""
     return
   }
 
@@ -2455,8 +2454,9 @@ const video = document.getElementById("camera")
 video.srcObject = stream
 await video.play()
 
-const placeholder = document.getElementById("cameraPlaceholder")
-if(placeholder) placeholder.style.display = "none"
+// Show camera panel
+const cameraPanel = document.getElementById("cameraPanel")
+if (cameraPanel) cameraPanel.style.display = ""
 
 // Hide any previous snapshot
 const snapshot = document.getElementById("snapshot")
@@ -2473,12 +2473,6 @@ if (openBtn) {
 // Show capture buttons (both top-row and in-camera overlay)
 setCameraLiveMode(true)
 
-// On mobile the camera card is below the input card — scroll it into view
-const cameraCard = document.querySelector(".camera-card")
-if (cameraCard) {
-  cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
-}
-
 }catch(err){
 
 console.error("Camera error:", err)
@@ -2487,6 +2481,9 @@ if(ocrEl){
   ocrEl.innerText = t("cameraAccessFailed")
   ocrEl.classList.add("visible")
 }
+// Show camera panel to display error message
+const cameraPanel = document.getElementById("cameraPanel")
+if (cameraPanel) cameraPanel.style.display = ""
 
 // Reset button and hide capture buttons
 if (openBtn) {
@@ -2614,7 +2611,9 @@ async function captureNative() {
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext("2d")
       ctx.drawImage(img, 0, 0)
-      // Show snapshot preview
+      // Show camera panel and snapshot preview
+      const cameraPanel = document.getElementById("cameraPanel")
+      if (cameraPanel) cameraPanel.style.display = ""
       canvas.style.display = "block"
       canvas.style.width = "100%"
       canvas.style.borderRadius = "var(--radius)"
@@ -2645,18 +2644,20 @@ async function captureNative() {
 OCR TEXT RECOGNITION
 Tries multiple image preprocessing strategies and picks the result with the
 most recognised ingredient tokens. Strategy order:
-  1. Grayscale only (no binarisation) — works well for high-contrast labels
-  2. Adaptive threshold (dark text on light background)
-  3. Inverted adaptive threshold (light text on dark background)
+  1. Grayscale only — good for high-contrast labels
+  2. Adaptive threshold — dark text on light background
+  3. Inverted adaptive threshold — light text on dark background
+  4. Contrast-stretched grayscale — normalises histogram for low-contrast images
+  5. Gamma-boosted grayscale — brightens underexposed / dark images
+  6. Gamma-boosted + adaptive threshold — combines brightness fix with binarisation
+  7. Sharpened grayscale — enhances blurry text edges
 Images are scaled up to at least OCR_MIN_WIDTH pixels wide before recognition
 so Tesseract has enough resolution for small label text.
 ----------------------- */
 // Tesseract performs best with label text rendered at roughly 40–50 px per
-// character. Typical ingredient text on a 100 mm wide label shot at normal
-// phone distance comes out at ~400–600 px after capture; upscaling to 1600 px
-// reliably brings small print above the ~30 px-per-char threshold where LSTM
-// accuracy degrades noticeably.
-const OCR_MIN_WIDTH = 1600
+// character. Upscaling to 2000 px reliably brings small print above the
+// ~30 px-per-char threshold where LSTM accuracy degrades noticeably.
+const OCR_MIN_WIDTH = 2000
 
 function scaleCanvasForOCR(src) {
   if (src.width >= OCR_MIN_WIDTH) return src
@@ -2707,16 +2708,137 @@ function makeThresholdCanvas(src, invert = false) {
   return c
 }
 
+// Stretch histogram of a grayscale-converted canvas to [0, 255] for better
+// contrast on washed-out or low-contrast label photos.
+function makeContrastStretchedCanvas(src) {
+  const c = document.createElement("canvas")
+  c.width = src.width
+  c.height = src.height
+  const ctx = c.getContext("2d")
+  ctx.drawImage(src, 0, 0)
+  const imgData = ctx.getImageData(0, 0, c.width, c.height)
+  const d = imgData.data
+  let minV = 255, maxV = 0
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+    if (g < minV) minV = g
+    if (g > maxV) maxV = g
+  }
+  const range = maxV - minV || 1
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+    const stretched = Math.round(((g - minV) / range) * 255)
+    d[i] = d[i + 1] = d[i + 2] = stretched
+  }
+  ctx.putImageData(imgData, 0, 0)
+  return c
+}
+
+// Apply gamma correction to brighten dark / underexposed images.
+// gamma > 1 brightens (e.g. 2.0 doubles perceived brightness of mid-tones).
+function makeGammaCorrectedCanvas(src, gamma = 2.0) {
+  const c = document.createElement("canvas")
+  c.width = src.width
+  c.height = src.height
+  const ctx = c.getContext("2d")
+  ctx.drawImage(src, 0, 0)
+  const imgData = ctx.getImageData(0, 0, c.width, c.height)
+  const d = imgData.data
+  const gammaLut = new Uint8Array(256)
+  for (let v = 0; v < 256; v++) {
+    gammaLut[v] = Math.round(Math.pow(v / 255, 1 / gamma) * 255)
+  }
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+    const boosted = gammaLut[Math.round(g)]
+    d[i] = d[i + 1] = d[i + 2] = boosted
+  }
+  ctx.putImageData(imgData, 0, 0)
+  return c
+}
+
+// Apply an unsharp mask to enhance blurry text edges.
+// Subtracts a blurred copy from the original to amplify detail.
+function makeSharpenedCanvas(src) {
+  const c = document.createElement("canvas")
+  c.width = src.width
+  c.height = src.height
+  const ctx = c.getContext("2d")
+  ctx.drawImage(src, 0, 0)
+  const imgData = ctx.getImageData(0, 0, c.width, c.height)
+  const d = imgData.data
+  const w = c.width, h = c.height
+  // 3×3 sharpen kernel: centre weight 5, neighbours -1 (cardinal only)
+  const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0]
+  const output = new Uint8ClampedArray(d.length)
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let r = 0, g = 0, b = 0
+      let ki = 0
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const ny = Math.min(Math.max(y + ky, 0), h - 1)
+          const nx = Math.min(Math.max(x + kx, 0), w - 1)
+          const idx = (ny * w + nx) * 4
+          const kv = kernel[ki++]
+          r += d[idx] * kv
+          g += d[idx + 1] * kv
+          b += d[idx + 2] * kv
+        }
+      }
+      const oi = (y * w + x) * 4
+      output[oi] = Math.min(Math.max(r, 0), 255)
+      output[oi + 1] = Math.min(Math.max(g, 0), 255)
+      output[oi + 2] = Math.min(Math.max(b, 0), 255)
+      output[oi + 3] = d[oi + 3]
+    }
+  }
+  ctx.putImageData(new ImageData(output, w, h), 0, 0)
+  return c
+}
+
+// Returns the mean luminance (0–255) of an image canvas.
+function imageMeanLuminance(src) {
+  const ctx = src.getContext("2d")
+  const d = ctx.getImageData(0, 0, src.width, src.height).data
+  let sum = 0
+  for (let i = 0; i < d.length; i += 4) {
+    sum += 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+  }
+  return sum / (d.length / 4)
+}
+
 async function runOCR(canvas) {
   try {
     const scaled = scaleCanvasForOCR(canvas)
-    // Three preprocessing candidates tried in order; we stop early once a
-    // candidate yields ≥3 recognised ingredients.
-    const candidates = [
+    const meanLum = imageMeanLuminance(scaled)
+    // 90 is ~35% of the 0-255 luminance scale; below this the image is too
+    // dark for standard grayscale/threshold OCR without brightness correction.
+    const isDark = meanLum < 90
+
+    // Pre-compute reusable intermediate canvases to avoid redundant pixel ops.
+    const gammaBoosted = makeGammaCorrectedCanvas(scaled, 2.2)
+    const contrastStretched = makeContrastStretchedCanvas(scaled)
+
+    // Build preprocessing candidates.  For dark images we promote the
+    // brightness-corrected strategies to the front so they are tried first.
+    const standardCandidates = [
       () => makeGrayscaleCanvas(scaled),
       () => makeThresholdCanvas(scaled, false),
       () => makeThresholdCanvas(scaled, true),
+      () => contrastStretched,
+      () => makeSharpenedCanvas(scaled),
     ]
+    const darkCandidates = [
+      () => gammaBoosted,
+      () => makeThresholdCanvas(gammaBoosted, false),
+      () => makeThresholdCanvas(gammaBoosted, true),
+      () => contrastStretched,
+      () => makeThresholdCanvas(contrastStretched, false),
+    ]
+    const candidates = isDark
+      ? [...darkCandidates, ...standardCandidates]
+      : [...standardCandidates, ...darkCandidates]
 
     const selectedLang = currentLanguage()
     const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
@@ -2737,15 +2859,11 @@ async function runOCR(canvas) {
       if (bestCount >= 3) break
     }
 
-    // Backup language pack when primary recognises very little.
-    // Only the first two candidates (grayscale + normal threshold) are retried
-    // here: the inverted-threshold strategy helps exclusively when the primary
-    // language model already had good coverage of the script, so running it
-    // against a second language pack rarely yields improvement and would add an
-    // extra heavyweight Tesseract pass. Stopping at two keeps the fallback fast.
+    // Backup language pack: try all candidates (not just the first two) so
+    // that dark-image strategies also get a chance with multilingual models.
     if (bestCount < 2 && backupOcrLang !== primaryOcrLang) {
       const backupWorker = await getTesseractWorker(backupOcrLang)
-      for (const makeCandidateCanvas of candidates.slice(0, 2)) {
+      for (const makeCandidateCanvas of candidates) {
         const { data } = await backupWorker.recognize(makeCandidateCanvas())
         const text = data.text || ""
         const count = extractIngredients(text).length
@@ -2796,6 +2914,9 @@ async function handleImageUpload(input) {
     ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
+  // Show camera panel immediately so the processing message is visible
+  const cameraPanel = document.getElementById("cameraPanel")
+  if (cameraPanel) cameraPanel.style.display = ""
 
   try {
     const url = URL.createObjectURL(file)
@@ -2812,9 +2933,9 @@ async function handleImageUpload(input) {
       canvas.style.borderRadius = "var(--radius)"
       canvas.style.marginBottom = "10px"
       URL.revokeObjectURL(url)
-      // Scroll camera card into view so the uploaded preview is visible
-      const cameraCard = document.querySelector(".camera-card")
-      if (cameraCard) cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
+      // Show camera panel so the uploaded preview and OCR result are visible
+      const cameraPanel = document.getElementById("cameraPanel")
+      if (cameraPanel) cameraPanel.style.display = ""
       runOCR(canvas)
     }
     img.onerror = () => {
@@ -2956,7 +3077,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (monthlyBtn) monthlyBtn.classList.toggle("active", !isAnnual)
     if (annualBtn) annualBtn.classList.toggle("active", isAnnual)
-    if (discountBadge) discountBadge.classList.toggle("visible", isAnnual)
     if (proPriceEl) {
       proPriceEl.innerHTML = `${escapeHtml(formatLocalizedPrice(amount, lang))}<small style="font-size:16px;font-weight:500">${escapeHtml(suffix)}</small>`
     }
