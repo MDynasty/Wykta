@@ -643,7 +643,16 @@ body::after {
 }
 
 /* === CAMERA PANEL === */
-.camera-card { text-align: left; }
+.camera-panel {
+  grid-column: 1 / -1;
+  animation: fadeSlideUp 0.28s ease;
+  background: rgba(15, 23, 42, 0.90);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
 
 .camera-wrapper {
   position: relative;
@@ -990,11 +999,8 @@ body::after {
   color: var(--brand);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  opacity: 0;
-  transition: opacity 0.2s;
   pointer-events: none;
 }
-.billing-discount.visible { opacity: 1; }
 
 /* === PLAN CTA BUTTON === */
 .plan-cta {
@@ -1402,9 +1408,6 @@ body::after {
 /* === RESPONSIVE === */
 @media (max-width: 920px) {
   .tool-grid      { grid-template-columns: 1fr; }
-  /* Camera card floats above the input card on tablet/mobile so the preview
-     appears before the action buttons in the reading/scrolling flow. */
-  .camera-card    { order: -1; }
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
     grid-template-columns: repeat(3, minmax(240px, 1fr));
@@ -1466,6 +1469,12 @@ body::after {
   .hero      { padding: 32px 0 0; }
   .card,
   .plan-card { padding: 20px; }
+  /* Single-column pricing on small mobile */
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    overflow-x: unset;
+    scroll-snap-type: unset;
+  }
   /* Proof-strip stays horizontal on small mobile with tighter spacing */
   .proof-strip    { gap: 6px; }
   .proof-item     { padding: 10px 8px; }
@@ -1477,6 +1486,7 @@ body::after {
   .btn       { font-size: 13px; padding: 10px 14px; }
   .hero-sub  { font-size: 15px; }
   .cta-band  { padding: 28px 16px; }
+  .billing-toggle { flex-wrap: wrap; justify-content: center; }
 }
 
 /* ===================================================

@@ -295,17 +295,10 @@
       <div id="productInfoBanner" class="product-info-banner" style="display:none;"></div>
     </div>
 
-    <!-- Camera card -->
-    <div class="card camera-card">
-      <h2 class="card-title"><span data-i18n="scanTitle">Scan Ingredient Label</span></h2>
-      <p class="card-subtitle" data-i18n="scanSubtitle">Use your camera to pull ingredients from labels in seconds.</p>
-
+    <!-- Camera panel (hidden until camera/upload is activated) -->
+    <div id="cameraPanel" class="camera-panel" style="display:none;">
       <div class="camera-wrapper">
         <video id="camera" autoplay playsinline muted></video>
-        <div class="camera-placeholder" id="cameraPlaceholder">
-          <span class="cam-icon" data-i18n="cameraTag">Camera</span>
-          <span data-i18n="cameraHint">Click "Open Camera" to start scanning</span>
-        </div>
         <!-- In-camera capture/stop buttons (label scan mode) -->
         <div class="camera-live-actions" id="cameraLiveActions" style="display:none;">
           <button class="btn btn-primary btn-sm" onclick="capture()">
@@ -331,8 +324,6 @@
         </div>
       </div>
       <canvas id="snapshot" style="display:none;"></canvas>
-
-      <label class="field-label" data-i18n="detectedTitle">Detected Text</label>
       <div id="ocrResult" class="ocr-result"></div>
     </div>
 
