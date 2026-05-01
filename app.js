@@ -809,7 +809,8 @@ const uiMessages = {
     pwaInstallTitle: "Add Wykta to your home screen",
     pwaInstallBody: "Install the app for quick access — no App Store needed.",
     pwaInstallBtn: "Add to Home Screen",
-    pwaInstallDismiss: "Not now"
+    pwaInstallDismiss: "Not now",
+    stopCameraButton: "Stop Camera"
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -949,7 +950,8 @@ const uiMessages = {
     pwaInstallTitle: "Ajoutez Wykta à votre écran d'accueil",
     pwaInstallBody: "Installez l'app pour un accès rapide — sans App Store.",
     pwaInstallBtn: "Ajouter à l'écran d'accueil",
-    pwaInstallDismiss: "Plus tard"
+    pwaInstallDismiss: "Plus tard",
+    stopCameraButton: "Arrêter la caméra"
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -1089,7 +1091,8 @@ const uiMessages = {
     pwaInstallTitle: "Wykta zum Home-Screen hinzufügen",
     pwaInstallBody: "App installieren für schnellen Zugriff — kein App Store nötig.",
     pwaInstallBtn: "Zum Home-Screen hinzufügen",
-    pwaInstallDismiss: "Nicht jetzt"
+    pwaInstallDismiss: "Nicht jetzt",
+    stopCameraButton: "Kamera schließen"
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -1229,7 +1232,8 @@ const uiMessages = {
     pwaInstallTitle: "将 Wykta 添加到主屏幕",
     pwaInstallBody: "安装应用快速访问 — 无需应用商店。",
     pwaInstallBtn: "添加到主屏幕",
-    pwaInstallDismiss: "暂不"
+    pwaInstallDismiss: "暂不",
+    stopCameraButton: "关闭相机"
   }
 }
 
@@ -2192,6 +2196,35 @@ CAMERA SCAN
 
 let stream
 
+/* Helper: show or hide the camera live-action buttons (in-camera capture/stop)
+   and the top-row captureBtn in sync. */
+function setCameraLiveMode(isLive) {
+  const captureBtn = document.getElementById("captureBtn")
+  if (captureBtn) captureBtn.style.display = isLive ? "" : "none"
+  const cameraLiveActions = document.getElementById("cameraLiveActions")
+  if (cameraLiveActions) cameraLiveActions.style.display = isLive ? "" : "none"
+}
+
+/* Stop the active camera stream and reset the camera panel. */
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop())
+    stream = null
+  }
+  const video = document.getElementById("camera")
+  if (video) video.srcObject = null
+  const placeholder = document.getElementById("cameraPlaceholder")
+  if (placeholder) placeholder.style.display = ""
+  setCameraLiveMode(false)
+  // Reset the Open Camera button label
+  const openBtn = document.querySelector('[onclick="startScan()"]')
+  if (openBtn) {
+    const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+    if (span) span.textContent = t("openCameraButton")
+    openBtn.disabled = false
+  }
+}
+
 // Barcode scanning state
 let barcodeZxingControls = null
 let currentNutriScore = null
@@ -2255,9 +2288,9 @@ function stopBarcodeScanning() {
   if (overlay) overlay.style.display = "none"
   const btn = document.getElementById("scanBarcodeBtn")
   if (btn) btn.disabled = false
-  // Hide capture button — it is only relevant for label OCR, not barcode mode
-  const captureBtn = document.getElementById("captureBtn")
-  if (captureBtn) captureBtn.style.display = "none"
+  // If camera stream is still live after barcode stops, restore label-scan controls
+  const cameraStillLive = !!(stream && stream.getTracks().some(t => t.readyState === "live"))
+  setCameraLiveMode(cameraStillLive)
 }
 
 /* -----------------------
@@ -2281,6 +2314,8 @@ async function scanBarcode() {
 
   // Stop any existing scan
   stopBarcodeScanning()
+  // Barcode scan has its own overlay — hide label-scan live actions
+  setCameraLiveMode(false)
 
   // Start camera if not already running
   if (!stream || stream.getTracks().every(track => track.readyState === "ended")) {
@@ -2312,6 +2347,10 @@ async function scanBarcode() {
   const scanningLabel = document.getElementById("barcodeScanningLabel")
   if (overlay) overlay.style.display = ""
   if (scanningLabel) scanningLabel.textContent = t("barcodeScanning", lang)
+
+  // Scroll camera card into view on mobile
+  const cameraCard = document.querySelector(".camera-card")
+  if (cameraCard) cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
 
   const btn = document.getElementById("scanBarcodeBtn")
   if (btn) btn.disabled = true
@@ -2379,8 +2418,9 @@ async function startScan(){
 
   // If camera is already active, show the capture button and do nothing else
   if (stream && stream.getTracks().some(t => t.readyState === "live")) {
-    const captureBtn = document.getElementById("captureBtn")
-    if (captureBtn) captureBtn.style.display = ""
+    setCameraLiveMode(true)
+    const cameraCard = document.querySelector(".camera-card")
+    if (cameraCard) cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
     return
   }
 
@@ -2424,9 +2464,14 @@ if (openBtn) {
   openBtn.title = ""
 }
 
-// Show the dedicated Capture button now that camera is live
-const captureBtn = document.getElementById("captureBtn")
-if (captureBtn) captureBtn.style.display = ""
+// Show capture buttons (both top-row and in-camera overlay)
+setCameraLiveMode(true)
+
+// On mobile the camera card is below the input card — scroll it into view
+const cameraCard = document.querySelector(".camera-card")
+if (cameraCard) {
+  cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
+}
 
 }catch(err){
 
@@ -2437,14 +2482,13 @@ if(ocrEl){
   ocrEl.classList.add("visible")
 }
 
-// Reset button and hide capture button
+// Reset button and hide capture buttons
 if (openBtn) {
   const span = openBtn.querySelector("[data-i18n='openCameraButton']")
   if (span) span.textContent = t("openCameraButton")
   openBtn.disabled = false
 }
-const captureBtnErr = document.getElementById("captureBtn")
-if (captureBtnErr) captureBtnErr.style.display = "none"
+setCameraLiveMode(false)
 
 }
 
@@ -2503,9 +2547,8 @@ if (openBtn) {
   openBtn.title = ""
 }
 
-// Hide the dedicated Capture button after taking the photo
-const captureBtn = document.getElementById("captureBtn")
-if (captureBtn) captureBtn.style.display = "none"
+// Hide all capture buttons after taking the photo
+setCameraLiveMode(false)
 
 if(ocrEl){
   ocrEl.innerText = t("ocrProcessing")
@@ -2654,6 +2697,10 @@ and runs OCR on it — same pipeline as the live camera capture.
 async function handleImageUpload(input) {
   if (!input || !input.files || !input.files[0]) return
   const file = input.files[0]
+
+  // Stop any active camera stream or barcode scan to avoid conflicts
+  stopBarcodeScanning()
+  stopCamera()
 
   const ocrEl = document.getElementById("ocrResult")
   const canvas = document.getElementById("snapshot")
