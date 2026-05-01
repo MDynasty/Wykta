@@ -2269,7 +2269,7 @@ function stopCamera() {
   if (video) video.srcObject = null
   setCameraLiveMode(false)
   // Reset the Open Camera button label
-  const openBtn = document.querySelector('[onclick="startScan()"]')
+  const openBtn = document.getElementById("openCameraBtn")
   if (openBtn) {
     const span = openBtn.querySelector("[data-i18n='openCameraButton']")
     if (span) span.textContent = t("openCameraButton")
@@ -2477,71 +2477,68 @@ async function startScan(){
     return
   }
 
-  const openBtn = document.querySelector('[onclick="startScan()"]')
+  const openBtn = document.getElementById("openCameraBtn")
   if (openBtn) {
     const span = openBtn.querySelector("[data-i18n='openCameraButton']")
     if (span) span.textContent = "…"
     openBtn.disabled = true
   }
 
-try{
-if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-  throw new Error(t("cameraAccessFailed"))
-}
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error(t("cameraAccessFailed"))
+    }
 
-stream = await navigator.mediaDevices.getUserMedia({
-video: {
-  facingMode: { ideal: "environment" },
-  width: { ideal: 1920 },
-  height: { ideal: 1080 }
-}
-})
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    })
 
-const video = document.getElementById("camera")
+    const video = document.getElementById("camera")
+    video.srcObject = stream
+    await video.play()
 
-video.srcObject = stream
-await video.play()
+    // Show camera panel
+    const cameraPanel = document.getElementById("cameraPanel")
+    if (cameraPanel) cameraPanel.style.display = ""
 
-// Show camera panel
-const cameraPanel = document.getElementById("cameraPanel")
-if (cameraPanel) cameraPanel.style.display = ""
+    // Hide any previous snapshot
+    const snapshot = document.getElementById("snapshot")
+    if (snapshot) snapshot.style.display = "none"
 
-// Hide any previous snapshot
-const snapshot = document.getElementById("snapshot")
-if (snapshot) snapshot.style.display = "none"
+    // Re-enable the Open Camera button (text stays as-is)
+    if (openBtn) {
+      const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+      if (span) span.textContent = t("openCameraButton")
+      openBtn.disabled = false
+      openBtn.title = ""
+    }
 
-// Re-enable the Open Camera button (text stays as-is)
-if (openBtn) {
-  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("openCameraButton")
-  openBtn.disabled = false
-  openBtn.title = ""
-}
+    // Show capture buttons (both top-row and in-camera overlay)
+    setCameraLiveMode(true)
 
-// Show capture buttons (both top-row and in-camera overlay)
-setCameraLiveMode(true)
+  } catch (err) {
+    console.error("Camera error:", err)
+    const ocrEl = document.getElementById("ocrResult")
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed")
+      ocrEl.classList.add("visible")
+    }
+    // Show camera panel to display error message
+    const cameraPanel = document.getElementById("cameraPanel")
+    if (cameraPanel) cameraPanel.style.display = ""
 
-}catch(err){
-
-console.error("Camera error:", err)
-const ocrEl = document.getElementById("ocrResult")
-if(ocrEl){
-  ocrEl.innerText = t("cameraAccessFailed")
-  ocrEl.classList.add("visible")
-}
-// Show camera panel to display error message
-const cameraPanel = document.getElementById("cameraPanel")
-if (cameraPanel) cameraPanel.style.display = ""
-
-// Reset button and hide capture buttons
-if (openBtn) {
-  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("openCameraButton")
-  openBtn.disabled = false
-}
-setCameraLiveMode(false)
-
-}
+    // Reset button and hide capture buttons
+    if (openBtn) {
+      const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+      if (span) span.textContent = t("openCameraButton")
+      openBtn.disabled = false
+    }
+    setCameraLiveMode(false)
+  }
 
 }
 
@@ -2561,52 +2558,53 @@ async function capture(){
     return
   }
 
-const video = document.getElementById("camera")
-const canvas = document.getElementById("snapshot")
-const ocrEl = document.getElementById("ocrResult")
+  const video = document.getElementById("camera")
+  const canvas = document.getElementById("snapshot")
+  const ocrEl = document.getElementById("ocrResult")
 
-if(!video || !canvas || !video.videoWidth || !video.videoHeight){
-  if(ocrEl){
-    ocrEl.innerText = t("cameraAccessFailed")
+  if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed")
+      ocrEl.classList.add("visible")
+    }
+    return
+  }
+
+  const ctx = canvas.getContext("2d")
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  ctx.drawImage(video, 0, 0)
+
+  // Stop all tracks and null the stream. Nulling is important: it frees the
+  // MediaStream object so the browser can release the camera hardware resource.
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop())
+    stream = null
+  }
+
+  // Show snapshot preview so user sees what was captured
+  canvas.style.display = "block"
+  canvas.style.width = "100%"
+  canvas.style.borderRadius = "var(--radius)"
+  canvas.style.marginBottom = "10px"
+
+  // Reset the open-camera button back to its original label
+  const openBtn = document.getElementById("openCameraBtn")
+  if (openBtn) {
+    const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+    if (span) span.textContent = t("openCameraButton")
+    openBtn.title = ""
+  }
+
+  // Hide all capture buttons after taking the photo
+  setCameraLiveMode(false)
+
+  if (ocrEl) {
+    ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
-  return
-}
 
-const ctx = canvas.getContext("2d")
-
-canvas.width = video.videoWidth
-canvas.height = video.videoHeight
-
-ctx.drawImage(video, 0, 0)
-
-if(stream){
-stream.getTracks().forEach(track => track.stop())
-}
-
-// Show snapshot preview so user sees what was captured
-canvas.style.display = "block"
-canvas.style.width = "100%"
-canvas.style.borderRadius = "var(--radius)"
-canvas.style.marginBottom = "10px"
-
-// Reset the open-camera button back to its original label
-const openBtn = document.querySelector('[onclick="startScan()"]')
-if (openBtn) {
-  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("openCameraButton")
-  openBtn.title = ""
-}
-
-// Hide all capture buttons after taking the photo
-setCameraLiveMode(false)
-
-if(ocrEl){
-  ocrEl.innerText = t("ocrProcessing")
-  ocrEl.classList.add("visible")
-}
-
-runOCR(canvas)
+  runOCR(canvas)
 
 }
 
