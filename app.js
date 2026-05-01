@@ -798,8 +798,7 @@ const uiMessages = {
     shareSuccess: "Result copied to clipboard.",
     shareUnsupported: "Share is not available on this device.",
     scanBarcodeButton: "Scan Barcode",
-    stopBarcodeButton: "Stop",
-    barcodeScanning: "Point camera at a barcode…",
+    uploadImageButton: "Upload Image",
     barcodeNotFound: "Product not found in the database.",
     barcodeProductFound: "Product found",
     barcodeIngredientsLoaded: "Ingredients loaded — analyzing…",
@@ -938,7 +937,7 @@ const uiMessages = {
     shareSuccess: "Résultat copié dans le presse-papiers.",
     shareUnsupported: "Le partage n'est pas disponible sur cet appareil.",
     scanBarcodeButton: "Scanner le code-barres",
-    stopBarcodeButton: "Arrêter",
+    uploadImageButton: "Télécharger une image",
     barcodeScanning: "Pointez la caméra sur un code-barres…",
     barcodeNotFound: "Produit non trouvé dans la base de données.",
     barcodeProductFound: "Produit trouvé",
@@ -1078,7 +1077,7 @@ const uiMessages = {
     shareSuccess: "Ergebnis in die Zwischenablage kopiert.",
     shareUnsupported: "Teilen ist auf diesem Gerät nicht verfügbar.",
     scanBarcodeButton: "Barcode scannen",
-    stopBarcodeButton: "Stopp",
+    uploadImageButton: "Bild hochladen",
     barcodeScanning: "Kamera auf Barcode richten…",
     barcodeNotFound: "Produkt nicht in der Datenbank gefunden.",
     barcodeProductFound: "Produkt gefunden",
@@ -1218,7 +1217,7 @@ const uiMessages = {
     shareSuccess: "结果已复制到剪贴板。",
     shareUnsupported: "当前设备不支持分享。",
     scanBarcodeButton: "扫描条形码",
-    stopBarcodeButton: "停止",
+    uploadImageButton: "上传图片",
     barcodeScanning: "将相机对准条形码…",
     barcodeNotFound: "数据库中未找到该产品。",
     barcodeProductFound: "已找到产品",
@@ -2255,6 +2254,9 @@ function stopBarcodeScanning() {
   if (overlay) overlay.style.display = "none"
   const btn = document.getElementById("scanBarcodeBtn")
   if (btn) btn.disabled = false
+  // Hide capture button — it is only relevant for label OCR, not barcode mode
+  const captureBtn = document.getElementById("captureBtn")
+  if (captureBtn) captureBtn.style.display = "none"
 }
 
 /* -----------------------
@@ -2374,9 +2376,10 @@ async function startScan(){
     return
   }
 
-  // If camera is already active, treat click as a capture action
+  // If camera is already active, show the capture button and do nothing else
   if (stream && stream.getTracks().some(t => t.readyState === "live")) {
-    await capture()
+    const captureBtn = document.getElementById("captureBtn")
+    if (captureBtn) captureBtn.style.display = ""
     return
   }
 
@@ -2408,21 +2411,21 @@ await video.play()
 const placeholder = document.getElementById("cameraPlaceholder")
 if(placeholder) placeholder.style.display = "none"
 
-// Show snapshot if previously hidden
+// Hide any previous snapshot
 const snapshot = document.getElementById("snapshot")
 if (snapshot) snapshot.style.display = "none"
 
-// Update button to show it's now live → click again to capture
+// Re-enable the Open Camera button (text stays as-is)
 if (openBtn) {
   const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("captureButton")
+  if (span) span.textContent = t("openCameraButton")
   openBtn.disabled = false
-  openBtn.title = t("captureButton")
+  openBtn.title = ""
 }
 
-// Enable the dedicated Capture button
-const captureBtn = document.querySelector('[onclick="capture()"]')
-if (captureBtn) captureBtn.disabled = false
+// Show the dedicated Capture button now that camera is live
+const captureBtn = document.getElementById("captureBtn")
+if (captureBtn) captureBtn.style.display = ""
 
 }catch(err){
 
@@ -2433,12 +2436,14 @@ if(ocrEl){
   ocrEl.classList.add("visible")
 }
 
-// Reset button
+// Reset button and hide capture button
 if (openBtn) {
   const span = openBtn.querySelector("[data-i18n='openCameraButton']")
   if (span) span.textContent = t("openCameraButton")
   openBtn.disabled = false
 }
+const captureBtnErr = document.getElementById("captureBtn")
+if (captureBtnErr) captureBtnErr.style.display = "none"
 
 }
 
@@ -2496,6 +2501,10 @@ if (openBtn) {
   if (span) span.textContent = t("openCameraButton")
   openBtn.title = ""
 }
+
+// Hide the dedicated Capture button after taking the photo
+const captureBtn = document.getElementById("captureBtn")
+if (captureBtn) captureBtn.style.display = "none"
 
 if(ocrEl){
   ocrEl.innerText = t("ocrProcessing")
@@ -2636,7 +2645,59 @@ async function runOCR(canvas) {
   }
 }
 
-function formatLocalizedPrice(amount, lang = currentLanguage()) {
+/* -----------------------
+IMAGE UPLOAD (fallback for camera)
+Reads a user-selected image file, draws it to the snapshot canvas,
+and runs OCR on it — same pipeline as the live camera capture.
+----------------------- */
+async function handleImageUpload(input) {
+  if (!input || !input.files || !input.files[0]) return
+  const file = input.files[0]
+  // Reset input so the same file can be re-selected if needed
+  input.value = ""
+
+  const ocrEl = document.getElementById("ocrResult")
+  const canvas = document.getElementById("snapshot")
+  if (!canvas) return
+
+  if (ocrEl) {
+    ocrEl.innerText = t("ocrProcessing")
+    ocrEl.classList.add("visible")
+  }
+
+  try {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext("2d")
+      ctx.drawImage(img, 0, 0)
+      canvas.style.display = "block"
+      canvas.style.width = "100%"
+      canvas.style.borderRadius = "var(--radius)"
+      canvas.style.marginBottom = "10px"
+      URL.revokeObjectURL(url)
+      runOCR(canvas)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrFailed")
+        ocrEl.classList.add("visible")
+      }
+    }
+    img.src = url
+  } catch (err) {
+    console.error("Image upload error:", err)
+    if (ocrEl) {
+      ocrEl.innerText = t("ocrFailed")
+      ocrEl.classList.add("visible")
+    }
+  }
+}
+
+
   const normalizedLang = normalizeSupportedLanguage(lang)
   const pricing = marketPricing[normalizedLang] || marketPricing.en
   const locale = languageLocales[normalizedLang] || "en"
