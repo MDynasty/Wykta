@@ -1403,7 +1403,14 @@ body::after {
 @media (max-width: 920px) {
   .tool-grid      { grid-template-columns: 1fr; }
   .results-grid   { grid-template-columns: 1fr; }
-  .pricing-grid   { grid-template-columns: 1fr; }
+  .pricing-grid   {
+    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 12px;
+  }
+  .plan-card      { scroll-snap-align: start; }
   .proof-strip    { grid-template-columns: 1fr 1fr; }
   .workflow-grid  { grid-template-columns: 1fr 1fr; }
   .workflow-grid::before { display: none; }
@@ -1452,8 +1459,9 @@ body::after {
   .hero      { padding: 32px 0 0; }
   .card,
   .plan-card { padding: 20px; }
-  .workflow-grid { grid-template-columns: 1fr; }
+  .workflow-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .workflow-grid::before { display: none; }
+  .workflow-card { padding: 14px 12px; }
   .btn       { font-size: 13px; padding: 10px 14px; }
   .hero-sub  { font-size: 15px; }
   .cta-band  { padding: 28px 16px; }
@@ -1522,6 +1530,43 @@ body::after {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+/* ===================================================
+   IN-CAMERA LIVE ACTION BUTTONS (capture / stop)
+   Shown as an overlay at the bottom of the camera view
+   when the camera is active for label scanning.
+   =================================================== */
+
+.camera-live-actions {
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  z-index: 5;
+  animation: fadeSlideUp 0.25s ease;
+}
+
+.camera-live-actions .btn {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(3, 7, 17, 0.75);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.camera-live-actions .btn-primary {
+  background: rgba(52, 211, 153, 0.85);
+  color: #030711;
+  border-color: transparent;
+}
+
+.camera-live-actions .btn-primary:hover {
+  background: rgba(52, 211, 153, 0.95);
 }
 
 /* ===================================================

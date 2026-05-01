@@ -306,6 +306,21 @@
           <span class="cam-icon" data-i18n="cameraTag">Camera</span>
           <span data-i18n="cameraHint">Click "Open Camera" to start scanning</span>
         </div>
+        <!-- In-camera capture/stop buttons (label scan mode) -->
+        <div class="camera-live-actions" id="cameraLiveActions" style="display:none;">
+          <button class="btn btn-primary btn-sm" onclick="capture()">
+            <span class="btn-icon btn-icon-svg" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="none">
+                <path d="M7 5.8L8.1 4H11.9L13 5.8H16.1C16.8 5.8 17.4 6.4 17.4 7.1V14.7C17.4 15.4 16.8 16 16.1 16H3.9C3.2 16 2.6 15.4 2.6 14.7V7.1C2.6 6.4 3.2 5.8 3.9 5.8H7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <circle cx="10" cy="10.7" r="2.8" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </span>
+            <span data-i18n="captureButton">Capture Label</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="stopCamera()">
+            <span data-i18n="stopCameraButton">Stop Camera</span>
+          </button>
+        </div>
         <!-- Barcode scanning overlay -->
         <div class="barcode-overlay" id="barcodeOverlay" style="display:none;">
           <div class="barcode-viewfinder">
