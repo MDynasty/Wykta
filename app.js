@@ -2812,7 +2812,13 @@ async function runOCR(canvas) {
   try {
     const scaled = scaleCanvasForOCR(canvas)
     const meanLum = imageMeanLuminance(scaled)
-    const isDark = meanLum < 90   // image is significantly underexposed
+    // 90 is ~35% of the 0-255 luminance scale; below this the image is too
+    // dark for standard grayscale/threshold OCR without brightness correction.
+    const isDark = meanLum < 90
+
+    // Pre-compute reusable intermediate canvases to avoid redundant pixel ops.
+    const gammaBoosted = makeGammaCorrectedCanvas(scaled, 2.2)
+    const contrastStretched = makeContrastStretchedCanvas(scaled)
 
     // Build preprocessing candidates.  For dark images we promote the
     // brightness-corrected strategies to the front so they are tried first.
@@ -2820,15 +2826,15 @@ async function runOCR(canvas) {
       () => makeGrayscaleCanvas(scaled),
       () => makeThresholdCanvas(scaled, false),
       () => makeThresholdCanvas(scaled, true),
-      () => makeContrastStretchedCanvas(scaled),
+      () => contrastStretched,
       () => makeSharpenedCanvas(scaled),
     ]
     const darkCandidates = [
-      () => makeGammaCorrectedCanvas(scaled, 2.2),
-      () => makeThresholdCanvas(makeGammaCorrectedCanvas(scaled, 2.2), false),
-      () => makeThresholdCanvas(makeGammaCorrectedCanvas(scaled, 2.2), true),
-      () => makeContrastStretchedCanvas(scaled),
-      () => makeThresholdCanvas(makeContrastStretchedCanvas(scaled), false),
+      () => gammaBoosted,
+      () => makeThresholdCanvas(gammaBoosted, false),
+      () => makeThresholdCanvas(gammaBoosted, true),
+      () => contrastStretched,
+      () => makeThresholdCanvas(contrastStretched, false),
     ]
     const candidates = isDark
       ? [...darkCandidates, ...standardCandidates]
