@@ -257,7 +257,7 @@
           </span>
           <span data-i18n="openCameraButton">Open Camera</span>
         </button>
-        <button class="btn btn-secondary" onclick="capture()">
+        <button class="btn btn-secondary" id="captureBtn" onclick="capture()" style="display:none;">
           <span class="btn-icon btn-icon-svg" aria-hidden="true">
             <svg viewBox="0 0 20 20" fill="none">
               <path d="M7 5.8L8.1 4H11.9L13 5.8H16.1C16.8 5.8 17.4 6.4 17.4 7.1V14.7C17.4 15.4 16.8 16 16.1 16H3.9C3.2 16 2.6 15.4 2.6 14.7V7.1C2.6 6.4 3.2 5.8 3.9 5.8H7Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
@@ -266,6 +266,16 @@
           </span>
           <span data-i18n="captureButton">Capture Label</span>
         </button>
+        <label class="btn btn-secondary" id="uploadImageBtn" style="cursor:pointer;">
+          <span class="btn-icon btn-icon-svg" aria-hidden="true">
+            <svg viewBox="0 0 20 20" fill="none">
+              <path d="M3 13.5V15.5C3 16.3 3.7 17 4.5 17H15.5C16.3 17 17 16.3 17 15.5V13.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M10 3V13M10 3L7 6M10 3L13 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span data-i18n="uploadImageButton">Upload Image</span>
+          <input type="file" accept="image/*" id="imageUploadInput" style="display:none;" onchange="handleImageUpload(this)">
+        </label>
         <button class="btn btn-secondary" id="scanBarcodeBtn" onclick="scanBarcode()">
           <span class="btn-icon btn-icon-svg" aria-hidden="true">
             <svg viewBox="0 0 20 20" fill="none">
