@@ -2651,6 +2651,11 @@ most recognised ingredient tokens. Strategy order:
 Images are scaled up to at least OCR_MIN_WIDTH pixels wide before recognition
 so Tesseract has enough resolution for small label text.
 ----------------------- */
+// Tesseract performs best with label text rendered at roughly 40–50 px per
+// character. Typical ingredient text on a 100 mm wide label shot at normal
+// phone distance comes out at ~400–600 px after capture; upscaling to 1600 px
+// reliably brings small print above the ~30 px-per-char threshold where LSTM
+// accuracy degrades noticeably.
 const OCR_MIN_WIDTH = 1600
 
 function scaleCanvasForOCR(src) {
@@ -2732,7 +2737,12 @@ async function runOCR(canvas) {
       if (bestCount >= 3) break
     }
 
-    // Backup language pack when primary recognises very little
+    // Backup language pack when primary recognises very little.
+    // Only the first two candidates (grayscale + normal threshold) are retried
+    // here: the inverted-threshold strategy helps exclusively when the primary
+    // language model already had good coverage of the script, so running it
+    // against a second language pack rarely yields improvement and would add an
+    // extra heavyweight Tesseract pass. Stopping at two keeps the fallback fast.
     if (bestCount < 2 && backupOcrLang !== primaryOcrLang) {
       const backupWorker = await getTesseractWorker(backupOcrLang)
       for (const makeCandidateCanvas of candidates.slice(0, 2)) {
