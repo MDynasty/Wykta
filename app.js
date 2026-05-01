@@ -29,16 +29,14 @@ TESSERACT WORKER CACHE
 Pre-initialize workers to speed up OCR on first use.
 Stores Promises to avoid race-condition double-init.
 If a language model fails to load (e.g. network block), falls back to eng.
+PSM is NOT set here — callers set it per-recognition for maximum flexibility.
 ----------------------- */
 const tesseractWorkerCache = {}
 async function getTesseractWorker(lang) {
   if (!tesseractWorkerCache[lang]) {
-    // PSM 11 = sparse text mode: find as much text as possible in no particular
-    // order — ideal for ingredient label paragraphs that aren't full documents.
     tesseractWorkerCache[lang] = (async () => {
       try {
         const w = await Tesseract.createWorker(lang)
-        await w.setParameters({ tessedit_pageseg_mode: "11" })
         return w
       } catch (e) {
         // Language pack download failed (e.g. blocked CDN). Fall back to eng only.
@@ -770,6 +768,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Falling back to open databases — paste your ingredients again or try a different product label.`,
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
+    ocrEngineUnavailable: "OCR engine could not load (possible network or CDN issue). Please paste ingredients manually below.",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -912,6 +911,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Utilisation des bases ouvertes — recollez vos ingrédients ou essayez une autre étiquette.`,
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
+    ocrEngineUnavailable: "Le moteur OCR n'a pas pu se charger (problème réseau ou CDN probable). Veuillez coller les ingrédients manuellement ci-dessous.",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -1054,6 +1054,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Nutze offene Datenbanken — Zutaten erneut einfügen oder anderes Etikett ausprobieren.`,
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
+    ocrEngineUnavailable: "OCR-Engine konnte nicht geladen werden (möglicherweise Netzwerk- oder CDN-Problem). Bitte fügen Sie die Zutaten manuell unten ein.",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1196,6 +1197,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果，正在切换至开放数据库——请重新粘贴成分，或尝试其他产品标签。`,
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
+    ocrEngineUnavailable: "OCR 引擎无法加载（可能是网络或 CDN 问题）。请在下方手动粘贴成分。",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -2855,6 +2857,10 @@ function imageMeanLuminance(src) {
 }
 
 async function runOCR(canvas) {
+  // Track whether the failure was engine-load (network/CDN) vs empty recognition (image quality).
+  // Only the first type should show the "network issue" message; the second shows quality tips.
+  // This is declared at function scope so both the inner logic and the outer catch can read it.
+  let workerLoadFailed = false
   try {
     const scaled = scaleCanvasForOCR(canvas)
     const meanLum = imageMeanLuminance(scaled)
@@ -2866,21 +2872,29 @@ async function runOCR(canvas) {
     const gammaBoosted = makeGammaCorrectedCanvas(scaled, 2.2)
     const contrastStretched = makeContrastStretchedCanvas(scaled)
 
-    // Build preprocessing candidates.  For dark images we promote the
-    // brightness-corrected strategies to the front so they are tried first.
+    // Each candidate is a { psm, makeCanvas } pair.
+    // PSM 6 (assume single uniform block of text) is tried first — ingredient lists
+    // are dense paragraphs and PSM 6 outperforms PSM 11 (sparse/scattered text) on them.
+    // PSM 11 is kept as a fallback for multi-column or unusually laid-out labels.
+    // PSM 3 (fully automatic) is the last resort.
     const standardCandidates = [
-      () => makeGrayscaleCanvas(scaled),
-      () => makeThresholdCanvas(scaled, false),
-      () => makeThresholdCanvas(scaled, true),
-      () => contrastStretched,
-      () => makeSharpenedCanvas(scaled),
+      { psm: "6",  makeCanvas: () => makeGrayscaleCanvas(scaled) },
+      { psm: "6",  makeCanvas: () => makeThresholdCanvas(scaled, false) },
+      { psm: "11", makeCanvas: () => makeGrayscaleCanvas(scaled) },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(scaled, false) },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(scaled, true) },
+      { psm: "6",  makeCanvas: () => contrastStretched },
+      { psm: "6",  makeCanvas: () => makeSharpenedCanvas(scaled) },
+      { psm: "3",  makeCanvas: () => makeGrayscaleCanvas(scaled) },
     ]
     const darkCandidates = [
-      () => gammaBoosted,
-      () => makeThresholdCanvas(gammaBoosted, false),
-      () => makeThresholdCanvas(gammaBoosted, true),
-      () => contrastStretched,
-      () => makeThresholdCanvas(contrastStretched, false),
+      { psm: "6",  makeCanvas: () => gammaBoosted },
+      { psm: "6",  makeCanvas: () => makeThresholdCanvas(gammaBoosted, false) },
+      { psm: "11", makeCanvas: () => gammaBoosted },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(gammaBoosted, false) },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(gammaBoosted, true) },
+      { psm: "6",  makeCanvas: () => contrastStretched },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(contrastStretched, false) },
     ]
     const candidates = isDark
       ? [...darkCandidates, ...standardCandidates]
@@ -2890,12 +2904,14 @@ async function runOCR(canvas) {
     const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
     const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
 
-    // Score each OCR result by (ingredient matches × 100) + confidence + text length/50.
-    // This ensures a high-confidence result with many characters wins even when
-    // none of the tokens match the ingredient dictionary (e.g. pure Chinese labels).
-    function ocrScore(text, confidence) {
-      const count = extractIngredients(text).length
-      return count * 100 + (confidence || 0) + Math.floor(text.length / 50)
+    // Score each OCR result combining three signals:
+    //   • ingredient matches × 100 — dictionary hits are the strongest signal
+    //   • Tesseract confidence (0–100) — high confidence beats low even with equal matches
+    //   • text length / 50 — longer extracted text is a weak tiebreaker for non-dict languages
+    // Example: 3 matches + 85 confidence + 300 chars → 385; 0 matches + 70 + 500 → 80.
+    // The ×100 weight ensures a single dictionary hit always beats a zero-match result.
+    function ocrScore(text, ingredientCount, confidence) {
+      return ingredientCount * 100 + (confidence || 0) + Math.floor(text.length / 50)
     }
 
     let primaryWorker
@@ -2903,31 +2919,45 @@ async function runOCR(canvas) {
       primaryWorker = await getTesseractWorker(primaryOcrLang)
     } catch (workerErr) {
       console.warn("OCR: primary worker failed, trying eng fallback", workerErr)
-      primaryWorker = await getTesseractWorker("eng")
+      try {
+        primaryWorker = await getTesseractWorker("eng")
+      } catch (engErr) {
+        console.warn("OCR: eng worker also failed — Tesseract engine unavailable", engErr)
+        workerLoadFailed = true
+      }
     }
 
     let bestText = ""
     let bestScore = -1
 
-    for (const makeCandidateCanvas of candidates) {
-      try {
-        const { data } = await primaryWorker.recognize(makeCandidateCanvas())
-        const text = data.text || ""
-        const score = ocrScore(text, data.confidence)
-        if (score > bestScore) {
-          bestScore = score
-          bestText = text
+    if (primaryWorker) {
+      let activePsm = null
+      for (const { psm, makeCanvas } of candidates) {
+        try {
+          // Only call setParameters when PSM changes to avoid redundant async round-trips.
+          if (psm !== activePsm) {
+            await primaryWorker.setParameters({ tessedit_pageseg_mode: psm })
+            activePsm = psm
+          }
+          const { data } = await primaryWorker.recognize(makeCanvas())
+          const text = data.text || ""
+          const ingredientCount = extractIngredients(text).length
+          const score = ocrScore(text, ingredientCount, data.confidence)
+          if (score > bestScore) {
+            bestScore = score
+            bestText = text
+          }
+          // Early exit: 3+ ingredient matches AND confidence ≥ 70 means we have a solid result.
+          if (ingredientCount >= 3 && (data.confidence || 0) >= 70) break
+        } catch (recErr) {
+          console.warn("OCR: recognize failed for candidate, skipping", recErr)
         }
-        // Early exit: 3+ ingredient matches AND confidence ≥ 70 means we have a solid result.
-        if (extractIngredients(text).length >= 3 && (data.confidence || 0) >= 70) break
-      } catch (recErr) {
-        console.warn("OCR: recognize failed for candidate, skipping", recErr)
       }
     }
 
     // Backup language pack: try when ingredient matches are low.
     const bestIngredientCount = extractIngredients(bestText).length
-    if (bestIngredientCount < 2 && backupOcrLang !== primaryOcrLang) {
+    if (bestIngredientCount < 2 && backupOcrLang !== primaryOcrLang && !workerLoadFailed) {
       let backupWorker
       try {
         backupWorker = await getTesseractWorker(backupOcrLang)
@@ -2935,16 +2965,22 @@ async function runOCR(canvas) {
         console.warn("OCR: backup worker failed", workerErr)
       }
       if (backupWorker) {
-        for (const makeCandidateCanvas of candidates) {
+        let activePsm = null
+        for (const { psm, makeCanvas } of candidates) {
           try {
-            const { data } = await backupWorker.recognize(makeCandidateCanvas())
+            if (psm !== activePsm) {
+              await backupWorker.setParameters({ tessedit_pageseg_mode: psm })
+              activePsm = psm
+            }
+            const { data } = await backupWorker.recognize(makeCanvas())
             const text = data.text || ""
-            const score = ocrScore(text, data.confidence)
+            const ingredientCount = extractIngredients(text).length
+            const score = ocrScore(text, ingredientCount, data.confidence)
             if (score > bestScore) {
               bestScore = score
               bestText = text
             }
-            if (extractIngredients(text).length >= 2 && (data.confidence || 0) >= 70) break
+            if (ingredientCount >= 2 && (data.confidence || 0) >= 70) break
           } catch (recErr) {
             console.warn("OCR: backup recognize failed for candidate, skipping", recErr)
           }
@@ -2962,7 +2998,7 @@ async function runOCR(canvas) {
       await analyzeIngredients()
     } else {
       if (ocrEl) {
-        ocrEl.innerText = t("ocrFailed")
+        ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
         ocrEl.classList.add("visible")
       }
     }
@@ -2970,7 +3006,7 @@ async function runOCR(canvas) {
     console.error("OCR error:", err)
     const ocrEl = document.getElementById("ocrResult")
     if (ocrEl) {
-      ocrEl.innerText = t("ocrFailed")
+      ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
       ocrEl.classList.add("visible")
     }
   }
