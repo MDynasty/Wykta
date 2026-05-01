@@ -2653,8 +2653,6 @@ and runs OCR on it — same pipeline as the live camera capture.
 async function handleImageUpload(input) {
   if (!input || !input.files || !input.files[0]) return
   const file = input.files[0]
-  // Reset input so the same file can be re-selected if needed
-  input.value = ""
 
   const ocrEl = document.getElementById("ocrResult")
   const canvas = document.getElementById("snapshot")
@@ -2669,6 +2667,8 @@ async function handleImageUpload(input) {
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
+      // Reset input now that the file has been fully read, so the same file can be re-selected
+      input.value = ""
       canvas.width = img.naturalWidth
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext("2d")
@@ -2681,6 +2681,7 @@ async function handleImageUpload(input) {
       runOCR(canvas)
     }
     img.onerror = () => {
+      input.value = ""
       URL.revokeObjectURL(url)
       if (ocrEl) {
         ocrEl.innerText = t("ocrFailed")
@@ -2698,6 +2699,7 @@ async function handleImageUpload(input) {
 }
 
 
+function formatLocalizedPrice(amount, lang = currentLanguage()) {
   const normalizedLang = normalizeSupportedLanguage(lang)
   const pricing = marketPricing[normalizedLang] || marketPricing.en
   const locale = languageLocales[normalizedLang] || "en"
