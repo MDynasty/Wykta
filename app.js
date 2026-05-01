@@ -28,16 +28,23 @@ document.addEventListener("DOMContentLoaded", function() {
 TESSERACT WORKER CACHE
 Pre-initialize workers to speed up OCR on first use.
 Stores Promises to avoid race-condition double-init.
+If a language model fails to load (e.g. network block), falls back to eng.
+PSM is NOT set here — callers set it per-recognition for maximum flexibility.
 ----------------------- */
 const tesseractWorkerCache = {}
 async function getTesseractWorker(lang) {
   if (!tesseractWorkerCache[lang]) {
-    // PSM 11 = sparse text mode: find as much text as possible in no particular
-    // order — ideal for ingredient label paragraphs that aren't full documents.
     tesseractWorkerCache[lang] = (async () => {
-      const w = await Tesseract.createWorker(lang)
-      await w.setParameters({ tessedit_pageseg_mode: "11" })
-      return w
+      try {
+        const w = await Tesseract.createWorker(lang)
+        return w
+      } catch (e) {
+        // Language pack download failed (e.g. blocked CDN). Fall back to eng only.
+        console.warn(`Tesseract: failed to load lang "${lang}", falling back to eng`, e)
+        if (lang === "eng") throw e
+        delete tesseractWorkerCache[lang]
+        return getTesseractWorker("eng")
+      }
     })()
   }
   return tesseractWorkerCache[lang]
@@ -761,6 +768,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Falling back to open databases — paste your ingredients again or try a different product label.`,
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
+    ocrEngineUnavailable: "OCR engine could not load (possible network or CDN issue). Please paste ingredients manually below.",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -768,10 +776,11 @@ const uiMessages = {
     noPublicData: "No clear match was found in public ingredient databases.",
     wikidataNoDescription: "No description available from Wikidata.",
     starterPeriod: "forever free",
+    starterScanLimit: "5 AI analyses/day",
     starterFeatureInput: "Paste or camera input",
     starterFeatureLang: "4-language support",
-    starterFeaturePriority: "Priority analysis",
-    starterFeatureExport: "Export reports",
+    starterFeaturePriority: "No priority analysis",
+    starterFeatureExport: "No PDF export",
     planMostPopular: "Most Popular",
     proPeriod: "billed monthly",
     proFeatureStarter: "Everything in Starter",
@@ -902,6 +911,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Utilisation des bases ouvertes — recollez vos ingrédients ou essayez une autre étiquette.`,
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
+    ocrEngineUnavailable: "Le moteur OCR n'a pas pu se charger (problème réseau ou CDN probable). Veuillez coller les ingrédients manuellement ci-dessous.",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -909,10 +919,11 @@ const uiMessages = {
     noPublicData: "Aucune correspondance claire trouvée dans les bases publiques.",
     wikidataNoDescription: "Aucune description disponible depuis Wikidata.",
     starterPeriod: "gratuit à vie",
+    starterScanLimit: "5 analyses IA/jour",
     starterFeatureInput: "Saisie par collage ou caméra",
     starterFeatureLang: "Support de 4 langues",
-    starterFeaturePriority: "Analyse prioritaire",
-    starterFeatureExport: "Export de rapports",
+    starterFeaturePriority: "Pas d'analyse prioritaire",
+    starterFeatureExport: "Pas d'export PDF",
     planMostPopular: "Le plus populaire",
     proPeriod: "facturé mensuellement",
     proFeatureStarter: "Tout le contenu de Starter",
@@ -1043,6 +1054,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Nutze offene Datenbanken — Zutaten erneut einfügen oder anderes Etikett ausprobieren.`,
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
+    ocrEngineUnavailable: "OCR-Engine konnte nicht geladen werden (möglicherweise Netzwerk- oder CDN-Problem). Bitte fügen Sie die Zutaten manuell unten ein.",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1050,10 +1062,11 @@ const uiMessages = {
     noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden.",
     wikidataNoDescription: "Keine Beschreibung von Wikidata verfügbar.",
     starterPeriod: "dauerhaft kostenlos",
+    starterScanLimit: "5 KI-Analysen/Tag",
     starterFeatureInput: "Eingabe per Einfügen oder Kamera",
     starterFeatureLang: "Unterstützung für 4 Sprachen",
-    starterFeaturePriority: "Priorisierte Analyse",
-    starterFeatureExport: "Berichte exportieren",
+    starterFeaturePriority: "Keine priorisierte Analyse",
+    starterFeatureExport: "Kein PDF-Export",
     planMostPopular: "Am beliebtesten",
     proPeriod: "monatliche Abrechnung",
     proFeatureStarter: "Alles aus Starter",
@@ -1184,6 +1197,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果，正在切换至开放数据库——请重新粘贴成分，或尝试其他产品标签。`,
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
+    ocrEngineUnavailable: "OCR 引擎无法加载（可能是网络或 CDN 问题）。请在下方手动粘贴成分。",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -1191,10 +1205,11 @@ const uiMessages = {
     noPublicData: "在公共数据库中未找到明确匹配。",
     wikidataNoDescription: "Wikidata 未提供可用描述。",
     starterPeriod: "永久免费",
+    starterScanLimit: "每日 5 次 AI 分析",
     starterFeatureInput: "支持粘贴或相机输入",
     starterFeatureLang: "支持 4 种语言",
-    starterFeaturePriority: "优先分析",
-    starterFeatureExport: "导出报告",
+    starterFeaturePriority: "无优先分析",
+    starterFeatureExport: "无 PDF 导出",
     planMostPopular: "最受欢迎",
     proPeriod: "按月计费",
     proFeatureStarter: "包含基础版全部功能",
@@ -2254,7 +2269,7 @@ function stopCamera() {
   if (video) video.srcObject = null
   setCameraLiveMode(false)
   // Reset the Open Camera button label
-  const openBtn = document.querySelector('[onclick="startScan()"]')
+  const openBtn = document.getElementById("openCameraBtn")
   if (openBtn) {
     const span = openBtn.querySelector("[data-i18n='openCameraButton']")
     if (span) span.textContent = t("openCameraButton")
@@ -2462,71 +2477,68 @@ async function startScan(){
     return
   }
 
-  const openBtn = document.querySelector('[onclick="startScan()"]')
+  const openBtn = document.getElementById("openCameraBtn")
   if (openBtn) {
     const span = openBtn.querySelector("[data-i18n='openCameraButton']")
     if (span) span.textContent = "…"
     openBtn.disabled = true
   }
 
-try{
-if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-  throw new Error(t("cameraAccessFailed"))
-}
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error(t("cameraAccessFailed"))
+    }
 
-stream = await navigator.mediaDevices.getUserMedia({
-video: {
-  facingMode: { ideal: "environment" },
-  width: { ideal: 1920 },
-  height: { ideal: 1080 }
-}
-})
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    })
 
-const video = document.getElementById("camera")
+    const video = document.getElementById("camera")
+    video.srcObject = stream
+    await video.play()
 
-video.srcObject = stream
-await video.play()
+    // Show camera panel
+    const cameraPanel = document.getElementById("cameraPanel")
+    if (cameraPanel) cameraPanel.style.display = ""
 
-// Show camera panel
-const cameraPanel = document.getElementById("cameraPanel")
-if (cameraPanel) cameraPanel.style.display = ""
+    // Hide any previous snapshot
+    const snapshot = document.getElementById("snapshot")
+    if (snapshot) snapshot.style.display = "none"
 
-// Hide any previous snapshot
-const snapshot = document.getElementById("snapshot")
-if (snapshot) snapshot.style.display = "none"
+    // Re-enable the Open Camera button (text stays as-is)
+    if (openBtn) {
+      const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+      if (span) span.textContent = t("openCameraButton")
+      openBtn.disabled = false
+      openBtn.title = ""
+    }
 
-// Re-enable the Open Camera button (text stays as-is)
-if (openBtn) {
-  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("openCameraButton")
-  openBtn.disabled = false
-  openBtn.title = ""
-}
+    // Show capture buttons (both top-row and in-camera overlay)
+    setCameraLiveMode(true)
 
-// Show capture buttons (both top-row and in-camera overlay)
-setCameraLiveMode(true)
+  } catch (err) {
+    console.error("Camera error:", err)
+    const ocrEl = document.getElementById("ocrResult")
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed")
+      ocrEl.classList.add("visible")
+    }
+    // Show camera panel to display error message
+    const cameraPanel = document.getElementById("cameraPanel")
+    if (cameraPanel) cameraPanel.style.display = ""
 
-}catch(err){
-
-console.error("Camera error:", err)
-const ocrEl = document.getElementById("ocrResult")
-if(ocrEl){
-  ocrEl.innerText = t("cameraAccessFailed")
-  ocrEl.classList.add("visible")
-}
-// Show camera panel to display error message
-const cameraPanel = document.getElementById("cameraPanel")
-if (cameraPanel) cameraPanel.style.display = ""
-
-// Reset button and hide capture buttons
-if (openBtn) {
-  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("openCameraButton")
-  openBtn.disabled = false
-}
-setCameraLiveMode(false)
-
-}
+    // Reset button and hide capture buttons
+    if (openBtn) {
+      const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+      if (span) span.textContent = t("openCameraButton")
+      openBtn.disabled = false
+    }
+    setCameraLiveMode(false)
+  }
 
 }
 
@@ -2546,52 +2558,53 @@ async function capture(){
     return
   }
 
-const video = document.getElementById("camera")
-const canvas = document.getElementById("snapshot")
-const ocrEl = document.getElementById("ocrResult")
+  const video = document.getElementById("camera")
+  const canvas = document.getElementById("snapshot")
+  const ocrEl = document.getElementById("ocrResult")
 
-if(!video || !canvas || !video.videoWidth || !video.videoHeight){
-  if(ocrEl){
-    ocrEl.innerText = t("cameraAccessFailed")
+  if (!video || !canvas || !video.videoWidth || !video.videoHeight) {
+    if (ocrEl) {
+      ocrEl.innerText = t("cameraAccessFailed")
+      ocrEl.classList.add("visible")
+    }
+    return
+  }
+
+  const ctx = canvas.getContext("2d")
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  ctx.drawImage(video, 0, 0)
+
+  // Stop all tracks and null the stream. Nulling is important: it frees the
+  // MediaStream object so the browser can release the camera hardware resource.
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop())
+    stream = null
+  }
+
+  // Show snapshot preview so user sees what was captured
+  canvas.style.display = "block"
+  canvas.style.width = "100%"
+  canvas.style.borderRadius = "var(--radius)"
+  canvas.style.marginBottom = "10px"
+
+  // Reset the open-camera button back to its original label
+  const openBtn = document.getElementById("openCameraBtn")
+  if (openBtn) {
+    const span = openBtn.querySelector("[data-i18n='openCameraButton']")
+    if (span) span.textContent = t("openCameraButton")
+    openBtn.title = ""
+  }
+
+  // Hide all capture buttons after taking the photo
+  setCameraLiveMode(false)
+
+  if (ocrEl) {
+    ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
-  return
-}
 
-const ctx = canvas.getContext("2d")
-
-canvas.width = video.videoWidth
-canvas.height = video.videoHeight
-
-ctx.drawImage(video, 0, 0)
-
-if(stream){
-stream.getTracks().forEach(track => track.stop())
-}
-
-// Show snapshot preview so user sees what was captured
-canvas.style.display = "block"
-canvas.style.width = "100%"
-canvas.style.borderRadius = "var(--radius)"
-canvas.style.marginBottom = "10px"
-
-// Reset the open-camera button back to its original label
-const openBtn = document.querySelector('[onclick="startScan()"]')
-if (openBtn) {
-  const span = openBtn.querySelector("[data-i18n='openCameraButton']")
-  if (span) span.textContent = t("openCameraButton")
-  openBtn.title = ""
-}
-
-// Hide all capture buttons after taking the photo
-setCameraLiveMode(false)
-
-if(ocrEl){
-  ocrEl.innerText = t("ocrProcessing")
-  ocrEl.classList.add("visible")
-}
-
-runOCR(canvas)
+  runOCR(canvas)
 
 }
 
@@ -2842,6 +2855,10 @@ function imageMeanLuminance(src) {
 }
 
 async function runOCR(canvas) {
+  // Track whether the failure was engine-load (network/CDN) vs empty recognition (image quality).
+  // Only the first type should show the "network issue" message; the second shows quality tips.
+  // This is declared at function scope so both the inner logic and the outer catch can read it.
+  let workerLoadFailed = false
   try {
     const scaled = scaleCanvasForOCR(canvas)
     const meanLum = imageMeanLuminance(scaled)
@@ -2853,21 +2870,29 @@ async function runOCR(canvas) {
     const gammaBoosted = makeGammaCorrectedCanvas(scaled, 2.2)
     const contrastStretched = makeContrastStretchedCanvas(scaled)
 
-    // Build preprocessing candidates.  For dark images we promote the
-    // brightness-corrected strategies to the front so they are tried first.
+    // Each candidate is a { psm, makeCanvas } pair.
+    // PSM 6 (assume single uniform block of text) is tried first — ingredient lists
+    // are dense paragraphs and PSM 6 outperforms PSM 11 (sparse/scattered text) on them.
+    // PSM 11 is kept as a fallback for multi-column or unusually laid-out labels.
+    // PSM 3 (fully automatic) is the last resort.
     const standardCandidates = [
-      () => makeGrayscaleCanvas(scaled),
-      () => makeThresholdCanvas(scaled, false),
-      () => makeThresholdCanvas(scaled, true),
-      () => contrastStretched,
-      () => makeSharpenedCanvas(scaled),
+      { psm: "6",  makeCanvas: () => makeGrayscaleCanvas(scaled) },
+      { psm: "6",  makeCanvas: () => makeThresholdCanvas(scaled, false) },
+      { psm: "11", makeCanvas: () => makeGrayscaleCanvas(scaled) },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(scaled, false) },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(scaled, true) },
+      { psm: "6",  makeCanvas: () => contrastStretched },
+      { psm: "6",  makeCanvas: () => makeSharpenedCanvas(scaled) },
+      { psm: "3",  makeCanvas: () => makeGrayscaleCanvas(scaled) },
     ]
     const darkCandidates = [
-      () => gammaBoosted,
-      () => makeThresholdCanvas(gammaBoosted, false),
-      () => makeThresholdCanvas(gammaBoosted, true),
-      () => contrastStretched,
-      () => makeThresholdCanvas(contrastStretched, false),
+      { psm: "6",  makeCanvas: () => gammaBoosted },
+      { psm: "6",  makeCanvas: () => makeThresholdCanvas(gammaBoosted, false) },
+      { psm: "11", makeCanvas: () => gammaBoosted },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(gammaBoosted, false) },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(gammaBoosted, true) },
+      { psm: "6",  makeCanvas: () => contrastStretched },
+      { psm: "11", makeCanvas: () => makeThresholdCanvas(contrastStretched, false) },
     ]
     const candidates = isDark
       ? [...darkCandidates, ...standardCandidates]
@@ -2877,50 +2902,109 @@ async function runOCR(canvas) {
     const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
     const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
 
-    const primaryWorker = await getTesseractWorker(primaryOcrLang)
-    let bestText = ""
-    let bestCount = -1
-
-    for (const makeCandidateCanvas of candidates) {
-      const { data } = await primaryWorker.recognize(makeCandidateCanvas())
-      const text = data.text || ""
-      const count = extractIngredients(text).length
-      if (count > bestCount || (count === bestCount && text.length > bestText.length)) {
-        bestCount = count
-        bestText = text
-      }
-      if (bestCount >= 3) break
+    // Score each OCR result combining three signals:
+    //   • ingredient matches × 100 — dictionary hits are the strongest signal
+    //   • Tesseract confidence (0–100) — high confidence beats low even with equal matches
+    //   • text length / 50 — longer extracted text is a weak tiebreaker for non-dict languages
+    // Example: 3 matches + 85 confidence + 300 chars → 385; 0 matches + 70 + 500 → 80.
+    // The ×100 weight ensures a single dictionary hit always beats a zero-match result.
+    function ocrScore(text, ingredientCount, confidence) {
+      return ingredientCount * 100 + (confidence || 0) + Math.floor(text.length / 50)
     }
 
-    // Backup language pack: try all candidates (not just the first two) so
-    // that dark-image strategies also get a chance with multilingual models.
-    if (bestCount < 2 && backupOcrLang !== primaryOcrLang) {
-      const backupWorker = await getTesseractWorker(backupOcrLang)
-      for (const makeCandidateCanvas of candidates) {
-        const { data } = await backupWorker.recognize(makeCandidateCanvas())
-        const text = data.text || ""
-        const count = extractIngredients(text).length
-        if (count > bestCount || (count === bestCount && text.length > bestText.length)) {
-          bestCount = count
-          bestText = text
+    let primaryWorker
+    try {
+      primaryWorker = await getTesseractWorker(primaryOcrLang)
+    } catch (workerErr) {
+      console.warn("OCR: primary worker failed, trying eng fallback", workerErr)
+      try {
+        primaryWorker = await getTesseractWorker("eng")
+      } catch (engErr) {
+        console.warn("OCR: eng worker also failed — Tesseract engine unavailable", engErr)
+        workerLoadFailed = true
+      }
+    }
+
+    let bestText = ""
+    let bestScore = -1
+
+    if (primaryWorker) {
+      let activePsm = null
+      for (const { psm, makeCanvas } of candidates) {
+        try {
+          // Only call setParameters when PSM changes to avoid redundant async round-trips.
+          if (psm !== activePsm) {
+            await primaryWorker.setParameters({ tessedit_pageseg_mode: psm })
+            activePsm = psm
+          }
+          const { data } = await primaryWorker.recognize(makeCanvas())
+          const text = data.text || ""
+          const ingredientCount = extractIngredients(text).length
+          const score = ocrScore(text, ingredientCount, data.confidence)
+          if (score > bestScore) {
+            bestScore = score
+            bestText = text
+          }
+          // Early exit: 3+ ingredient matches AND confidence ≥ 70 means we have a solid result.
+          if (ingredientCount >= 3 && (data.confidence || 0) >= 70) break
+        } catch (recErr) {
+          console.warn("OCR: recognize failed for candidate, skipping", recErr)
         }
-        if (bestCount >= 2) break
+      }
+    }
+
+    // Backup language pack: try when ingredient matches are low.
+    const bestIngredientCount = extractIngredients(bestText).length
+    if (bestIngredientCount < 2 && backupOcrLang !== primaryOcrLang && !workerLoadFailed) {
+      let backupWorker
+      try {
+        backupWorker = await getTesseractWorker(backupOcrLang)
+      } catch (workerErr) {
+        console.warn("OCR: backup worker failed", workerErr)
+      }
+      if (backupWorker) {
+        let activePsm = null
+        for (const { psm, makeCanvas } of candidates) {
+          try {
+            if (psm !== activePsm) {
+              await backupWorker.setParameters({ tessedit_pageseg_mode: psm })
+              activePsm = psm
+            }
+            const { data } = await backupWorker.recognize(makeCanvas())
+            const text = data.text || ""
+            const ingredientCount = extractIngredients(text).length
+            const score = ocrScore(text, ingredientCount, data.confidence)
+            if (score > bestScore) {
+              bestScore = score
+              bestText = text
+            }
+            if (ingredientCount >= 2 && (data.confidence || 0) >= 70) break
+          } catch (recErr) {
+            console.warn("OCR: backup recognize failed for candidate, skipping", recErr)
+          }
+        }
       }
     }
 
     const ocrEl = document.getElementById("ocrResult")
-    if (ocrEl) {
-      ocrEl.innerText = bestText
-      ocrEl.classList.add("visible")
+    if (bestText.trim()) {
+      if (ocrEl) {
+        ocrEl.innerText = bestText
+        ocrEl.classList.add("visible")
+      }
+      document.getElementById("ingredients").value = bestText
+      await analyzeIngredients()
+    } else {
+      if (ocrEl) {
+        ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
+        ocrEl.classList.add("visible")
+      }
     }
-    document.getElementById("ingredients").value = bestText
-
-    await analyzeIngredients()
   } catch (err) {
     console.error("OCR error:", err)
     const ocrEl = document.getElementById("ocrResult")
     if (ocrEl) {
-      ocrEl.innerText = t("ocrFailed")
+      ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
       ocrEl.classList.add("visible")
     }
   }
