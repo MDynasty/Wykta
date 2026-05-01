@@ -499,8 +499,19 @@ body::after {
   margin: -8px 0 14px;
 }
 
+/* === ANALYSIS LAYOUT WRAPPER (input + results) === */
+.analysis-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
 /* === TOOL GRID === */
 .tool-grid {
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto;
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
@@ -1404,6 +1415,44 @@ body::after {
 .nav-hamburger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
 .nav-hamburger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
 .nav-hamburger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* === WIDE DESKTOP: input + results side by side === */
+@media (min-width: 1200px) {
+  /* Once analysis has run, switch to 2-column: input panel left, results right */
+  .analysis-layout.has-results {
+    grid-template-columns: 400px 1fr;
+  }
+  /* Remove the centering constraint on the input panel when it sits in the left column */
+  .analysis-layout.has-results .tool-grid {
+    max-width: unset;
+    margin: 0;
+  }
+  /* Inside the right (results) column, a single-column stack reads better than 2 narrow cards */
+  .analysis-layout.has-results .results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* === PRICING SCROLL HINT (mobile/tablet) === */
+/* Wrap the pricing-grid in a position:relative section so the fade overlay can be absolutely positioned */
+.pricing-scroll-wrap {
+  position: relative;
+}
+.pricing-scroll-wrap::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 12px; /* matches the padding-bottom on .pricing-grid at this breakpoint */
+  width: 48px;
+  background: linear-gradient(to right, transparent, rgba(3, 7, 23, 0.82));
+  pointer-events: none;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  display: none;
+}
+@media (max-width: 920px) {
+  .pricing-scroll-wrap::after { display: block; }
+}
 
 /* === RESPONSIVE === */
 @media (max-width: 920px) {

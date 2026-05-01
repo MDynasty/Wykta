@@ -189,6 +189,8 @@ const OCR_BINARIZATION_THRESHOLD = 135
 const WIKIDATA_TIMEOUT_MS = 6500
 // Maximum character length for a single ingredient token in the raw-fallback extraction path.
 const MAX_INGREDIENT_TOKEN_LENGTH = 120
+// Viewport width at which the analysis section switches from stacked to side-by-side layout.
+const WIDE_DESKTOP_BREAKPOINT_PX = 1200
 // Split on Latin/CJK punctuation, quotes, brackets, operators, and OCR noise separators.
 const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
 const supportedLanguages = ["en", "fr", "de", "zh"]
@@ -2134,7 +2136,15 @@ MAIN ANALYSIS BUTTON
 async function analyzeIngredients(){
   trackEvent('Ingredient', 'Analyze', 'manual')
   const resultsSection = document.getElementById("resultsSection")
-  if(resultsSection) resultsSection.style.display = ""
+  if(resultsSection) {
+    resultsSection.style.display = ""
+    const layout = document.getElementById("analysisLayout")
+    if (layout) layout.classList.add("has-results")
+    // On narrow viewports (stacked layout), scroll results into view so user sees output
+    if (window.innerWidth < WIDE_DESKTOP_BREAKPOINT_PX) {
+      setTimeout(() => resultsSection.scrollIntoView({ behavior: "smooth", block: "start" }), 80)
+    }
+  }
 
   // Clear Nutri-Score if the product info banner is hidden
   // (means this is a manual analysis, not from a barcode scan)
