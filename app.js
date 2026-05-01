@@ -32,7 +32,13 @@ Stores Promises to avoid race-condition double-init.
 const tesseractWorkerCache = {}
 async function getTesseractWorker(lang) {
   if (!tesseractWorkerCache[lang]) {
-    tesseractWorkerCache[lang] = Tesseract.createWorker(lang)
+    // PSM 11 = sparse text mode: find as much text as possible in no particular
+    // order — ideal for ingredient label paragraphs that aren't full documents.
+    tesseractWorkerCache[lang] = (async () => {
+      const w = await Tesseract.createWorker(lang)
+      await w.setParameters({ tessedit_pageseg_mode: "11" })
+      return w
+    })()
   }
   return tesseractWorkerCache[lang]
 }
@@ -2637,52 +2643,132 @@ async function captureNative() {
 
 /* -----------------------
 OCR TEXT RECOGNITION
+Tries multiple image preprocessing strategies and picks the result with the
+most recognised ingredient tokens. Strategy order:
+  1. Grayscale only (no binarisation) — works well for high-contrast labels
+  2. Adaptive threshold (dark text on light background)
+  3. Inverted adaptive threshold (light text on dark background)
+Images are scaled up to at least OCR_MIN_WIDTH pixels wide before recognition
+so Tesseract has enough resolution for small label text.
 ----------------------- */
+// Tesseract performs best with label text rendered at roughly 40–50 px per
+// character. Typical ingredient text on a 100 mm wide label shot at normal
+// phone distance comes out at ~400–600 px after capture; upscaling to 1600 px
+// reliably brings small print above the ~30 px-per-char threshold where LSTM
+// accuracy degrades noticeably.
+const OCR_MIN_WIDTH = 1600
+
+function scaleCanvasForOCR(src) {
+  if (src.width >= OCR_MIN_WIDTH) return src
+  const scale = OCR_MIN_WIDTH / src.width
+  const scaled = document.createElement("canvas")
+  scaled.width = Math.round(src.width * scale)
+  scaled.height = Math.round(src.height * scale)
+  const ctx = scaled.getContext("2d")
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+  ctx.drawImage(src, 0, 0, scaled.width, scaled.height)
+  return scaled
+}
+
+function makeGrayscaleCanvas(src) {
+  const c = document.createElement("canvas")
+  c.width = src.width
+  c.height = src.height
+  const ctx = c.getContext("2d")
+  ctx.drawImage(src, 0, 0)
+  const imgData = ctx.getImageData(0, 0, c.width, c.height)
+  const d = imgData.data
+  for (let i = 0; i < d.length; i += 4) {
+    const g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]
+    d[i] = d[i + 1] = d[i + 2] = g
+  }
+  ctx.putImageData(imgData, 0, 0)
+  return c
+}
+
+function makeThresholdCanvas(src, invert = false) {
+  const c = document.createElement("canvas")
+  c.width = src.width
+  c.height = src.height
+  const ctx = c.getContext("2d")
+  ctx.drawImage(src, 0, 0)
+  applyAdaptiveThreshold(ctx, c.width, c.height)
+  if (invert) {
+    const imgData = ctx.getImageData(0, 0, c.width, c.height)
+    const d = imgData.data
+    for (let i = 0; i < d.length; i += 4) {
+      d[i] = 255 - d[i]
+      d[i + 1] = 255 - d[i + 1]
+      d[i + 2] = 255 - d[i + 2]
+    }
+    ctx.putImageData(imgData, 0, 0)
+  }
+  return c
+}
+
 async function runOCR(canvas) {
   try {
-    const processedCanvas = document.createElement("canvas")
-    processedCanvas.width = canvas.width
-    processedCanvas.height = canvas.height
-    const processedCtx = processedCanvas.getContext("2d")
-    if(processedCtx){
-      processedCtx.drawImage(canvas, 0, 0)
-      applyAdaptiveThreshold(processedCtx, processedCanvas.width, processedCanvas.height)
-    }
+    const scaled = scaleCanvasForOCR(canvas)
+    // Three preprocessing candidates tried in order; we stop early once a
+    // candidate yields ≥3 recognised ingredients.
+    const candidates = [
+      () => makeGrayscaleCanvas(scaled),
+      () => makeThresholdCanvas(scaled, false),
+      () => makeThresholdCanvas(scaled, true),
+    ]
 
     const selectedLang = currentLanguage()
     const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
     const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
 
     const primaryWorker = await getTesseractWorker(primaryOcrLang)
-    const { data } = await primaryWorker.recognize(processedCanvas)
-    let text = data.text || ""
+    let bestText = ""
+    let bestCount = -1
 
-    const primaryIngredientCount = extractIngredients(text).length
-    if(primaryIngredientCount < 2 && backupOcrLang !== primaryOcrLang){
+    for (const makeCandidateCanvas of candidates) {
+      const { data } = await primaryWorker.recognize(makeCandidateCanvas())
+      const text = data.text || ""
+      const count = extractIngredients(text).length
+      if (count > bestCount || (count === bestCount && text.length > bestText.length)) {
+        bestCount = count
+        bestText = text
+      }
+      if (bestCount >= 3) break
+    }
+
+    // Backup language pack when primary recognises very little.
+    // Only the first two candidates (grayscale + normal threshold) are retried
+    // here: the inverted-threshold strategy helps exclusively when the primary
+    // language model already had good coverage of the script, so running it
+    // against a second language pack rarely yields improvement and would add an
+    // extra heavyweight Tesseract pass. Stopping at two keeps the fallback fast.
+    if (bestCount < 2 && backupOcrLang !== primaryOcrLang) {
       const backupWorker = await getTesseractWorker(backupOcrLang)
-      const { data: backupData } = await backupWorker.recognize(processedCanvas)
-      const backupText = backupData.text || ""
-      const backupIngredientCount = extractIngredients(backupText).length
-      if(
-        backupIngredientCount > primaryIngredientCount ||
-        (backupIngredientCount === primaryIngredientCount && backupText.length > text.length)
-      ){
-        text = backupText
+      for (const makeCandidateCanvas of candidates.slice(0, 2)) {
+        const { data } = await backupWorker.recognize(makeCandidateCanvas())
+        const text = data.text || ""
+        const count = extractIngredients(text).length
+        if (count > bestCount || (count === bestCount && text.length > bestText.length)) {
+          bestCount = count
+          bestText = text
+        }
+        if (bestCount >= 2) break
       }
     }
 
     const ocrEl = document.getElementById("ocrResult")
-    if(ocrEl){
-      ocrEl.innerText = text
+    if (ocrEl) {
+      ocrEl.innerText = bestText
       ocrEl.classList.add("visible")
     }
-    document.getElementById("ingredients").value = text
+    document.getElementById("ingredients").value = bestText
 
     await analyzeIngredients()
   } catch (err) {
     console.error("OCR error:", err)
     const ocrEl = document.getElementById("ocrResult")
-    if(ocrEl){
+    if (ocrEl) {
       ocrEl.innerText = t("ocrFailed")
       ocrEl.classList.add("visible")
     }
@@ -2726,6 +2812,9 @@ async function handleImageUpload(input) {
       canvas.style.borderRadius = "var(--radius)"
       canvas.style.marginBottom = "10px"
       URL.revokeObjectURL(url)
+      // Scroll camera card into view so the uploaded preview is visible
+      const cameraCard = document.querySelector(".camera-card")
+      if (cameraCard) cameraCard.scrollIntoView({ behavior: "smooth", block: "nearest" })
       runOCR(canvas)
     }
     img.onerror = () => {
