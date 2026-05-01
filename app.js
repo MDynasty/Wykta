@@ -2531,7 +2531,6 @@ ctx.drawImage(video, 0, 0)
 
 if(stream){
 stream.getTracks().forEach(track => track.stop())
-stream = null
 }
 
 // Show snapshot preview so user sees what was captured
