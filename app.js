@@ -187,6 +187,10 @@ const ingredientAliases = {
 const OCR_BINARIZATION_THRESHOLD = 135
 // Keep slightly lower than fetchJsonWithTimeout default (7000ms) so this fallback cannot block overall analysis.
 const WIKIDATA_TIMEOUT_MS = 6500
+// Maximum character length for a single ingredient token in the raw-fallback extraction path.
+const MAX_INGREDIENT_TOKEN_LENGTH = 120
+// Viewport width at which the analysis section switches from stacked to side-by-side layout.
+const WIDE_DESKTOP_BREAKPOINT_PX = 1200
 // Split on Latin/CJK punctuation, quotes, brackets, operators, and OCR noise separators.
 const ingredientSplitPunctuationPattern = /[,\.;:•·\n\r\t，；。、“”"''`´|/\\!！?？+＋&＆()（）\[\]【】]+/gu
 const supportedLanguages = ["en", "fr", "de", "zh"]
@@ -2132,7 +2136,15 @@ MAIN ANALYSIS BUTTON
 async function analyzeIngredients(){
   trackEvent('Ingredient', 'Analyze', 'manual')
   const resultsSection = document.getElementById("resultsSection")
-  if(resultsSection) resultsSection.style.display = ""
+  if(resultsSection) {
+    resultsSection.style.display = ""
+    const layout = document.getElementById("analysisLayout")
+    if (layout) layout.classList.add("has-results")
+    // On narrow viewports (stacked layout), scroll results into view so user sees output
+    if (window.innerWidth < WIDE_DESKTOP_BREAKPOINT_PX) {
+      setTimeout(() => resultsSection.scrollIntoView({ behavior: "smooth", block: "start" }), 80)
+    }
+  }
 
   // Clear Nutri-Score if the product info banner is hidden
   // (means this is a manual analysis, not from a barcode scan)
@@ -2146,7 +2158,7 @@ async function analyzeIngredients(){
   let analysisLanguage = currentLanguage()
   try {
     const text = document.getElementById("ingredients").value
-    const ingredients = extractIngredients(text)
+    let ingredients = extractIngredients(text)
     analysisLanguage = detectInputLanguage(text, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
@@ -2166,6 +2178,27 @@ async function analyzeIngredients(){
       const normalized = normalizeIngredientName(raw)
       if (normalized && !displayNameMap[normalized]) {
         displayNameMap[normalized] = raw
+      }
+    }
+
+    // If vocabulary extraction found nothing but there is raw text (e.g. OCR output that
+    // doesn't match our ingredient dictionary), split by common delimiters and use those
+    // raw tokens so the AI can still analyze whatever was captured or pasted.
+    if (ingredients.length === 0 && text.trim().length > 0) {
+      const rawFallback = text
+        .replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, "$1, $2")
+        .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
+        .split(ingredientSplitPunctuationPattern)
+        .map(s => s.trim())
+        .filter(s => s.length >= 2 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH)
+      if (rawFallback.length > 0) {
+        ingredients = rawFallback
+        for (const raw of ingredients) {
+          const normalized = normalizeIngredientName(raw) || raw.toLowerCase().trim()
+          if (normalized && !displayNameMap[normalized]) {
+            displayNameMap[normalized] = raw
+          }
+        }
       }
     }
 
