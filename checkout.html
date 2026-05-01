@@ -10,14 +10,7 @@
 .payment-methods-strip { text-align: center; padding: 16px 0 8px; }
 .payment-methods-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 10px; }
 .payment-methods { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-bottom: 10px; }
-.payment-badge { display: inline-flex; align-items: center; justify-content: center; padding: 5px 13px; border-radius: 7px; font-size: 12px; font-weight: 700; border: 1px solid var(--border-2); background: var(--surface); color: var(--text); letter-spacing: 0.04em; }
-.payment-visa { color: #1a1f71; border-color: #1a1f7133; }
-.payment-mc { color: #eb001b; border-color: #eb001b33; }
-.payment-apple { background: #000; color: #fff; border-color: #000; }
-.payment-google { color: #4285f4; border-color: #4285f433; }
-.payment-alipay { color: #1677ff; border-color: #1677ff33; }
-.payment-wechat { color: #07c160; border-color: #07c16033; }
-.payment-stripe { color: #635bff; border-color: #635bff33; }
+.payment-badge { display: inline-flex; align-items: center; justify-content: center; padding: 5px 13px; border-radius: 7px; font-size: 12px; font-weight: 700; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.06); color: var(--text); letter-spacing: 0.04em; }
 .payment-trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .trust-badge { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 4px; }
   </style>
@@ -64,7 +57,7 @@
       </div>
     </section>
 
-    <section class="sub-grid">
+    <section class="sub-grid" style="max-width:520px; margin:0 auto;">
       <article class="card">
         <h2 class="card-title" id="formTitle">Choose your plan</h2>
 
@@ -105,16 +98,6 @@
           By continuing you agree to our <a href="terms.html" style="color:var(--brand);">Terms of Service</a> and acknowledge our <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a>.
           You can cancel at any time via the Stripe Customer Portal.
         </p>
-      </article>
-
-      <article class="card">
-        <h2 class="card-title" id="pricingTitle">Plan details</h2>
-        <ul id="planDetailsList" style="padding-left:20px; color:var(--text-2); display:grid; gap:6px; font-size:13px; margin-bottom:16px;"></ul>
-
-        <h3 style="font-size:14px; margin-bottom:8px;" id="settlementTitle">Settlement & payout</h3>
-        <ul id="settlementList" style="padding-left:20px; color:var(--text-2); display:grid; gap:5px; font-size:13px;"></ul>
-        <h3 style="font-size:14px; margin:14px 0 8px;" id="customNeedsTitle">Custom request examples</h3>
-        <ul id="customNeedsList" style="padding-left:20px; color:var(--text-2); display:grid; gap:5px; font-size:13px;"></ul>
       </article>
     </section>
   </main>
@@ -161,129 +144,51 @@
       document.getElementById('cancelledBanner').style.display = '';
     }
 
-    // Industry-benchmarked prices (same values as create-checkout edge function):
-    // EN: $2.99/mo, $24.99/yr — between Yuka ($13.99/yr) and Think Dirty ($39.99/yr)
-    // Verified against 2025 public App Store listings:
-    // Yuka: $15/yr (US), ~€14/yr (EU) · Think Dirty Premium: $27.99–$29.99/yr (US)
-    // INCI Beauty: €1.50/mo = €18/yr (EU) · CN market: ¥15–38/月, ¥88–258/年
-    // Wykta = AI-powered → positioned at Think Dirty Premium tier.
     // EN/USD: $3.99/mo, $27.99/yr · FR/DE/EUR: €2.99/mo, €21.99/yr · ZH/CNY: ¥18/mo, ¥128/yr
     const marketData = {
       en: {
         currency: 'USD', monthly: 3.99, annual: 27.99,
         title: 'Secure checkout',
-        subtitle: "You will be redirected to Stripe's secure hosted payment page. Stripe handles card, Alipay, and WeChat Pay.",
+        subtitle: "Enter your email below and click the button — you will be redirected to Stripe's secure hosted page to complete payment (card, Apple Pay, Google Pay, Alipay, WeChat Pay, etc.).",
         paymentMethodsLabel: 'Accepted payment methods',
         formTitle: 'Choose your plan',
         labelPlan: 'Plan', labelEmail: 'Billing email',
         submitLabel: 'Continue to secure payment →',
-        stripeNote: "Secured by Stripe. Payment methods are selected on Stripe's hosted page and depend on region, currency, plan, and device eligibility.",
-        pricingTitle: 'Plan details', settlementTitle: 'Settlement & payout', customNeedsTitle: 'Custom request examples',
+        stripeNote: "Secured by Stripe. Your payment method is selected on Stripe's hosted page.",
         planLabels: { 'pro-monthly': 'Pro Monthly', 'pro-annual': 'Pro Annual', enterprise: 'Enterprise — Custom Scope' },
-        planDetails: [
-          'Pro Monthly: flexible monthly billing for individual and creator use.',
-          'Pro Annual: lower effective monthly cost for long-term use.',
-          'Enterprise (Custom Scope): quote is based on requirements, integration depth, and support SLA.',
-        ],
-        settlement: [
-          'Card / Apple Pay / Google Pay → Stripe balance → bank payout (1–2 business days)',
-          'Alipay / WeChat Pay → Stripe balance → bank payout',
-          'Payout currency: USD to your connected bank account',
-          'Tax: Stripe Tax handles VAT/GST automatically',
-        ],
-        customNeeds: [
-          'Team-wide roles and permission controls',
-          'API integrations and custom data workflows',
-          'White-label experience and reporting templates',
-          'Dedicated onboarding, SLA, and compliance requirements',
-        ],
       },
       fr: {
         currency: 'EUR', monthly: 2.99, annual: 21.99,
         title: 'Paiement sécurisé',
-        subtitle: "Vous serez redirigé vers la page de paiement hébergée et sécurisée de Stripe.",
+        subtitle: "Saisissez votre email ci-dessous et cliquez sur le bouton — vous serez redirigé vers la page Stripe sécurisée pour finaliser le paiement (carte, Apple Pay, Google Pay, Alipay, WeChat Pay, etc.).",
         paymentMethodsLabel: 'Moyens de paiement acceptés',
         formTitle: 'Choisissez votre offre',
         labelPlan: 'Offre', labelEmail: 'Email de facturation',
         submitLabel: 'Continuer vers le paiement sécurisé →',
-        stripeNote: 'Sécurisé par Stripe. Le mode de paiement est sélectionné sur la page Stripe selon la région, la devise, l’offre et l’appareil.',
-        pricingTitle: 'Détails des offres', settlementTitle: 'Règlement & virement', customNeedsTitle: 'Exemples de besoins sur mesure',
+        stripeNote: 'Sécurisé par Stripe. Le mode de paiement est sélectionné sur la page Stripe.',
         planLabels: { 'pro-monthly': 'Pro Mensuel', 'pro-annual': 'Pro Annuel', enterprise: 'Entreprise — Périmètre sur mesure' },
-        planDetails: [
-          'Pro Mensuel : facturation souple pour un usage individuel ou créateur.',
-          'Pro Annuel : coût mensuel effectif plus bas pour un usage long terme.',
-          'Entreprise (sur mesure) : devis selon besoins, intégrations et niveau de SLA.',
-        ],
-        settlement: [
-          'Carte / Apple Pay / Google Pay → Solde Stripe → virement bancaire (1-2 jours ouvrés)',
-          'Alipay / WeChat Pay → Solde Stripe → virement bancaire',
-          'Devise de règlement : EUR vers votre compte bancaire connecté',
-          'TVA : gérée automatiquement par Stripe Tax',
-        ],
-        customNeeds: [
-          'Rôles équipe et gestion des permissions',
-          'Intégrations API et workflows de données personnalisés',
-          'Expérience marque blanche et modèles de reporting',
-          'Onboarding dédié, SLA et exigences de conformité',
-        ],
       },
       de: {
         currency: 'EUR', monthly: 2.99, annual: 21.99,
         title: 'Sicherer Checkout',
-        subtitle: "Sie werden auf die sichere, gehostete Zahlungsseite von Stripe weitergeleitet.",
+        subtitle: "Geben Sie Ihre E-Mail ein und klicken Sie auf den Button — Sie werden zur sicheren Stripe-Zahlungsseite weitergeleitet (Karte, Apple Pay, Google Pay, Alipay, WeChat Pay usw.).",
         paymentMethodsLabel: 'Akzeptierte Zahlungsmethoden',
         formTitle: 'Tarif wählen',
         labelPlan: 'Tarif', labelEmail: 'Rechnungs-E-Mail',
         submitLabel: 'Zum sicheren Bezahlvorgang →',
-        stripeNote: 'Gesichert durch Stripe. Die Zahlungsart wird auf der Stripe-Seite nach Region, Währung, Tarif und Gerät gewählt.',
-        pricingTitle: 'Tarifdetails', settlementTitle: 'Abrechnung & Auszahlung', customNeedsTitle: 'Beispiele für individuelle Anforderungen',
+        stripeNote: 'Gesichert durch Stripe. Die Zahlungsart wird auf der Stripe-Seite gewählt.',
         planLabels: { 'pro-monthly': 'Pro Monatlich', 'pro-annual': 'Pro Jährlich', enterprise: 'Enterprise — Individueller Umfang' },
-        planDetails: [
-          'Pro Monatlich: flexible monatliche Abrechnung für Einzel- und Creator-Nutzung.',
-          'Pro Jährlich: niedrigere effektive Monatskosten für langfristige Nutzung.',
-          'Enterprise (individuell): Angebot je nach Anforderungen, Integrationstiefe und SLA.',
-        ],
-        settlement: [
-          'Karte / Apple Pay / Google Pay → Stripe-Guthaben → Banküberweisung (1–2 Werktage)',
-          'Alipay / WeChat Pay → Stripe-Guthaben → Banküberweisung',
-          'Auszahlungswährung: EUR auf Ihr verbundenes Bankkonto',
-          'MwSt.: automatisch über Stripe Tax verwaltet',
-        ],
-        customNeeds: [
-          'Team-Rollen und Berechtigungssteuerung',
-          'API-Integrationen und individuelle Daten-Workflows',
-          'White-Label-Erlebnis und Reporting-Vorlagen',
-          'Dediziertes Onboarding, SLA- und Compliance-Anforderungen',
-        ],
       },
       zh: {
         currency: 'CNY', monthly: 18, annual: 128,
         title: '安全结算',
-        subtitle: '您将被引导至 Stripe 的安全托管支付页面。支持银行卡、支付宝及微信支付。',
+        subtitle: '请填写邮箱并点击下方按钮，您将跳转至 Stripe 安全支付页面，在那里选择支付方式（银行卡、支付宝、微信支付、Apple Pay、Google Pay 等）。',
         paymentMethodsLabel: '支持的支付方式',
         formTitle: '选择套餐',
         labelPlan: '套餐', labelEmail: '账单邮箱',
         submitLabel: '继续前往安全支付 →',
-        stripeNote: '由 Stripe 加密保障。支付方式在 Stripe 托管页中选择，是否可用取决于地区、币种、套餐与设备。',
-        pricingTitle: '套餐说明', settlementTitle: '收款与结算路径', customNeedsTitle: '可定制诉求示例',
+        stripeNote: '由 Stripe 加密保障。支付方式在 Stripe 托管页中选择。',
         planLabels: { 'pro-monthly': '专业版（月付）', 'pro-annual': '专业版（年付）', enterprise: '企业版 — 按需求定制' },
-        planDetails: [
-          '专业版（月付）：适合灵活试用与个人/内容创作者场景。',
-          '专业版（年付）：总成本更低，适合长期稳定使用。',
-          '企业版（定制）：根据团队规模、系统集成深度和服务 SLA 按需报价。',
-        ],
-        settlement: [
-          '银行卡 / Apple Pay / Google Pay → Stripe 余额 → 银行账户出款（1-2工作日）',
-          '支付宝 / 微信支付 → Stripe 余额 → 银行账户出款',
-          '结算货币：CNY 打入您绑定的收款银行账户',
-          '税务：Stripe Tax 自动处理',
-        ],
-        customNeeds: [
-          '团队成员角色权限与审核流程',
-          'API 对接与企业内部系统集成',
-          '白标品牌化与定制报告模板',
-          '专属 onboarding、SLA 与合规要求',
-        ],
       },
     };
 
@@ -296,9 +201,6 @@
     document.getElementById('labelEmail').textContent = m.labelEmail;
     document.getElementById('submitLabel').textContent = m.submitLabel;
     document.getElementById('stripeNote').textContent = m.stripeNote;
-    document.getElementById('pricingTitle').textContent = m.pricingTitle;
-    document.getElementById('settlementTitle').textContent = m.settlementTitle;
-    document.getElementById('customNeedsTitle').textContent = m.customNeedsTitle;
 
     // Render plan options with localized prices
     const planEl = document.getElementById('plan');
@@ -320,24 +222,7 @@
       planEl.value = requestedPlan;
     }
 
-    // Render plan detail list
-    const planDetailsList = document.getElementById('planDetailsList');
-    m.planDetails.forEach(item => {
-      planDetailsList.insertAdjacentHTML('beforeend', `<li>${item}</li>`);
-    });
-
-    // Render settlement list
-    const settlList = document.getElementById('settlementList');
-    m.settlement.forEach(item => {
-      settlList.insertAdjacentHTML('beforeend', `<li>${item}</li>`);
-    });
-
-    const customNeedsList = document.getElementById('customNeedsList');
-    m.customNeeds.forEach(item => {
-      customNeedsList.insertAdjacentHTML('beforeend', `<li>${item}</li>`);
-    });
-
-    // Show enterprise note when enterprise selected
+        // Show enterprise note when enterprise selected
     planEl.addEventListener('change', () => {
       document.getElementById('enterpriseNote').style.display =
         planEl.value === 'enterprise' ? '' : 'none';

@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", function() {
 TESSERACT WORKER CACHE
 Pre-initialize workers to speed up OCR on first use.
 Stores Promises to avoid race-condition double-init.
+If a language model fails to load (e.g. network block), falls back to eng.
 ----------------------- */
 const tesseractWorkerCache = {}
 async function getTesseractWorker(lang) {
@@ -35,9 +36,17 @@ async function getTesseractWorker(lang) {
     // PSM 11 = sparse text mode: find as much text as possible in no particular
     // order — ideal for ingredient label paragraphs that aren't full documents.
     tesseractWorkerCache[lang] = (async () => {
-      const w = await Tesseract.createWorker(lang)
-      await w.setParameters({ tessedit_pageseg_mode: "11" })
-      return w
+      try {
+        const w = await Tesseract.createWorker(lang)
+        await w.setParameters({ tessedit_pageseg_mode: "11" })
+        return w
+      } catch (e) {
+        // Language pack download failed (e.g. blocked CDN). Fall back to eng only.
+        console.warn(`Tesseract: failed to load lang "${lang}", falling back to eng`, e)
+        if (lang === "eng") throw e
+        delete tesseractWorkerCache[lang]
+        return getTesseractWorker("eng")
+      }
     })()
   }
   return tesseractWorkerCache[lang]
@@ -768,10 +777,11 @@ const uiMessages = {
     noPublicData: "No clear match was found in public ingredient databases.",
     wikidataNoDescription: "No description available from Wikidata.",
     starterPeriod: "forever free",
+    starterScanLimit: "5 AI analyses/day",
     starterFeatureInput: "Paste or camera input",
     starterFeatureLang: "4-language support",
-    starterFeaturePriority: "Priority analysis",
-    starterFeatureExport: "Export reports",
+    starterFeaturePriority: "No priority analysis",
+    starterFeatureExport: "No PDF export",
     planMostPopular: "Most Popular",
     proPeriod: "billed monthly",
     proFeatureStarter: "Everything in Starter",
@@ -909,10 +919,11 @@ const uiMessages = {
     noPublicData: "Aucune correspondance claire trouvée dans les bases publiques.",
     wikidataNoDescription: "Aucune description disponible depuis Wikidata.",
     starterPeriod: "gratuit à vie",
+    starterScanLimit: "5 analyses IA/jour",
     starterFeatureInput: "Saisie par collage ou caméra",
     starterFeatureLang: "Support de 4 langues",
-    starterFeaturePriority: "Analyse prioritaire",
-    starterFeatureExport: "Export de rapports",
+    starterFeaturePriority: "Pas d'analyse prioritaire",
+    starterFeatureExport: "Pas d'export PDF",
     planMostPopular: "Le plus populaire",
     proPeriod: "facturé mensuellement",
     proFeatureStarter: "Tout le contenu de Starter",
@@ -1050,10 +1061,11 @@ const uiMessages = {
     noPublicData: "Keine klare Übereinstimmung in öffentlichen Datenbanken gefunden.",
     wikidataNoDescription: "Keine Beschreibung von Wikidata verfügbar.",
     starterPeriod: "dauerhaft kostenlos",
+    starterScanLimit: "5 KI-Analysen/Tag",
     starterFeatureInput: "Eingabe per Einfügen oder Kamera",
     starterFeatureLang: "Unterstützung für 4 Sprachen",
-    starterFeaturePriority: "Priorisierte Analyse",
-    starterFeatureExport: "Berichte exportieren",
+    starterFeaturePriority: "Keine priorisierte Analyse",
+    starterFeatureExport: "Kein PDF-Export",
     planMostPopular: "Am beliebtesten",
     proPeriod: "monatliche Abrechnung",
     proFeatureStarter: "Alles aus Starter",
@@ -1191,10 +1203,11 @@ const uiMessages = {
     noPublicData: "在公共数据库中未找到明确匹配。",
     wikidataNoDescription: "Wikidata 未提供可用描述。",
     starterPeriod: "永久免费",
+    starterScanLimit: "每日 5 次 AI 分析",
     starterFeatureInput: "支持粘贴或相机输入",
     starterFeatureLang: "支持 4 种语言",
-    starterFeaturePriority: "优先分析",
-    starterFeatureExport: "导出报告",
+    starterFeaturePriority: "无优先分析",
+    starterFeatureExport: "无 PDF 导出",
     planMostPopular: "最受欢迎",
     proPeriod: "按月计费",
     proFeatureStarter: "包含基础版全部功能",
@@ -2877,45 +2890,82 @@ async function runOCR(canvas) {
     const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
     const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
 
-    const primaryWorker = await getTesseractWorker(primaryOcrLang)
-    let bestText = ""
-    let bestCount = -1
-
-    for (const makeCandidateCanvas of candidates) {
-      const { data } = await primaryWorker.recognize(makeCandidateCanvas())
-      const text = data.text || ""
+    // Score each OCR result by (ingredient matches × 100) + confidence + text length/50.
+    // This ensures a high-confidence result with many characters wins even when
+    // none of the tokens match the ingredient dictionary (e.g. pure Chinese labels).
+    function ocrScore(text, confidence) {
       const count = extractIngredients(text).length
-      if (count > bestCount || (count === bestCount && text.length > bestText.length)) {
-        bestCount = count
-        bestText = text
-      }
-      if (bestCount >= 3) break
+      return count * 100 + (confidence || 0) + Math.floor(text.length / 50)
     }
 
-    // Backup language pack: try all candidates (not just the first two) so
-    // that dark-image strategies also get a chance with multilingual models.
-    if (bestCount < 2 && backupOcrLang !== primaryOcrLang) {
-      const backupWorker = await getTesseractWorker(backupOcrLang)
-      for (const makeCandidateCanvas of candidates) {
-        const { data } = await backupWorker.recognize(makeCandidateCanvas())
+    let primaryWorker
+    try {
+      primaryWorker = await getTesseractWorker(primaryOcrLang)
+    } catch (workerErr) {
+      console.warn("OCR: primary worker failed, trying eng fallback", workerErr)
+      primaryWorker = await getTesseractWorker("eng")
+    }
+
+    let bestText = ""
+    let bestScore = -1
+
+    for (const makeCandidateCanvas of candidates) {
+      try {
+        const { data } = await primaryWorker.recognize(makeCandidateCanvas())
         const text = data.text || ""
-        const count = extractIngredients(text).length
-        if (count > bestCount || (count === bestCount && text.length > bestText.length)) {
-          bestCount = count
+        const score = ocrScore(text, data.confidence)
+        if (score > bestScore) {
+          bestScore = score
           bestText = text
         }
-        if (bestCount >= 2) break
+        // Early exit: 3+ ingredient matches AND confidence ≥ 70 means we have a solid result.
+        if (extractIngredients(text).length >= 3 && (data.confidence || 0) >= 70) break
+      } catch (recErr) {
+        console.warn("OCR: recognize failed for candidate, skipping", recErr)
+      }
+    }
+
+    // Backup language pack: try when ingredient matches are low.
+    const bestIngredientCount = extractIngredients(bestText).length
+    if (bestIngredientCount < 2 && backupOcrLang !== primaryOcrLang) {
+      let backupWorker
+      try {
+        backupWorker = await getTesseractWorker(backupOcrLang)
+      } catch (workerErr) {
+        console.warn("OCR: backup worker failed", workerErr)
+      }
+      if (backupWorker) {
+        for (const makeCandidateCanvas of candidates) {
+          try {
+            const { data } = await backupWorker.recognize(makeCandidateCanvas())
+            const text = data.text || ""
+            const score = ocrScore(text, data.confidence)
+            if (score > bestScore) {
+              bestScore = score
+              bestText = text
+            }
+            if (extractIngredients(text).length >= 2 && (data.confidence || 0) >= 70) break
+          } catch (recErr) {
+            console.warn("OCR: backup recognize failed for candidate, skipping", recErr)
+          }
+        }
       }
     }
 
     const ocrEl = document.getElementById("ocrResult")
-    if (ocrEl) {
-      ocrEl.innerText = bestText
-      ocrEl.classList.add("visible")
+    if (bestText.trim()) {
+      if (ocrEl) {
+        ocrEl.innerText = bestText
+        ocrEl.classList.add("visible")
+      }
+      document.getElementById("ingredients").value = bestText
+      await analyzeIngredients()
+    } else {
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrFailed")
+        ocrEl.classList.add("visible")
+      }
     }
-    document.getElementById("ingredients").value = bestText
-
-    await analyzeIngredients()
   } catch (err) {
     console.error("OCR error:", err)
     const ocrEl = document.getElementById("ocrResult")
