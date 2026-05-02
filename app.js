@@ -1939,8 +1939,10 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
       const langName = languageNames[normalizedAnalysisLang] || normalizedAnalysisLang
       const langLocale = languageLocales[normalizedAnalysisLang] || normalizedAnalysisLang
 
-      // Race the invoke against a 12-second timeout so a cold-start or paused
+      // Race the invoke against a 30-second timeout so a cold-start or paused
       // Supabase project doesn't leave the UI stuck at "Analyzing..." indefinitely.
+      // 30 s matches the OCR timeout and gives enough headroom for a cold-start
+      // plus one provider API call in the multi-provider fallback chain.
       const invokePromise = supabaseClient.functions.invoke(
         "wykta-backend",
         {
@@ -1955,8 +1957,8 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
       )
       const timeoutPromise = new Promise((_, reject) => {
         invokeTimeoutId = setTimeout(
-          () => reject(new Error("Edge function timed out after 12 seconds")),
-          12000
+          () => reject(new Error("Edge function timed out after 30 seconds")),
+          30000
         )
       })
 

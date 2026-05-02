@@ -494,7 +494,7 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
         )
       } catch (visionErr) {
-        console.warn('Vision OCR error:', visionErr)
+        console.warn("Vision OCR error:", visionErr)
         return new Response(
           JSON.stringify({ extractedText: null }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
