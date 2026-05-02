@@ -153,8 +153,7 @@
     document.getElementById('heroTitle').textContent = c.verifying;
     document.getElementById('heroSubtitle').textContent = c.verifyingNote;
     document.getElementById('communityBtn').textContent = c.communityBtn;
-    if (document.getElementById('communityBtn'))
-      document.getElementById('communityBtn').href = `community.html?lang=${encodeURIComponent(lang)}`;
+    document.getElementById('communityBtn').href = `community.html?lang=${encodeURIComponent(document.documentElement.lang)}`;
 
     function showError(msg) {
       document.getElementById('heroTitle').textContent = 'Unable to Verify Payment';

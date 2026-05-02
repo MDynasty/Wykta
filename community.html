@@ -388,6 +388,7 @@
         if (result.valid) {
           status.textContent = c.successOtp;
           status.classList.add('visible');
+          label.style.display = ''; spinner.style.display = 'none';
           document.getElementById('otpForm').querySelectorAll('button').forEach(b => b.disabled = true);
         } else {
           status.textContent = result.error || c.errorOtp;

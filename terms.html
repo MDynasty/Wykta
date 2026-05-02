@@ -33,9 +33,20 @@
           <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div><span>Wykta</span></a>
-      <div class="nav-right">
+      <div class="nav-right" id="navRight">
         <a class="nav-link" href="index.html">Home</a>
         <a class="nav-link" href="privacy.html">Privacy</a>
+      </div>
+      <div class="nav-end">
+        <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="zh">中文</option>
+        </select>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" aria-controls="navRight" aria-expanded="false" onclick="toggleNav()">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </nav>
@@ -185,6 +196,17 @@
   </main>
 
   <script>
+    function toggleNav() {
+      const navRight = document.getElementById('navRight');
+      const btn = document.getElementById('navHamburger');
+      if (!navRight || !btn) return;
+      const isOpen = navRight.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+    function setLang(val) {
+      localStorage.setItem('wykta_lang', val);
+      window.location.reload();
+    }
     function showLang(lang, evt) {
       document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.lang-tab').forEach(el => el.classList.remove('active'));
@@ -194,6 +216,7 @@
     const storedLang = localStorage.getItem('wykta_lang') || navigator.language.slice(0, 2);
     const supported = ['en', 'fr', 'de', 'zh'];
     const initialLang = supported.includes(storedLang) ? storedLang : 'en';
+    document.querySelector('.nav-end .lang-select').value = initialLang;
     if (initialLang !== 'en') {
       document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
       document.getElementById('lang-' + initialLang).classList.add('active');
@@ -202,6 +225,10 @@
       });
     }
   </script>
-  <script src="config.js"></script>
+  <footer style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);margin-top:40px;">
+    Wykta &copy; 2026 &nbsp;&middot;&nbsp;
+    <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="terms.html" style="color:var(--brand);">Terms of Service</a>
+  </footer>
 </body>
 </html>
