@@ -205,7 +205,9 @@
     }
     function setLang(val) {
       localStorage.setItem('wykta_lang', val);
-      window.location.reload();
+      const u = new URL(window.location.href);
+      u.searchParams.set('lang', val);
+      window.location.href = u.toString();
     }
     function showLang(lang, evt) {
       document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
@@ -213,10 +215,26 @@
       document.getElementById('lang-' + lang).classList.add('active');
       if (evt && evt.target) evt.target.classList.add('active');
     }
-    const storedLang = localStorage.getItem('wykta_lang') || navigator.language.slice(0, 2);
+    const params = new URLSearchParams(window.location.search);
+    const storedLang = params.get('lang') || localStorage.getItem('wykta_lang') || navigator.language.slice(0, 2);
     const supported = ['en', 'fr', 'de', 'zh'];
     const initialLang = supported.includes(storedLang) ? storedLang : 'en';
+    localStorage.setItem('wykta_lang', initialLang);
+    document.documentElement.lang = initialLang;
     document.querySelector('.nav-end .lang-select').value = initialLang;
+    if (initialLang !== 'en') {
+      const legalPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
+      document.querySelectorAll('a[href]').forEach((el) => {
+        try {
+          const url = new URL(el.getAttribute('href'), window.location.href);
+          if (url.origin !== window.location.origin) return;
+          const page = url.pathname.split('/').pop() || 'index.html';
+          if (!legalPages.has(page)) return;
+          url.searchParams.set('lang', initialLang);
+          el.setAttribute('href', `${url.pathname}${url.search}${url.hash}`);
+        } catch {}
+      });
+    }
     if (initialLang !== 'en') {
       document.querySelectorAll('.lang-section').forEach(el => el.classList.remove('active'));
       document.getElementById('lang-' + initialLang).classList.add('active');
