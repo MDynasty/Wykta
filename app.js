@@ -733,11 +733,6 @@ const uiMessages = {
     accountNav: "My Account",
     analysisTitle: "AI Ingredient Analysis",
     analysisSubtitle: "Now enriched with free food and skincare databases for broader ingredient coverage.",
-    ctaTitle: "Ready to know what's really in your products?",
-    ctaBody: "Join the community of conscious shoppers. Wykta delivers instant, science-backed ingredient insight — for free.",
-    ctaGetPro: "Get Pro Annual",
-    ctaContactSales: "Contact Sales",
-    ctaJoinCommunity: "Join Community",
     ingredientList: "Ingredient List",
     ingredientsPlaceholder: "Paste ingredients from food or skincare labels",
     analyzeButton: "Analyze Ingredients",
@@ -851,11 +846,6 @@ const uiMessages = {
     accountNav: "Mon compte",
     analysisTitle: "Analyse IA des ingrédients",
     analysisSubtitle: "Désormais enrichi avec des bases alimentaires et skincare gratuites pour élargir la couverture.",
-    ctaTitle: "Prêt à savoir ce qui se cache vraiment dans vos produits ?",
-    ctaBody: "Rejoignez la communauté des consommateurs avertis. Wykta vous offre une analyse instantanée et scientifique des ingrédients — gratuitement.",
-    ctaGetPro: "Passer Pro Annuel",
-    ctaContactSales: "Contacter l'équipe commerciale",
-    ctaJoinCommunity: "Rejoindre la communauté",
     ingredientList: "Liste d'ingrédients",
     ingredientsPlaceholder: "Collez les ingrédients d'étiquettes alimentaires ou skincare",
     analyzeButton: "Analyser les ingrédients",
@@ -969,11 +959,6 @@ const uiMessages = {
     accountNav: "Mein Konto",
     analysisTitle: "KI-Inhaltsstoffanalyse",
     analysisSubtitle: "Jetzt mit kostenlosen Lebensmittel- und Hautpflege-Datenbanken für breitere Abdeckung.",
-    ctaTitle: "Bereit zu wissen, was wirklich in Ihren Produkten steckt?",
-    ctaBody: "Schließen Sie sich bewussten Verbrauchern an. Wykta liefert sofortige, wissenschaftlich fundierte Inhaltsstoff-Einblicke — kostenlos.",
-    ctaGetPro: "Pro jährlich holen",
-    ctaContactSales: "Vertrieb kontaktieren",
-    ctaJoinCommunity: "Community beitreten",
     ingredientList: "Inhaltsstoffliste",
     ingredientsPlaceholder: "Inhaltsstoffe von Lebensmittel- oder Hautpflegeetiketten einfügen",
     analyzeButton: "Inhaltsstoffe analysieren",
@@ -1087,11 +1072,6 @@ const uiMessages = {
     accountNav: "我的账户",
     analysisTitle: "AI 成分分析",
     analysisSubtitle: "现已接入免费的食品与护肤数据库，成分覆盖更广。",
-    ctaTitle: "准备好了解您产品里真正含有什么了吗？",
-    ctaBody: "加入注重健康的消费者社区。Wykta 提供即时、有科学依据的成分洞察——完全免费。",
-    ctaGetPro: "开通年度专业版",
-    ctaContactSales: "联系销售",
-    ctaJoinCommunity: "加入社区",
     ingredientList: "成分列表",
     ingredientsPlaceholder: "粘贴食品或护肤品标签中的成分",
     analyzeButton: "分析成分",
@@ -3035,7 +3015,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const proPeriodEl = document.getElementById("proPeriodDisplay")
   const discountBadge = document.getElementById("billingDiscountBadge")
   const planProCta = document.getElementById("planProCta")
-  const ctaGetProBtn = document.getElementById("ctaGetProBtn")
   const exportPdfBtn = document.getElementById("exportPdfBtn")
   const shareResultBtn = document.getElementById("shareResultBtn")
 
@@ -3057,7 +3036,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const checkoutHref = getCheckoutHrefForPlan(isAnnual ? "pro-annual" : "pro-monthly", lang)
     if (planProCta) planProCta.setAttribute("href", checkoutHref)
-    if (ctaGetProBtn) ctaGetProBtn.setAttribute("href", checkoutHref)
     localizeInternalLinks(lang)
   }
 
