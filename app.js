@@ -2638,6 +2638,34 @@ const LOCAL_OCR_MIN_CHARS = 5
 // The eng.traineddata file is ~10 MB; 90 s covers a slow 1 Mbit/s connection.
 const LOCAL_OCR_TIMEOUT_MS = 90000
 
+// Minimum width (px) for the preprocessed canvas fed to Tesseract.
+// Upscaling small photos dramatically improves recognition — Tesseract needs
+// at least ~30 px of cap-height to reliably identify characters.
+// 2400 px is wide enough that even very small label text is legible.
+const LOCAL_OCR_MIN_WIDTH = 2400
+
+// Preprocess a canvas for Tesseract.js before recognition.
+// Steps performed:
+//   1. Scale up if the image is narrower than LOCAL_OCR_MIN_WIDTH (more pixels = better OCR).
+//   2. Convert to greyscale and boost contrast via a canvas CSS filter applied
+//      during drawImage. This works in all evergreen browsers (Chrome, Firefox,
+//      Safari 15+). The filter is reset immediately after drawing.
+// Returns a new canvas with the preprocessed image; the original is unchanged.
+function preprocessCanvasForOCR(src) {
+  const scale = src.width < LOCAL_OCR_MIN_WIDTH ? LOCAL_OCR_MIN_WIDTH / src.width : 1
+  const dst = document.createElement("canvas")
+  dst.width  = Math.round(src.width  * scale)
+  dst.height = Math.round(src.height * scale)
+  const ctx = dst.getContext("2d")
+  // grayscale(1): removes colour variation that confuses text/background separation.
+  // contrast(1.8): sharpens the boundary between dark text and light backgrounds
+  //                (and vice-versa for light-on-dark labels) without losing strokes.
+  ctx.filter = "grayscale(1) contrast(1.8)"
+  ctx.drawImage(src, 0, 0, dst.width, dst.height)
+  ctx.filter = "none"
+  return dst
+}
+
 // Run on-device OCR via Tesseract.js.
 // INCI ingredient names are always Latin-script, so the English training data
 // covers the vast majority of cosmetic and food labels globally.
@@ -2646,8 +2674,9 @@ async function runLocalOCR(canvas) {
   const loaded = await loadTesseract()
   if (!loaded || typeof window.Tesseract === "undefined") return null
   try {
+    const prepared = preprocessCanvasForOCR(canvas)
     const recognizePromise = window.Tesseract.recognize(
-      canvas,
+      prepared,
       "eng",
       // Suppress verbose per-word progress logs that would flood the console;
       // errors are still surfaced via the outer catch.
