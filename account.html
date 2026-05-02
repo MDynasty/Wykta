@@ -26,9 +26,20 @@
     <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
 </div><span>Wykta</span></a>
-      <div class="nav-right">
+      <div class="nav-right" id="navRight">
         <a class="nav-link" href="index.html" id="navWorkflow">Home</a>
         <a class="nav-link" href="community.html" id="navCommunity">Community</a>
+      </div>
+      <div class="nav-end">
+        <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="zh">中文</option>
+        </select>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" aria-controls="navRight" aria-expanded="false" onclick="toggleNav()">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </nav>
@@ -121,6 +132,21 @@
     document.documentElement.lang = uiLang;
     localStorage.setItem('wykta_lang', uiLang);
 
+    function toggleNav() {
+      const navRight = document.getElementById('navRight');
+      const btn = document.getElementById('navHamburger');
+      if (!navRight || !btn) return;
+      const isOpen = navRight.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+    function setLang(val) {
+      localStorage.setItem('wykta_lang', val);
+      const u = new URL(window.location.href);
+      u.searchParams.set('lang', val);
+      window.location.href = u.toString();
+    }
+    document.querySelector('.nav-end .lang-select').value = uiLang;
+
     function withLang(href) {
       if (!href || href.startsWith('#')) return href;
       if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
@@ -152,6 +178,7 @@
         otpLabel: 'Verify', otpBtnLoading: 'Verifying…',
         resendLabel: 'Resend code',
         otpSuccess: 'Email verified.',
+        otpResent: 'Verification code resent.',
         otpError: 'Invalid or expired code. Please try again.',
         resultTitle: 'Your subscription',
         plan: 'Plan', status: 'Status', since: 'Active since',
@@ -176,6 +203,7 @@
         otpLabel: 'Vérifier', otpBtnLoading: 'Vérification…',
         resendLabel: 'Renvoyer le code',
         otpSuccess: 'E-mail vérifié.',
+        otpResent: 'Code de vérification renvoyé.',
         otpError: 'Code invalide ou expiré. Veuillez réessayer.',
         resultTitle: 'Votre abonnement',
         plan: 'Offre', status: 'Statut', since: 'Actif depuis',
@@ -200,6 +228,7 @@
         otpLabel: 'Bestätigen', otpBtnLoading: 'Wird geprüft…',
         resendLabel: 'Code erneut senden',
         otpSuccess: 'E-Mail bestätigt.',
+        otpResent: 'Bestätigungscode erneut gesendet.',
         otpError: 'Ungültiger oder abgelaufener Code. Bitte erneut versuchen.',
         resultTitle: 'Ihr Abonnement',
         plan: 'Tarif', status: 'Status', since: 'Aktiv seit',
@@ -224,6 +253,7 @@
         otpLabel: '验证', otpBtnLoading: '验证中…',
         resendLabel: '重新发送验证码',
         otpSuccess: '邮箱已验证。',
+        otpResent: '验证码已重新发送。',
         otpError: '验证码无效或已过期，请重试。',
         resultTitle: '您的订阅',
         plan: '套餐', status: '状态', since: '激活时间',
@@ -453,7 +483,7 @@
         body: JSON.stringify({ email: lastEmail, purpose: 'verify', lang: uiLang }),
       }).catch(err => console.warn('resend-otp failed:', err));
       const status = document.getElementById('otpStatus');
-      status.textContent = c.otpSuccess;
+      status.textContent = c.otpResent;
       status.style.display = '';
     }
 
