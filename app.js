@@ -2625,9 +2625,18 @@ async function loadTesseract() {
 }
 
 // Minimum output quality thresholds for the Tesseract fallback.
-// Outputs below these values are treated as unreadable and discarded.
-const LOCAL_OCR_MIN_CHARS = 5       // discard near-empty strings
-const LOCAL_OCR_MIN_CONFIDENCE = 25  // Tesseract confidence score (0–100)
+// Only the minimum character count is enforced — a non-empty string indicates
+// that Tesseract found something on the label. Confidence is NOT checked because
+// on real-world product label photos (blur, angles, small print) the mean
+// document confidence routinely sits at 5–25 % even when the extracted
+// ingredient words are largely correct. The ingredient parser in
+// analyzeIngredients() already handles imperfect / partial text, so pre-filtering
+// by confidence would silently discard usable results.
+const LOCAL_OCR_MIN_CHARS = 5
+
+// Maximum milliseconds to wait for the local OCR engine.
+// The eng.traineddata file is ~10 MB; 90 s covers a slow 1 Mbit/s connection.
+const LOCAL_OCR_TIMEOUT_MS = 90000
 
 // Run on-device OCR via Tesseract.js.
 // INCI ingredient names are always Latin-script, so the English training data
@@ -2637,14 +2646,18 @@ async function runLocalOCR(canvas) {
   const loaded = await loadTesseract()
   if (!loaded || typeof window.Tesseract === "undefined") return null
   try {
-    const { data: { text, confidence } } = await window.Tesseract.recognize(
+    const recognizePromise = window.Tesseract.recognize(
       canvas,
       "eng",
       // Suppress verbose per-word progress logs that would flood the console;
       // errors are still surfaced via the outer catch.
       { logger: () => {} },
     )
-    if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS || confidence < LOCAL_OCR_MIN_CONFIDENCE) return null
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Local OCR timed out")), LOCAL_OCR_TIMEOUT_MS)
+    )
+    const { data: { text } } = await Promise.race([recognizePromise, timeoutPromise])
+    if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS) return null
     return text.trim()
   } catch (err) {
     console.warn("Local OCR (Tesseract) failed:", err)
