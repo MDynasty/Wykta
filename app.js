@@ -402,7 +402,7 @@ function getKnownIngredientMatchers(){
 function normalizeIngredientName(value = ""){
   if(!value) return ""
 
-  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|成分|配料)[:：\s-]*/i, "")
+  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
   const normalized = sanitizeIngredientTerm(withoutHeader)
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
@@ -433,6 +433,57 @@ function isLikelyIngredientToken(token = ""){
   return true
 }
 
+
+// Extracts just the ingredient section from full product label text (e.g. OCR of an entire label).
+// Strips product metadata (name, manufacturer, batch number, etc.) that precedes the ingredient list,
+// and — when both a Chinese (成分:) and a Latin INCI (INGREDIENTS:) section are present —
+// selects only the section that matches the user's preferred language to avoid double-counting.
+// Returns the original text unchanged when no known ingredient-section heading is found.
+function findIngredientSection(text, preferredLang) {
+  if (!text || !text.trim()) return text
+  const lang = preferredLang || currentLanguage()
+
+  // Heading patterns that signal the start of an ingredient section
+  const zhHeaderRe = /(?:其他微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
+  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
+
+  const zhMatch = zhHeaderRe.exec(text)
+  const laMatch = laHeaderRe.exec(text)
+
+  // No known ingredient heading → return full text (user may have pasted ingredients directly)
+  if (!zhMatch && !laMatch) return text
+
+  // After identifying the start of an ingredient section, stop before product-metadata keywords
+  // (batch number, net weight, usage instructions, etc.) that typically follow ingredients.
+  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]/i
+
+  function sliceSection(start, hardEnd) {
+    const slice = text.slice(start, hardEnd)
+    const stopMatch = metadataStopRe.exec(slice)
+    const result = stopMatch ? slice.slice(0, stopMatch.index).trim() : slice.trim()
+    return result || text  // safety: never return empty
+  }
+
+  if (lang === "zh") {
+    if (zhMatch) {
+      const start = zhMatch.index + zhMatch[0].length
+      // Stop before the Latin INCI section (same ingredients in different notation)
+      const laStop = (laMatch && laMatch.index > start) ? laMatch.index : text.length
+      return sliceSection(start, laStop)
+    }
+    // No Chinese header but Latin exists — use Latin section as fallback
+    return sliceSection(laMatch.index + laMatch[0].length, text.length)
+  } else {
+    if (laMatch) {
+      const start = laMatch.index + laMatch[0].length
+      // Stop before the Chinese section (if it appears after the Latin header)
+      const zhStop = (zhMatch && zhMatch.index > start) ? zhMatch.index : text.length
+      return sliceSection(start, zhStop)
+    }
+    // No Latin header but Chinese exists — use Chinese section as fallback
+    return sliceSection(zhMatch.index + zhMatch[0].length, text.length)
+  }
+}
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
@@ -1300,6 +1351,16 @@ function detectInputLanguage(text = "", ingredients = []){
     })
   })
 
+  // UI-language affinity: INCI ingredient names are always Latin-script even on Chinese products,
+  // so a Chinese label with a full INCI list can score higher for English than for Chinese.
+  // When the user's UI is already set to a specific language and the text contains characters
+  // from that language's script, add a small affinity bonus to prevent INCI names from
+  // overriding the obvious product language context.
+  const uiLang = currentLanguage()
+  if (uiLang === "zh" && chineseCharCount > 0) scores.zh += 10
+  else if (uiLang === "fr" && scores.fr > 0) scores.fr += 5
+  else if (uiLang === "de" && scores.de > 0) scores.de += 5
+
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1])
   const [bestLang, bestScore] = ranked[0]
   if(bestScore > 0){
@@ -2088,15 +2149,18 @@ async function analyzeIngredients(){
   let analysisLanguage = currentLanguage()
   try {
     const text = document.getElementById("ingredients").value
-    let ingredients = extractIngredients(text)
-    analysisLanguage = detectInputLanguage(text, ingredients)
+    // Strip product metadata and choose the language-appropriate ingredient section
+    // (e.g. Chinese 成分: section vs Latin INCI section) before any further parsing.
+    const ingredientText = findIngredientSection(text, currentLanguage())
+    let ingredients = extractIngredients(ingredientText)
+    analysisLanguage = detectInputLanguage(ingredientText, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
     // Build a map from normalized ingredient key → original user-typed token.
     // This preserves the input language and display name (e.g. "芦荟" instead of "aloe vera")
     // for per-ingredient language detection and display in the results.
     const displayNameMap = {}
-    const scriptBoundaryNormalized = (text || "")
+    const scriptBoundaryNormalized = (ingredientText || "")
       .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
       .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
     const rawTokens = scriptBoundaryNormalized
@@ -2114,8 +2178,8 @@ async function analyzeIngredients(){
     // If vocabulary extraction found nothing but there is raw text (e.g. OCR output that
     // doesn't match our ingredient dictionary), split by common delimiters and use those
     // raw tokens so the AI can still analyze whatever was captured or pasted.
-    if (ingredients.length === 0 && text.trim().length > 0) {
-      const rawFallback = text
+    if (ingredients.length === 0 && ingredientText.trim().length > 0) {
+      const rawFallback = ingredientText
         .replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, "$1, $2")
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
