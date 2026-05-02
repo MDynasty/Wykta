@@ -427,9 +427,15 @@ function extractVocabularyMatches(text = ""){
 
 function isLikelyIngredientToken(token = ""){
   const normalized = sanitizeIngredientTerm(token)
-  if(!normalized || normalized.length < 2) return false
+  if(!normalized || normalized.length < 3) return false
   if(/^\d+([.,]\d+)?$/.test(normalized)) return false
   if(normalized.split(" ").length > 8) return false
+  // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
+  // (e.g. "LS", "OP", "OI", "BIR") — reject them.
+  if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
+  // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
+  // scan-code or batch-number fragments — reject them.
+  if(normalized.length <= 4 && /\d/.test(normalized) && /[a-z]/i.test(normalized)) return false
   return true
 }
 
@@ -2187,7 +2193,14 @@ async function analyzeIngredients(){
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
         .map(s => s.trim())
-        .filter(s => s.length >= 2 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH)
+        .filter(s => {
+          const l = s.length
+          if (l < 3 || l > MAX_INGREDIENT_TOKEN_LENGTH) return false
+          // Same OCR-noise filters as isLikelyIngredientToken
+          if (l <= 4 && !/[aeiouy]/i.test(s)) return false
+          if (l <= 4 && /\d/.test(s) && /[a-z]/i.test(s)) return false
+          return true
+        })
       if (rawFallback.length > 0) {
         ingredients = rawFallback
         for (const raw of ingredients) {
@@ -2762,6 +2775,19 @@ function preprocessCanvasForOCR(src) {
   return dst
 }
 
+// Checks whether Tesseract output looks like real label text vs. OCR noise.
+// A garbage scan (curled label, blurry photo, logo area) typically yields many
+// 1-3 character fragments and very few proper words.
+// Returns false (unusable) if fewer than 3 words of 4+ characters are found —
+// real ingredient lists always contain at least a few full words (e.g. "AQUA",
+// "WATER", "GLYCERIN") even when the scan is imperfect.
+function isOCRTextUsable(text) {
+  if (!text) return false
+  const words = text.trim().split(/\s+/).filter(w => w.length > 0)
+  const longWordCount = words.filter(w => w.replace(/[^a-z\u4e00-\u9fa5]/gi, "").length >= 4).length
+  return longWordCount >= 3
+}
+
 // Run on-device OCR via Tesseract.js.
 // INCI ingredient names are always Latin-script, so the English training data
 // covers the vast majority of cosmetic and food labels globally.
@@ -2792,7 +2818,12 @@ async function runLocalOCR(canvas) {
     const { data: { text } } = await Promise.race([recognizePromise, timeoutPromise])
     clearTimeout(timeoutId)
     if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS) return null
-    return text.trim()
+    const trimmed = text.trim()
+    if (!isOCRTextUsable(trimmed)) {
+      console.warn("Local OCR: output rejected as noise (too many fragments, not enough real words)")
+      return null
+    }
+    return trimmed
   } catch (err) {
     clearTimeout(timeoutId)
     console.warn("Local OCR (Tesseract) failed:", err)
