@@ -2644,53 +2644,96 @@ const LOCAL_OCR_TIMEOUT_MS = 90000
 // 2400 px is wide enough that even very small label text is legible.
 const LOCAL_OCR_MIN_WIDTH = 2400
 
+// Maximum total pixels in the preprocessed canvas.
+// Prevents excessive memory usage on memory-constrained devices (e.g. older iOS)
+// when a tall portrait photo is scaled up to meet LOCAL_OCR_MIN_WIDTH.
+// 10 MP (≈ 3162×3162) covers any typical label photo at full legibility.
+const LOCAL_OCR_MAX_PIXELS = 10_000_000
+
+// OCR Engine Mode: 1 = LSTM (neural net engine, best accuracy in Tesseract 4/5).
+const LOCAL_OCR_OEM_LSTM = 1
+
 // Preprocess a canvas for Tesseract.js before recognition.
 // Steps performed:
 //   1. Scale up if the image is narrower than LOCAL_OCR_MIN_WIDTH (more pixels = better OCR).
-//   2. Convert to greyscale and boost contrast via a canvas CSS filter applied
-//      during drawImage. This works in all evergreen browsers (Chrome, Firefox,
-//      Safari 15+). The filter is reset immediately after drawing.
-// Returns a new canvas with the preprocessed image; the original is unchanged.
+//      The scale is capped so the total pixel count never exceeds LOCAL_OCR_MAX_PIXELS,
+//      preventing browser crashes on memory-constrained devices with very tall photos.
+//   2. Convert to greyscale and boost contrast using manual pixel manipulation.
+//      Manual processing is used instead of ctx.filter because ctx.filter is not
+//      supported in Safari < 18 (released Sept 2024) — the iOS browser most users
+//      on iOS 17 or older will be running. ctx.filter silently does nothing on
+//      those browsers, leaving the image in colour and harming OCR accuracy.
+// Returns a new off-screen canvas; the original src canvas is unchanged.
 function preprocessCanvasForOCR(src) {
-  const scale = src.width < LOCAL_OCR_MIN_WIDTH ? LOCAL_OCR_MIN_WIDTH / src.width : 1
+  let scale = src.width < LOCAL_OCR_MIN_WIDTH ? LOCAL_OCR_MIN_WIDTH / src.width : 1
+  // Cap scale so total pixel count stays within LOCAL_OCR_MAX_PIXELS.
+  const scaledPixels = src.width * scale * src.height * scale
+  if (scaledPixels > LOCAL_OCR_MAX_PIXELS) {
+    scale = Math.sqrt(LOCAL_OCR_MAX_PIXELS / (src.width * src.height))
+  }
   const dst = document.createElement("canvas")
   dst.width  = Math.round(src.width  * scale)
   dst.height = Math.round(src.height * scale)
-  const ctx = dst.getContext("2d")
-  // grayscale(1): removes colour variation that confuses text/background separation.
-  // contrast(1.8): sharpens the boundary between dark text and light backgrounds
-  //                (and vice-versa for light-on-dark labels) without losing strokes.
-  ctx.filter = "grayscale(1) contrast(1.8)"
+  // willReadFrequently: true keeps pixel data in CPU memory for fast getImageData.
+  const ctx = dst.getContext("2d", { willReadFrequently: true })
   ctx.drawImage(src, 0, 0, dst.width, dst.height)
-  ctx.filter = "none"
+
+  // Manual luminance-weighted greyscale (ITU-R BT.601) + contrast boost.
+  // factor = 1.8 pushes pixels toward black/white; intercept keeps midtones centred.
+  const imageData = ctx.getImageData(0, 0, dst.width, dst.height)
+  const data = imageData.data
+  const factor = 1.8
+  const intercept = 128 * (1 - factor)
+  for (let i = 0; i < data.length; i += 4) {
+    const grey = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+    const contrasted = factor * grey + intercept
+    const clamped = contrasted < 0 ? 0 : contrasted > 255 ? 255 : contrasted
+    data[i] = data[i + 1] = data[i + 2] = clamped
+    // alpha unchanged
+  }
+  ctx.putImageData(imageData, 0, 0)
   return dst
 }
 
 // Run on-device OCR via Tesseract.js.
 // INCI ingredient names are always Latin-script, so the English training data
 // covers the vast majority of cosmetic and food labels globally.
+// Uses PSM 11 (SPARSE_TEXT) which tells Tesseract to find as much text as
+// possible without assuming a structured page layout — far better than the
+// default PSM 3 (AUTO) for product labels with scattered text, logos, and
+// varying font sizes spread across the image.
 // Returns the extracted text string, or null if recognition failed/produced nothing.
 async function runLocalOCR(canvas) {
   const loaded = await loadTesseract()
   if (!loaded || typeof window.Tesseract === "undefined") return null
+  let worker = null
+  let timeoutId = null
   try {
     const prepared = preprocessCanvasForOCR(canvas)
-    const recognizePromise = window.Tesseract.recognize(
-      prepared,
-      "eng",
-      // Suppress verbose per-word progress logs that would flood the console;
-      // errors are still surfaced via the outer catch.
-      { logger: () => {} },
-    )
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Local OCR timed out")), LOCAL_OCR_TIMEOUT_MS)
-    )
+    // Use the Worker API so we can set Tesseract parameters before recognition.
+    worker = await window.Tesseract.createWorker("eng", LOCAL_OCR_OEM_LSTM, { logger: () => {} })
+    await worker.setParameters({
+      // PSM 11 — Sparse text: find as much text as possible in no particular order.
+      // This is the correct mode for product labels where text is scattered across
+      // logos, nutritional tables, and graphics at varying sizes and orientations.
+      tessedit_pageseg_mode: "11",
+    })
+    const recognizePromise = worker.recognize(prepared)
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("Local OCR timed out")), LOCAL_OCR_TIMEOUT_MS)
+    })
     const { data: { text } } = await Promise.race([recognizePromise, timeoutPromise])
+    clearTimeout(timeoutId)
     if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS) return null
     return text.trim()
   } catch (err) {
+    clearTimeout(timeoutId)
     console.warn("Local OCR (Tesseract) failed:", err)
     return null
+  } finally {
+    if (worker) {
+      try { await worker.terminate() } catch (e) {}
+    }
   }
 }
 
