@@ -2611,7 +2611,7 @@ on normal page-load performance.
 // Lazy-load Tesseract.js from CDN.
 // Returns true when the library is available, false if the CDN load failed.
 async function loadTesseract() {
-  if (typeof Tesseract !== "undefined") return true
+  if (typeof window.Tesseract !== "undefined") return true
   return new Promise((resolve) => {
     const script = document.createElement("script")
     script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
@@ -2624,20 +2624,27 @@ async function loadTesseract() {
   })
 }
 
+// Minimum output quality thresholds for the Tesseract fallback.
+// Outputs below these values are treated as unreadable and discarded.
+const LOCAL_OCR_MIN_CHARS = 5       // discard near-empty strings
+const LOCAL_OCR_MIN_CONFIDENCE = 25  // Tesseract confidence score (0–100)
+
 // Run on-device OCR via Tesseract.js.
 // INCI ingredient names are always Latin-script, so the English training data
 // covers the vast majority of cosmetic and food labels globally.
 // Returns the extracted text string, or null if recognition failed/produced nothing.
 async function runLocalOCR(canvas) {
   const loaded = await loadTesseract()
-  if (!loaded || typeof Tesseract === "undefined") return null
+  if (!loaded || typeof window.Tesseract === "undefined") return null
   try {
-    const { data: { text, confidence } } = await Tesseract.recognize(
+    const { data: { text, confidence } } = await window.Tesseract.recognize(
       canvas,
       "eng",
+      // Suppress verbose per-word progress logs that would flood the console;
+      // errors are still surfaced via the outer catch.
       { logger: () => {} },
     )
-    if (!text || text.trim().length < 5 || confidence < 25) return null
+    if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS || confidence < LOCAL_OCR_MIN_CONFIDENCE) return null
     return text.trim()
   } catch (err) {
     console.warn("Local OCR (Tesseract) failed:", err)
