@@ -2739,9 +2739,10 @@ const AI_OCR_JPEG_QUALITY = 0.85
 // Timeout (ms) for the AI Vision OCR backend call.
 const AI_OCR_TIMEOUT_MS = 20000
 
-// Keeps the JPEG payload small (~200–400 KB) while preserving enough
-// resolution for OpenAI Vision to read dense label text.
-const AI_OCR_MAX_WIDTH = 1024
+// Send images at up to 2048 px wide so OpenAI Vision (detail: "high") gets
+// enough tiles to read dense small-print text on product labels.
+// A 4 K phone photo at 1024 px yields only 4 tiles; at 2048 px it gets 12 tiles.
+const AI_OCR_MAX_WIDTH = 2048
 
 function resizeCanvasForBackend(src) {
   if (src.width <= AI_OCR_MAX_WIDTH) return src
