@@ -1506,6 +1506,9 @@ body::after {
   .hero { padding: 48px 0 0; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
+  /* Feature chips: 2×2 grid on tablet/phone */
+  .chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .chip  { text-align: center; }
 }
 
 @media (max-width: 600px) {
@@ -1521,9 +1524,14 @@ body::after {
   .workflow-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .workflow-grid::before { display: none; }
   .workflow-card { padding: 14px 12px; }
+  .workflow-card p { font-size: 11px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .btn       { font-size: 13px; padding: 10px 14px; }
   .hero-sub  { font-size: 15px; }
   .cta-band  { padding: 28px 16px; }
+  /* CTA action buttons: all three in one row */
+  .cta-actions { flex-wrap: nowrap; gap: 6px; }
+  .cta-actions .btn { flex: 1 1 0; font-size: 11px; padding: 9px 5px; min-width: 0; justify-content: center; }
+  .chips     { gap: 6px; }
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
 }
 
