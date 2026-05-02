@@ -444,7 +444,7 @@ function findIngredientSection(text, preferredLang) {
   const lang = preferredLang || currentLanguage()
 
   // Heading patterns that signal the start of an ingredient section
-  const zhHeaderRe = /(?:其他微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
+  const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
   const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
 
   const zhMatch = zhHeaderRe.exec(text)
@@ -460,8 +460,11 @@ function findIngredientSection(text, preferredLang) {
   function sliceSection(start, hardEnd) {
     const slice = text.slice(start, hardEnd)
     const stopMatch = metadataStopRe.exec(slice)
-    const result = stopMatch ? slice.slice(0, stopMatch.index).trim() : slice.trim()
-    return result || text  // safety: never return empty
+    // If the stop marker fires, return everything before it.
+    // If it doesn't fire, return the whole slice.
+    // Do NOT fall back to the full original text on empty result — that would
+    // reintroduce the product metadata we just stripped.
+    return stopMatch ? slice.slice(0, stopMatch.index).trim() : slice.trim()
   }
 
   if (lang === "zh") {
@@ -469,19 +472,19 @@ function findIngredientSection(text, preferredLang) {
       const start = zhMatch.index + zhMatch[0].length
       // Stop before the Latin INCI section (same ingredients in different notation)
       const laStop = (laMatch && laMatch.index > start) ? laMatch.index : text.length
-      return sliceSection(start, laStop)
+      return sliceSection(start, laStop) || text
     }
     // No Chinese header but Latin exists — use Latin section as fallback
-    return sliceSection(laMatch.index + laMatch[0].length, text.length)
+    return sliceSection(laMatch.index + laMatch[0].length, text.length) || text
   } else {
     if (laMatch) {
       const start = laMatch.index + laMatch[0].length
       // Stop before the Chinese section (if it appears after the Latin header)
       const zhStop = (zhMatch && zhMatch.index > start) ? zhMatch.index : text.length
-      return sliceSection(start, zhStop)
+      return sliceSection(start, zhStop) || text
     }
     // No Latin header but Chinese exists — use Chinese section as fallback
-    return sliceSection(zhMatch.index + zhMatch[0].length, text.length)
+    return sliceSection(zhMatch.index + zhMatch[0].length, text.length) || text
   }
 }
 
