@@ -769,6 +769,7 @@ const uiMessages = {
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
     ocrEngineUnavailable: "OCR engine could not load (possible network or CDN issue). Please paste ingredients manually below.",
+    ocrAIFallback: "Local OCR unavailable; trying AI vision scan…",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -912,6 +913,7 @@ const uiMessages = {
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
     ocrEngineUnavailable: "Le moteur OCR n'a pas pu se charger (problème réseau ou CDN probable). Veuillez coller les ingrédients manuellement ci-dessous.",
+    ocrAIFallback: "OCR local indisponible ; analyse par vision IA en cours…",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -1055,6 +1057,7 @@ const uiMessages = {
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
     ocrEngineUnavailable: "OCR-Engine konnte nicht geladen werden (möglicherweise Netzwerk- oder CDN-Problem). Bitte fügen Sie die Zutaten manuell unten ein.",
+    ocrAIFallback: "Lokale OCR nicht verfügbar; KI-Bilderkennung wird versucht…",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1198,6 +1201,7 @@ const uiMessages = {
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
     ocrEngineUnavailable: "OCR 引擎无法加载（可能是网络或 CDN 问题）。请在下方手动粘贴成分。",
+    ocrAIFallback: "本地 OCR 不可用，正在尝试 AI 视觉识别…",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -2705,6 +2709,29 @@ so Tesseract has enough resolution for small label text.
 // ~30 px-per-char threshold where LSTM accuracy degrades noticeably.
 const OCR_MIN_WIDTH = 2000
 
+// JPEG quality for the base64 payload sent to the AI Vision backend.
+// 0.85 balances readability vs payload size; label text remains clear.
+const AI_OCR_JPEG_QUALITY = 0.85
+// Timeout (ms) for the AI Vision OCR backend call.
+const AI_OCR_TIMEOUT_MS = 20000
+
+// Keeps the JPEG payload small (~200–400 KB) while preserving enough
+// resolution for OpenAI Vision to read dense label text.
+const AI_OCR_MAX_WIDTH = 1024
+
+function resizeCanvasForBackend(src) {
+  if (src.width <= AI_OCR_MAX_WIDTH) return src
+  const scale = AI_OCR_MAX_WIDTH / src.width
+  const dst = document.createElement("canvas")
+  dst.width = AI_OCR_MAX_WIDTH
+  dst.height = Math.round(src.height * scale)
+  const ctx = dst.getContext("2d")
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+  ctx.drawImage(src, 0, 0, dst.width, dst.height)
+  return dst
+}
+
 function scaleCanvasForOCR(src) {
   if (src.width >= OCR_MIN_WIDTH) return src
   const scale = OCR_MIN_WIDTH / src.width
@@ -2987,6 +3014,39 @@ async function runOCR(canvas) {
     }
 
     const ocrEl = document.getElementById("ocrResult")
+
+    // AI Vision OCR fallback: when Tesseract returns empty text and the
+    // Supabase backend is available, send the image to OpenAI Vision.
+    // This is the primary fix for mobile devices where Tesseract language
+    // packs silently fail to download from CDN.
+    if (!bestText.trim() && supabaseClient) {
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrAIFallback")
+        ocrEl.classList.add("visible")
+      }
+      try {
+        const resized = resizeCanvasForBackend(canvas)
+        const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
+        const invokePromise = supabaseClient.functions.invoke("wykta-backend", {
+          body: {
+            action: "ocrImage",
+            imageBase64,
+            lang: selectedLang,
+            sessionId: getOrCreateSessionId(),
+          },
+        })
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("AI Vision OCR timed out")), AI_OCR_TIMEOUT_MS)
+        )
+        const { data: visionData, error: visionErr } = await Promise.race([invokePromise, timeoutPromise])
+        if (!visionErr && visionData && visionData.extractedText && visionData.extractedText.trim()) {
+          bestText = visionData.extractedText.trim()
+        }
+      } catch (visionErr) {
+        console.warn("AI Vision OCR failed:", visionErr)
+      }
+    }
+
     if (bestText.trim()) {
       if (ocrEl) {
         ocrEl.innerText = bestText

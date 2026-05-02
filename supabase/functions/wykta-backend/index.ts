@@ -54,6 +54,57 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 }
 
 // ---------------------------------------------------------------------------
+// OpenAI Vision OCR
+// Uses the same OPENAI_API_KEY as analysis. Accepts a base64-encoded JPEG and
+// returns the raw ingredients text extracted from the product label image.
+// Called by the frontend when Tesseract.js (client-side OCR) returns empty
+// results — common on mobile or when CDN-hosted language packs fail to load.
+// ---------------------------------------------------------------------------
+
+async function extractTextFromImage(imageBase64: string): Promise<string | null> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY")
+  const model = Deno.env.get("OPENAI_MODEL") || FALLBACK_OPENAI_MODEL
+  if (!apiKey) return null
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: "Extract ONLY the ingredients list text from this product label image. Output the raw ingredients text exactly as printed, preserving commas and other separators between ingredient names. Do not add any explanation, headers, or extra formatting. If there is no ingredients list visible in the image, output an empty string.",
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:image/jpeg;base64,${imageBase64}`,
+              detail: "auto",
+            },
+          },
+        ],
+      }],
+      max_tokens: 1024,
+      temperature: 0.1,
+    }),
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`OpenAI Vision API error ${response.status}: ${errText}`)
+  }
+
+  const json = await response.json()
+  return json?.choices?.[0]?.message?.content?.trim() || null
+}
+
+// ---------------------------------------------------------------------------
 // OpenAI AI analysis
 // Set the OPENAI_API_KEY Supabase secret to enable AI-powered analysis:
 //   supabase secrets set OPENAI_API_KEY=sk-...
@@ -177,7 +228,38 @@ serve(async (req) => {
   }
 
   try {
-    const { ingredients, lang, targetLanguage, sessionId } = await req.json()
+    const body = await req.json()
+    const { ingredients, lang, targetLanguage, sessionId, action, imageBase64 } = body
+
+    // ---------------------------------------------------------------------------
+    // AI Vision OCR: extract ingredient text from a product label image.
+    // Called when client-side Tesseract OCR returns empty results (e.g. on
+    // mobile where CDN-hosted language packs may silently fail to load).
+    // Not rate-limited — the subsequent analyzeIngredients call is.
+    // ---------------------------------------------------------------------------
+    if (action === "ocrImage") {
+      if (!imageBase64) {
+        return new Response(
+          JSON.stringify({ extractedText: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+        )
+      }
+      try {
+        const extractedText = await extractTextFromImage(imageBase64)
+        console.log('Vision OCR extracted text length:', extractedText?.length ?? 0)
+        return new Response(
+          JSON.stringify({ extractedText: extractedText || null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+        )
+      } catch (visionErr) {
+        console.warn('Vision OCR error:', visionErr)
+        return new Response(
+          JSON.stringify({ extractedText: null }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+        )
+      }
+    }
+
     const normalizedLanguage = normalizeLanguage(lang)
     const languagePack = languageContent[normalizedLanguage] || languageContent.en
     const aiLanguage = targetLanguage || languagePack.aiLanguage || 'English'
