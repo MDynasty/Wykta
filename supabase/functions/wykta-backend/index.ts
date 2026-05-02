@@ -7,7 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const FALLBACK_OPENAI_MODEL = "gpt-4o-mini"
+const FALLBACK_OPENAI_MODEL = "gpt-4o"
 
 // ---------------------------------------------------------------------------
 // Free-tier daily AI analysis limit
@@ -60,6 +60,23 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 // Not rate-limited — the subsequent analyzeIngredients call is.
 // ---------------------------------------------------------------------------
 
+// System prompt for the Vision OCR call.
+// Step 1 – find the ingredients section by its heading and return only those names.
+// Step 2 – if no clear heading is present, return all visible label text so the
+//          client-side parser can still attempt ingredient extraction.
+const OCR_SYSTEM_PROMPT =
+  "You are a product label OCR assistant. " +
+  "Step 1: look for the ingredients / components section on the label. " +
+  "It may be headed by keywords such as 'INGREDIENTS', 'INCI', 'Ingrédients', 'Zutaten', " +
+  "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
+  "If you find that section, output ONLY the ingredient names exactly as printed, " +
+  "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) — " +
+  "no headers, no explanations, no extra formatting. " +
+  "Step 2: if you cannot identify a clearly labelled ingredients section " +
+  "(e.g. because the heading is cropped, absent, or ambiguous), output ALL the text " +
+  "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
+  "Never output an empty response — always return whatever text is legible on the label."
+
 async function extractTextFromImage(imageBase64: string): Promise<string | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")
   const model = Deno.env.get("OPENAI_MODEL") || FALLBACK_OPENAI_MODEL
@@ -78,7 +95,7 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
         content: [
           {
             type: "text",
-            text: "Find and extract the complete list of ingredients from this product label image. The ingredients section may be headed by 'INGREDIENTS', '成分', '配料', '原料', 'Ingrédients', 'Zutaten', or a similar label in any language. Output ONLY the ingredient names exactly as printed on the label, preserving all original separators (commas, slashes, semicolons, etc.). Do not add any explanation, headers, or extra formatting. If no ingredients section is visible in the image, output an empty string.",
+            text: OCR_SYSTEM_PROMPT,
           },
           {
             type: "image_url",
@@ -96,11 +113,16 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
 
   if (!response.ok) {
     const errText = await response.text()
+    console.error(`OpenAI Vision API error ${response.status}:`, errText)
     throw new Error(`OpenAI Vision API error ${response.status}: ${errText}`)
   }
 
   const json = await response.json()
-  return json?.choices?.[0]?.message?.content?.trim() || null
+  const text = json?.choices?.[0]?.message?.content?.trim() || null
+  if (!text) {
+    console.warn("Vision OCR: model returned empty content; finish_reason:", json?.choices?.[0]?.finish_reason)
+  }
+  return text
 }
 
 // ---------------------------------------------------------------------------

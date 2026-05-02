@@ -2601,7 +2601,7 @@ async function captureNative() {
 // 0.85 balances readability vs payload size; label text remains clear.
 const AI_OCR_JPEG_QUALITY = 0.85
 // Timeout (ms) for the AI Vision OCR backend call.
-const AI_OCR_TIMEOUT_MS = 20000
+const AI_OCR_TIMEOUT_MS = 30000
 
 // Send images at up to 2048 px wide so OpenAI Vision (detail: "high") gets
 // enough tiles to read dense small-print text on product labels.
