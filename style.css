@@ -92,6 +92,14 @@ body::after {
   opacity: 0;
 }
 
+/* iOS Safari bug workaround: clip-path prevents the file picker from opening
+   when the input is triggered via a wrapping <label>. Remove clip and margin
+   so iOS correctly forwards the label tap to the file input. */
+input[type="file"].visually-hidden {
+  clip-path: none;
+  margin: 0;
+}
+
 /* === NAVIGATION === */
 .nav {
   position: sticky;
@@ -1004,75 +1012,6 @@ body::after {
   color: var(--brand);
 }
 
-.cta-band {
-  border: 1px solid rgba(52, 211, 153, 0.30);
-  border-radius: var(--radius-lg);
-  padding: 52px 36px;
-  background:
-    radial-gradient(ellipse 70% 80% at 10% 50%, rgba(52, 211, 153, 0.13), transparent),
-    radial-gradient(ellipse 60% 70% at 90% 20%, rgba(56, 189, 248, 0.11), transparent),
-    radial-gradient(ellipse 50% 50% at 50% 100%, rgba(74, 222, 128, 0.09), transparent),
-    linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(56, 189, 248, 0.06) 50%, rgba(15, 23, 42, 0.7) 100%);
-  text-align: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 48px rgba(52, 211, 153, 0.10), inset 0 1px 0 rgba(255,255,255,0.08);
-}
-
-.cta-band::before {
-  content: '';
-  position: absolute;
-  top: -60px;
-  right: -60px;
-  width: 280px;
-  height: 280px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.15), transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
-  animation: blobPulse 8s ease-in-out infinite alternate;
-}
-
-.cta-band::after {
-  content: '';
-  position: absolute;
-  bottom: -50px;
-  left: -50px;
-  width: 240px;
-  height: 240px;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.12), transparent 70%);
-  pointer-events: none;
-  border-radius: 50%;
-  animation: blobPulse 10s ease-in-out infinite alternate-reverse;
-}
-
-.cta-band h3 {
-  font-size: clamp(24px, 4vw, 36px);
-  line-height: 1.18;
-  margin-bottom: 12px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  position: relative;
-  z-index: 1;
-}
-
-.cta-band p {
-  color: var(--text-2);
-  max-width: 740px;
-  margin: 0 auto;
-  position: relative;
-  z-index: 1;
-}
-
-.cta-actions {
-  margin-top: 24px;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 12px;
-  position: relative;
-  z-index: 1;
-}
-
 /* === SUB PAGES (checkout/contact/community) === */
 .sub-main {
   max-width: 980px;
@@ -1412,10 +1351,6 @@ body::after {
   .plan-card { padding: 20px; }
   .btn       { font-size: 13px; padding: 10px 14px; }
   .hero-sub  { font-size: 15px; }
-  .cta-band  { padding: 28px 16px; }
-  /* CTA action buttons: all three in one row */
-  .cta-actions { flex-wrap: nowrap; gap: 6px; }
-  .cta-actions .btn { flex: 1 1 0; font-size: 11px; padding: 9px 5px; min-width: 0; justify-content: center; }
   .chips     { gap: 6px; }
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
 }
