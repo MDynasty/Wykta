@@ -164,8 +164,6 @@ const ingredientAliases = {
   "duftstoff": "fragrance"
 }
 
-// 135 keeps high-contrast label text readable while reducing colorful package noise.
-const OCR_BINARIZATION_THRESHOLD = 135
 // Keep slightly lower than fetchJsonWithTimeout default (7000ms) so this fallback cannot block overall analysis.
 const WIKIDATA_TIMEOUT_MS = 6500
 // Maximum character length for a single ingredient token in the raw-fallback extraction path.
@@ -2622,10 +2620,11 @@ function resizeCanvasForBackend(src) {
 }
 
 // Sends the canvas image to the Supabase backend for OpenAI Vision OCR.
-// Returns the extracted text string, or null if unavailable or failed.
-// Used both in the normal OCR fallback path and in the error-recovery path.
+// Returns { text: string, unavailable: false } on success,
+//         { text: null, unavailable: false } when the model found no text, or
+//         { text: null, unavailable: true }  when the OCR engine is not configured.
 async function callAIVisionOCR(canvas) {
-  if (!supabaseClient) return null
+  if (!supabaseClient) return { text: null, unavailable: true }
   try {
     const resized = resizeCanvasForBackend(canvas)
     const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
@@ -2641,13 +2640,20 @@ async function callAIVisionOCR(canvas) {
       setTimeout(() => reject(new Error("AI Vision OCR timed out")), AI_OCR_TIMEOUT_MS)
     )
     const { data: visionData, error: visionErr } = await Promise.race([invokePromise, timeoutPromise])
-    if (!visionErr && visionData && visionData.extractedText && visionData.extractedText.trim()) {
-      return visionData.extractedText.trim()
+    if (visionErr) {
+      console.error("AI Vision OCR backend error:", visionErr)
+      return { text: null, unavailable: false }
     }
-    return null
+    if (visionData && visionData.ocrUnavailable) {
+      return { text: null, unavailable: true }
+    }
+    const text = visionData && visionData.extractedText && visionData.extractedText.trim()
+      ? visionData.extractedText.trim()
+      : null
+    return { text, unavailable: false }
   } catch (visionErr) {
     console.warn("AI Vision OCR failed:", visionErr)
-    return null
+    return { text: null, unavailable: false }
   }
 }
 
@@ -2664,7 +2670,7 @@ async function runOCR(canvas) {
     ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
-  const visionText = await callAIVisionOCR(canvas)
+  const { text: visionText, unavailable } = await callAIVisionOCR(canvas)
   if (visionText) {
     if (ocrEl) {
       ocrEl.innerText = ""
@@ -2674,7 +2680,7 @@ async function runOCR(canvas) {
     await analyzeIngredients()
   } else {
     if (ocrEl) {
-      ocrEl.innerText = t("ocrFailed")
+      ocrEl.innerText = t(unavailable ? "ocrEngineUnavailable" : "ocrFailed")
       ocrEl.classList.add("visible")
     }
   }

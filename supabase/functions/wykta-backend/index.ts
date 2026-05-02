@@ -77,10 +77,14 @@ const OCR_SYSTEM_PROMPT =
   "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
   "Never output an empty response — always return whatever text is legible on the label."
 
+// Sentinel returned when the OpenAI API key is not configured in Supabase secrets.
+// Distinguishes "engine not available" from "model returned no text".
+const OCR_NO_API_KEY = "__NO_API_KEY__"
+
 async function extractTextFromImage(imageBase64: string): Promise<string | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")
   const model = Deno.env.get("OPENAI_MODEL") || FALLBACK_OPENAI_MODEL
-  if (!apiKey) return null
+  if (!apiKey) return OCR_NO_API_KEY
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -265,6 +269,15 @@ serve(async (req) => {
       }
       try {
         const extractedText = await extractTextFromImage(imageBase64)
+        // Sentinel means OPENAI_API_KEY is not configured — tell the client so it
+        // can show "engine unavailable" rather than blaming image quality.
+        if (extractedText === OCR_NO_API_KEY) {
+          console.warn('Vision OCR: OPENAI_API_KEY not set; OCR unavailable')
+          return new Response(
+            JSON.stringify({ extractedText: null, ocrUnavailable: true }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+          )
+        }
         console.log('Vision OCR extracted text length:', extractedText?.length ?? 0)
         return new Response(
           JSON.stringify({ extractedText: extractedText || null }),
