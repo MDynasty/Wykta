@@ -97,23 +97,25 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
     },
     body: JSON.stringify({
       model,
-      messages: [{
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: OCR_SYSTEM_PROMPT,
-          },
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:image/jpeg;base64,${imageBase64}`,
-              detail: "high",
+      messages: [
+        {
+          role: "system",
+          content: OCR_SYSTEM_PROMPT,
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: "high",
+              },
             },
-          },
-        ],
-      }],
-      max_tokens: 2048,
+          ],
+        },
+      ],
+      max_tokens: 4096,
       temperature: 0.1,
     }),
   })
@@ -148,13 +150,15 @@ async function extractTextFromImageGemini(imageBase64: string): Promise<string |
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: OCR_SYSTEM_PROMPT }],
+        },
         contents: [{
           parts: [
-            { text: OCR_SYSTEM_PROMPT },
             { inline_data: { mime_type: "image/jpeg", data: imageBase64 } },
           ],
         }],
-        generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.1 },
       }),
     },
   )

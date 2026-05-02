@@ -722,6 +722,7 @@ const uiMessages = {
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
     ocrEngineUnavailable: "OCR engine could not load (possible network or CDN issue). Please paste ingredients manually below.",
+    ocrLocalProcessing: "Backend unavailable — running on-device OCR (may be slower)…",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -865,6 +866,7 @@ const uiMessages = {
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
     ocrEngineUnavailable: "Le moteur OCR n'a pas pu se charger (problème réseau ou CDN probable). Veuillez coller les ingrédients manuellement ci-dessous.",
+    ocrLocalProcessing: "Service indisponible — OCR local en cours (peut être plus lent)…",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -1008,6 +1010,7 @@ const uiMessages = {
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
     ocrEngineUnavailable: "OCR-Engine konnte nicht geladen werden (möglicherweise Netzwerk- oder CDN-Problem). Bitte fügen Sie die Zutaten manuell unten ein.",
+    ocrLocalProcessing: "Backend nicht verfügbar — lokale Texterkennung läuft (kann langsamer sein)…",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1151,6 +1154,7 @@ const uiMessages = {
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
     ocrEngineUnavailable: "OCR 引擎无法加载（可能是网络或 CDN 问题）。请在下方手动粘贴成分。",
+    ocrLocalProcessing: "后端不可用，正在使用本地 OCR（速度可能较慢）……",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -2597,6 +2601,50 @@ async function captureNative() {
 
 
 
+/* -----------------------
+CLIENT-SIDE OCR FALLBACK (Tesseract.js)
+Used when the AI backend is unavailable or returns no text.
+Tesseract.js is lazy-loaded from CDN on first use so it has zero impact
+on normal page-load performance.
+----------------------- */
+
+// Lazy-load Tesseract.js from CDN.
+// Returns true when the library is available, false if the CDN load failed.
+async function loadTesseract() {
+  if (typeof Tesseract !== "undefined") return true
+  return new Promise((resolve) => {
+    const script = document.createElement("script")
+    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+    script.onload = () => resolve(true)
+    script.onerror = () => {
+      console.warn("Tesseract.js CDN load failed")
+      resolve(false)
+    }
+    document.head.appendChild(script)
+  })
+}
+
+// Run on-device OCR via Tesseract.js.
+// INCI ingredient names are always Latin-script, so the English training data
+// covers the vast majority of cosmetic and food labels globally.
+// Returns the extracted text string, or null if recognition failed/produced nothing.
+async function runLocalOCR(canvas) {
+  const loaded = await loadTesseract()
+  if (!loaded || typeof Tesseract === "undefined") return null
+  try {
+    const { data: { text, confidence } } = await Tesseract.recognize(
+      canvas,
+      "eng",
+      { logger: () => {} },
+    )
+    if (!text || text.trim().length < 5 || confidence < 25) return null
+    return text.trim()
+  } catch (err) {
+    console.warn("Local OCR (Tesseract) failed:", err)
+    return null
+  }
+}
+
 // JPEG quality for the base64 payload sent to the AI Vision backend.
 // 0.85 balances readability vs payload size; label text remains clear.
 const AI_OCR_JPEG_QUALITY = 0.85
@@ -2661,28 +2709,42 @@ async function callAIVisionOCR(canvas) {
 
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
-  if (!supabaseClient) {
+
+  // Try the AI backend first (highest accuracy, multi-language).
+  if (supabaseClient) {
     if (ocrEl) {
-      ocrEl.innerText = t("ocrEngineUnavailable")
+      ocrEl.innerText = t("ocrProcessing")
       ocrEl.classList.add("visible")
     }
-    return
+    const { text: visionText } = await callAIVisionOCR(canvas)
+    if (visionText) {
+      if (ocrEl) {
+        ocrEl.innerText = ""
+        ocrEl.classList.remove("visible")
+      }
+      document.getElementById("ingredients").value = visionText
+      await analyzeIngredients()
+      return
+    }
+    // Backend unavailable or returned no text — fall through to on-device OCR.
   }
+
+  // On-device Tesseract.js OCR fallback — works without any API keys.
   if (ocrEl) {
-    ocrEl.innerText = t("ocrProcessing")
+    ocrEl.innerText = t("ocrLocalProcessing")
     ocrEl.classList.add("visible")
   }
-  const { text: visionText, unavailable } = await callAIVisionOCR(canvas)
-  if (visionText) {
+  const localText = await runLocalOCR(canvas)
+  if (localText) {
     if (ocrEl) {
       ocrEl.innerText = ""
       ocrEl.classList.remove("visible")
     }
-    document.getElementById("ingredients").value = visionText
+    document.getElementById("ingredients").value = localText
     await analyzeIngredients()
   } else {
     if (ocrEl) {
-      ocrEl.innerText = t(unavailable ? "ocrEngineUnavailable" : "ocrFailed")
+      ocrEl.innerText = t("ocrFailed")
       ocrEl.classList.add("visible")
     }
   }
