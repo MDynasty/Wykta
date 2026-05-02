@@ -18,9 +18,20 @@
     <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
 </div><span>Wykta</span></a>
-      <div class="nav-right">
+      <div class="nav-right" id="navRight">
         <a class="nav-link" href="checkout.html">Checkout</a>
         <a class="nav-link" href="community.html">Community</a>
+      </div>
+      <div class="nav-end">
+        <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="zh">中文</option>
+        </select>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" aria-controls="navRight" aria-expanded="false" onclick="toggleNav()">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </nav>
@@ -74,6 +85,7 @@
     </section>
   </main>
 
+  <script src="config.js"></script>
   <script>
     const SUPABASE_URL = typeof supabaseUrl !== 'undefined' ? supabaseUrl : '';
     const SUPABASE_ANON = typeof supabaseKey !== 'undefined' ? supabaseKey : '';
@@ -84,6 +96,21 @@
     document.documentElement.lang = lang;
     localStorage.setItem('wykta_lang', lang);
 
+    function toggleNav() {
+      const navRight = document.getElementById('navRight');
+      const btn = document.getElementById('navHamburger');
+      if (!navRight || !btn) return;
+      const isOpen = navRight.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+    function setLang(val) {
+      localStorage.setItem('wykta_lang', val);
+      const u = new URL(window.location.href);
+      u.searchParams.set('lang', val);
+      window.location.href = u.toString();
+    }
+    document.querySelector('.nav-end .lang-select').value = lang;
+
     function withLang(href) {
       if (!href || href.startsWith('#')) return href;
       if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
@@ -91,7 +118,7 @@
         const url = new URL(href, window.location.href);
         if (url.origin !== window.location.origin) return href;
         const page = url.pathname.split('/').pop() || 'index.html';
-        const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html']);
+        const localPages = new Set(typeof APP_LOCAL_PAGES !== 'undefined' ? APP_LOCAL_PAGES : ['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
         if (!localPages.has(page)) return href;
         url.searchParams.set('lang', lang);
         return `${url.pathname}${url.search}${url.hash}`;
@@ -234,13 +261,13 @@
       const body = encodeURIComponent(
         `Company: ${payload.company}\nEmail: ${payload.email}\nTeam: ${payload.team_size}\nNeeds: ${payload.needs}`
       );
-      window.location.href = `mailto:sales@wykta.app?subject=${subject}&body=${body}`;
-
       status.textContent = c.success;
       status.classList.add('visible');
       btn.disabled = false; label.style.display = ''; spinner.style.display = 'none';
+      setTimeout(() => {
+        window.location.href = `mailto:sales@wykta.app?subject=${subject}&body=${body}`;
+      }, 1500);
     });
   </script>
-  <script src="config.js"></script>
 </body>
 </html>

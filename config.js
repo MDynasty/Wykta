@@ -10,6 +10,9 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 // and set the matching SITE_URL secret in your Supabase project.
 const siteUrl = "https://wykta.pages.dev"
 
+// Pages that support the ?lang= URL parameter for language propagation.
+const APP_LOCAL_PAGES = ["index.html","checkout.html","contact-sales.html","community.html","payment-success.html","account.html","privacy.html","terms.html"];
+
 // Analytics (optional — leave empty to disable)
 // gaId:            Google Analytics 4 Measurement ID, e.g. "G-XXXXXXXXXX"
 // plausibleDomain: your site domain registered with plausible.io, e.g. "wykta.app"

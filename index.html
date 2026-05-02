@@ -144,19 +144,20 @@
       <span>Wykta</span>
     </a>
     <div class="nav-right" id="navRight">
-      <a class="nav-link" href="#workflow" data-i18n="workflowNav">Workflow</a>
       <a class="nav-link" href="community.html" data-i18n="communityNav">Community</a>
       <a class="nav-link" href="account.html" data-i18n="accountNav">My Account</a>
+    </div>
+    <div class="nav-end">
       <select id="language" class="lang-select" aria-label="Language">
         <option value="en">English</option>
         <option value="fr">Français</option>
         <option value="de">Deutsch</option>
         <option value="zh">中文</option>
       </select>
+      <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" aria-controls="navRight" aria-expanded="false" onclick="toggleNav()">
+        <span></span><span></span><span></span>
+      </button>
     </div>
-    <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" aria-controls="navRight" aria-expanded="false" onclick="toggleNav()">
-      <span></span><span></span><span></span>
-    </button>
   </div>
 </nav>
 
@@ -178,50 +179,6 @@
       <span class="chip" data-i18n="chipUpgrade">Allergen &amp; Safety Alerts</span>
     </div>
     <a class="btn btn-primary hero-cta" href="#ingredients" data-i18n="heroCta">Try it now</a>
-  </section>
-
-  <section class="proof-strip">
-    <div class="proof-item">
-      <span class="proof-label" data-i18n="proofData">Data Sources</span>
-      <strong data-i18n="proofDataValue">2.8M+ ingredients indexed</strong>
-    </div>
-    <div class="proof-item">
-      <span class="proof-label" data-i18n="proofTrust">Trust Signal</span>
-      <strong data-i18n="proofTrustValue">Community-maintained open databases</strong>
-    </div>
-    <div class="proof-item">
-      <span class="proof-label" data-i18n="proofSpeed">Speed</span>
-      <strong data-i18n="proofSpeedValue">Live lookup + instant warnings</strong>
-    </div>
-  </section>
-
-  <section class="workflow-section" id="workflow">
-    <div class="value-header">
-      <h2 data-i18n="workflowTitle">How Wykta works</h2>
-      <p data-i18n="workflowSubtitle">From scan to safety decision in seconds — completely free to start.</p>
-    </div>
-    <div class="workflow-grid">
-      <article class="workflow-card">
-        <span class="workflow-step">01</span>
-        <h3 data-i18n="workflowStep1Title">Start</h3>
-        <p data-i18n="workflowStep1Body">Paste ingredients or open the camera to begin your check immediately.</p>
-      </article>
-      <article class="workflow-card">
-        <span class="workflow-step">02</span>
-        <h3 data-i18n="workflowStep2Title">Scan &amp; analyze</h3>
-        <p data-i18n="workflowStep2Body">Open camera, point at any food or skincare label. AI reads it in seconds.</p>
-      </article>
-      <article class="workflow-card">
-        <span class="workflow-step">03</span>
-        <h3 data-i18n="workflowStep3Title">Get insights</h3>
-        <p data-i18n="workflowStep3Body">See ingredient safety ratings, allergen flags, and interaction warnings instantly.</p>
-      </article>
-      <article class="workflow-card">
-        <span class="workflow-step">04</span>
-        <h3 data-i18n="workflowStep4Title">Stay informed</h3>
-        <p data-i18n="workflowStep4Body">Upgrade to Pro for unlimited scans, PDF exports, and join our community.</p>
-      </article>
-    </div>
   </section>
 
   <!-- ── ANALYSIS LAYOUT (input + results side by side on wide desktop) ── -->
@@ -277,7 +234,7 @@
             </svg>
           </span>
           <span data-i18n="uploadImageButton">Upload Image</span>
-          <input type="file" accept="image/*" id="imageUploadInput" style="display:none;" onchange="handleImageUpload(this)">
+          <input type="file" accept="image/*" id="imageUploadInput" class="visually-hidden" onchange="handleImageUpload(this)">
         </label>
         <button class="btn btn-secondary" id="scanBarcodeBtn" onclick="scanBarcode()">
           <span class="btn-icon btn-icon-svg" aria-hidden="true">

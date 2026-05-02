@@ -26,9 +26,20 @@
     <path d="M7.5 13L10 15.5L15 10.5" stroke="url(#leafGrad)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
 </div><span>Wykta</span></a>
-      <div class="nav-right">
-        <a class="nav-link" href="index.html#workflow" id="navWorkflow">How It Works</a>
+      <div class="nav-right" id="navRight">
+        <a class="nav-link" href="index.html" id="navHome">Home</a>
         <a class="nav-link" href="community.html" id="navCommunity">Community</a>
+      </div>
+      <div class="nav-end">
+        <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="zh">中文</option>
+        </select>
+        <button class="nav-hamburger" id="navHamburger" aria-label="Toggle navigation menu" aria-controls="navRight" aria-expanded="false" onclick="toggleNav()">
+          <span></span><span></span><span></span>
+        </button>
       </div>
     </div>
   </nav>
@@ -121,6 +132,21 @@
     document.documentElement.lang = uiLang;
     localStorage.setItem('wykta_lang', uiLang);
 
+    function toggleNav() {
+      const navRight = document.getElementById('navRight');
+      const btn = document.getElementById('navHamburger');
+      if (!navRight || !btn) return;
+      const isOpen = navRight.classList.toggle('open');
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+    function setLang(val) {
+      localStorage.setItem('wykta_lang', val);
+      const u = new URL(window.location.href);
+      u.searchParams.set('lang', val);
+      window.location.href = u.toString();
+    }
+    document.querySelector('.nav-end .lang-select').value = uiLang;
+
     function withLang(href) {
       if (!href || href.startsWith('#')) return href;
       if (/^(mailto:|tel:|javascript:)/i.test(href)) return href;
@@ -128,7 +154,7 @@
         const url = new URL(href, window.location.href);
         if (url.origin !== window.location.origin) return href;
         const page = url.pathname.split('/').pop() || 'index.html';
-        const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html']);
+        const localPages = new Set(typeof APP_LOCAL_PAGES !== 'undefined' ? APP_LOCAL_PAGES : ['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
         if (!localPages.has(page)) return href;
         url.searchParams.set('lang', uiLang);
         return `${url.pathname}${url.search}${url.hash}`;
@@ -152,6 +178,7 @@
         otpLabel: 'Verify', otpBtnLoading: 'Verifying…',
         resendLabel: 'Resend code',
         otpSuccess: 'Email verified.',
+        otpResent: 'Verification code resent.',
         otpError: 'Invalid or expired code. Please try again.',
         resultTitle: 'Your subscription',
         plan: 'Plan', status: 'Status', since: 'Active since',
@@ -162,7 +189,7 @@
         notFoundTitle: 'No subscription found',
         notFoundBody: 'No active subscription was found for this email. Check the address or get started with Pro.',
         notFoundCheckout: 'Get Pro', notFoundHome: 'Back to Home',
-        navWorkflow: 'How It Works', navCommunity: 'Community',
+        navHome: 'Home', navCommunity: 'Community',
         errRequired: 'Please enter a valid email address.',
         errServer: 'Could not check subscription. Please try again.',
       },
@@ -176,6 +203,7 @@
         otpLabel: 'Vérifier', otpBtnLoading: 'Vérification…',
         resendLabel: 'Renvoyer le code',
         otpSuccess: 'E-mail vérifié.',
+        otpResent: 'Code de vérification renvoyé.',
         otpError: 'Code invalide ou expiré. Veuillez réessayer.',
         resultTitle: 'Votre abonnement',
         plan: 'Offre', status: 'Statut', since: 'Actif depuis',
@@ -186,7 +214,7 @@
         notFoundTitle: 'Aucun abonnement trouvé',
         notFoundBody: 'Aucun abonnement actif trouvé pour cet email. Vérifiez l\'adresse ou passez Pro.',
         notFoundCheckout: 'Passer Pro', notFoundHome: 'Accueil',
-        navWorkflow: 'Fonctionnement', navCommunity: 'Communauté',
+        navHome: 'Accueil', navCommunity: 'Communauté',
         errRequired: 'Veuillez saisir une adresse email valide.',
         errServer: 'Impossible de vérifier l\'abonnement. Veuillez réessayer.',
       },
@@ -200,6 +228,7 @@
         otpLabel: 'Bestätigen', otpBtnLoading: 'Wird geprüft…',
         resendLabel: 'Code erneut senden',
         otpSuccess: 'E-Mail bestätigt.',
+        otpResent: 'Bestätigungscode erneut gesendet.',
         otpError: 'Ungültiger oder abgelaufener Code. Bitte erneut versuchen.',
         resultTitle: 'Ihr Abonnement',
         plan: 'Tarif', status: 'Status', since: 'Aktiv seit',
@@ -210,7 +239,7 @@
         notFoundTitle: 'Kein Abonnement gefunden',
         notFoundBody: 'Für diese E-Mail-Adresse wurde kein aktives Abonnement gefunden. Adresse prüfen oder Pro holen.',
         notFoundCheckout: 'Pro holen', notFoundHome: 'Zur Startseite',
-        navWorkflow: 'Funktionsweise', navCommunity: 'Community',
+        navHome: 'Startseite', navCommunity: 'Community',
         errRequired: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
         errServer: 'Abonnement konnte nicht geprüft werden. Bitte erneut versuchen.',
       },
@@ -224,6 +253,7 @@
         otpLabel: '验证', otpBtnLoading: '验证中…',
         resendLabel: '重新发送验证码',
         otpSuccess: '邮箱已验证。',
+        otpResent: '验证码已重新发送。',
         otpError: '验证码无效或已过期，请重试。',
         resultTitle: '您的订阅',
         plan: '套餐', status: '状态', since: '激活时间',
@@ -234,7 +264,7 @@
         notFoundTitle: '未找到订阅',
         notFoundBody: '此邮箱未找到有效订阅。请检查邮箱地址，或开始使用专业版。',
         notFoundCheckout: '获取专业版', notFoundHome: '返回首页',
-        navWorkflow: '使用方法', navCommunity: '社区',
+        navHome: '首页', navCommunity: '社区',
         errRequired: '请输入有效的电子邮件地址。',
         errServer: '无法查询订阅，请重试。',
       },
@@ -261,7 +291,7 @@
     document.getElementById('notFoundBody').textContent  = c.notFoundBody;
     document.getElementById('notFoundCheckout').textContent = c.notFoundCheckout;
     document.getElementById('notFoundHome').textContent  = c.notFoundHome;
-    document.getElementById('navWorkflow').textContent   = c.navWorkflow;
+    document.getElementById('navHome').textContent       = c.navHome;
     document.getElementById('navCommunity').textContent  = c.navCommunity;
 
     let lastEmail = '';
@@ -453,7 +483,7 @@
         body: JSON.stringify({ email: lastEmail, purpose: 'verify', lang: uiLang }),
       }).catch(err => console.warn('resend-otp failed:', err));
       const status = document.getElementById('otpStatus');
-      status.textContent = c.otpSuccess;
+      status.textContent = c.otpResent;
       status.style.display = '';
     }
 
