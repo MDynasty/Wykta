@@ -234,7 +234,7 @@
             </svg>
           </span>
           <span data-i18n="uploadImageButton">Upload Image</span>
-          <input type="file" accept="image/*" id="imageUploadInput" style="position:absolute;width:0;height:0;overflow:hidden;opacity:0;" onchange="handleImageUpload(this)">
+          <input type="file" accept="image/*" id="imageUploadInput" class="visually-hidden" onchange="handleImageUpload(this)">
         </label>
         <button class="btn btn-secondary" id="scanBarcodeBtn" onclick="scanBarcode()">
           <span class="btn-icon btn-icon-svg" aria-hidden="true">
