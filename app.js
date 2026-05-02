@@ -456,8 +456,22 @@ function findIngredientSection(text, preferredLang) {
   const zhMatch = zhHeaderRe.exec(text)
   const laMatch = laHeaderRe.exec(text)
 
-  // No known ingredient heading → return full text (user may have pasted ingredients directly)
-  if (!zhMatch && !laMatch) return text
+  // No known ingredient heading found.
+  // Check whether the text looks like a nutrition facts / nutritional information panel.
+  // Key signals: "Nutrition Facts" / "Valeur nutritive" / "Nährwerte" heading OR
+  // a combination of ≥2 distinct macronutrient/micronutrient names plus a percentage
+  // value (characteristic of a nutrition table row). When detected without an ingredient
+  // header, return "" so the caller can show a targeted "aim at INGREDIENTS section" message.
+  // Otherwise (no nutrition-facts signals) the text is probably a user-pasted ingredient
+  // list without a header — return it as-is so it can be parsed normally.
+  if (!zhMatch && !laMatch) {
+    const hasNutrifactsHeader = /\bNutrition\s+Facts\b|\bValeur\s+nutritive\b|\bNährwert(?:angaben|information|e)?\b|\b营养成分(?:表)?\b/i.test(text)
+    const macroMatches = text.match(/\b(?:Calories?|Protein|Protéines?|Fat|Fett|Graisses?|Carbohydrate|Glucides?|Sodium|Natrium|Cholesterol|Cholestérol|Sugars?|Sucres?|Fibre|Fiber|Potassium|Eiweiß|Kohlenhydrate|Calcium|Iron|Fer|Vitamine?\s*[A-Za-z0-9]+)\b/gi)
+    const distinctMacros = new Set((macroMatches || []).map(m => m.toLowerCase().replace(/\s+/g, " "))).size
+    const hasPercentageValue = /\b\d+\s*%/.test(text)
+    if (hasNutrifactsHeader || (distinctMacros >= 2 && hasPercentageValue)) return ""
+    return text
+  }
 
   // After identifying the start of an ingredient section, stop before product-metadata keywords
   // (batch number, net weight, usage instructions, etc.) that typically follow ingredients.
@@ -847,7 +861,8 @@ const uiMessages = {
     pwaInstallBody: "Install the app for quick access — no App Store needed.",
     pwaInstallBtn: "Add to Home Screen",
     pwaInstallDismiss: "Not now",
-    stopCameraButton: "Stop Camera"
+    stopCameraButton: "Stop Camera",
+    noIngredientSection: "No ingredient list detected in this scan. Aim the camera at the section labelled \"INGREDIENTS:\" on the label and try again."
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -991,7 +1006,8 @@ const uiMessages = {
     pwaInstallBody: "Installez l'app pour un accès rapide — sans App Store.",
     pwaInstallBtn: "Ajouter à l'écran d'accueil",
     pwaInstallDismiss: "Plus tard",
-    stopCameraButton: "Arrêter la caméra"
+    stopCameraButton: "Arrêter la caméra",
+    noIngredientSection: "Aucune liste d'ingrédients détectée dans ce scan. Pointez la caméra vers la section « INGRÉDIENTS : » de l'étiquette et réessayez."
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -1135,7 +1151,8 @@ const uiMessages = {
     pwaInstallBody: "App installieren für schnellen Zugriff — kein App Store nötig.",
     pwaInstallBtn: "Zum Home-Screen hinzufügen",
     pwaInstallDismiss: "Nicht jetzt",
-    stopCameraButton: "Kamera schließen"
+    stopCameraButton: "Kamera schließen",
+    noIngredientSection: "Keine Zutatenliste in diesem Scan erkannt. Bitte Kamera auf den Abschnitt „ZUTATEN:" des Etiketts richten und erneut versuchen."
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -1279,7 +1296,8 @@ const uiMessages = {
     pwaInstallBody: "安装应用快速访问 — 无需应用商店。",
     pwaInstallBtn: "添加到主屏幕",
     pwaInstallDismiss: "暂不",
-    stopCameraButton: "关闭相机"
+    stopCameraButton: "关闭相机",
+    noIngredientSection: "此次扫描未找到成分列表。请将相机对准标签上标有"成分："的部分后重试。"
   }
 }
 
@@ -2165,6 +2183,15 @@ async function analyzeIngredients(){
     // Strip product metadata and choose the language-appropriate ingredient section
     // (e.g. Chinese 成分: section vs Latin INCI section) before any further parsing.
     const ingredientText = findIngredientSection(text, currentLanguage())
+
+    // If the scan contained content but no ingredient section was found — most likely
+    // because the user aimed the camera at a nutrition facts panel rather than the
+    // ingredient list — show a targeted message and abort analysis.
+    if (text.trim().length > 0 && !ingredientText.trim()) {
+      displayAIAnalysis(t("noIngredientSection", analysisLanguage), [], { lang: analysisLanguage })
+      return
+    }
+
     let ingredients = extractIngredients(ingredientText)
     analysisLanguage = detectInputLanguage(ingredientText, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
