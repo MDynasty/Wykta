@@ -722,6 +722,7 @@ const uiMessages = {
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
     ocrEngineUnavailable: "OCR engine could not load (possible network or CDN issue). Please paste ingredients manually below.",
+    ocrLocalProcessing: "Backend unavailable — running on-device OCR (may be slower)…",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -865,6 +866,7 @@ const uiMessages = {
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
     ocrEngineUnavailable: "Le moteur OCR n'a pas pu se charger (problème réseau ou CDN probable). Veuillez coller les ingrédients manuellement ci-dessous.",
+    ocrLocalProcessing: "Service indisponible — OCR local en cours (peut être plus lent)…",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -1008,6 +1010,7 @@ const uiMessages = {
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
     ocrEngineUnavailable: "OCR-Engine konnte nicht geladen werden (möglicherweise Netzwerk- oder CDN-Problem). Bitte fügen Sie die Zutaten manuell unten ein.",
+    ocrLocalProcessing: "Backend nicht verfügbar — lokale Texterkennung läuft (kann langsamer sein)…",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1151,6 +1154,7 @@ const uiMessages = {
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
     ocrEngineUnavailable: "OCR 引擎无法加载（可能是网络或 CDN 问题）。请在下方手动粘贴成分。",
+    ocrLocalProcessing: "后端不可用，正在使用本地 OCR（速度可能较慢）……",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -2597,6 +2601,142 @@ async function captureNative() {
 
 
 
+/* -----------------------
+CLIENT-SIDE OCR FALLBACK (Tesseract.js)
+Used when the AI backend is unavailable or returns no text.
+Tesseract.js is lazy-loaded from CDN on first use so it has zero impact
+on normal page-load performance.
+----------------------- */
+
+// Lazy-load Tesseract.js from CDN.
+// Returns true when the library is available, false if the CDN load failed.
+async function loadTesseract() {
+  if (typeof window.Tesseract !== "undefined") return true
+  return new Promise((resolve) => {
+    const script = document.createElement("script")
+    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+    script.onload = () => resolve(true)
+    script.onerror = () => {
+      console.warn("Tesseract.js CDN load failed")
+      resolve(false)
+    }
+    document.head.appendChild(script)
+  })
+}
+
+// Minimum output quality thresholds for the Tesseract fallback.
+// Only the minimum character count is enforced — a non-empty string indicates
+// that Tesseract found something on the label. Confidence is NOT checked because
+// on real-world product label photos (blur, angles, small print) the mean
+// document confidence routinely sits at 5–25 % even when the extracted
+// ingredient words are largely correct. The ingredient parser in
+// analyzeIngredients() already handles imperfect / partial text, so pre-filtering
+// by confidence would silently discard usable results.
+const LOCAL_OCR_MIN_CHARS = 5
+
+// Maximum milliseconds to wait for the local OCR engine.
+// The eng.traineddata file is ~10 MB; 90 s covers a slow 1 Mbit/s connection.
+const LOCAL_OCR_TIMEOUT_MS = 90000
+
+// Minimum width (px) for the preprocessed canvas fed to Tesseract.
+// Upscaling small photos dramatically improves recognition — Tesseract needs
+// at least ~30 px of cap-height to reliably identify characters.
+// 2400 px is wide enough that even very small label text is legible.
+const LOCAL_OCR_MIN_WIDTH = 2400
+
+// Maximum total pixels in the preprocessed canvas.
+// Prevents excessive memory usage on memory-constrained devices (e.g. older iOS)
+// when a tall portrait photo is scaled up to meet LOCAL_OCR_MIN_WIDTH.
+// 10 MP (≈ 3162×3162) covers any typical label photo at full legibility.
+const LOCAL_OCR_MAX_PIXELS = 10_000_000
+
+// OCR Engine Mode: 1 = LSTM (neural net engine, best accuracy in Tesseract 4/5).
+const LOCAL_OCR_OEM_LSTM = 1
+
+// Preprocess a canvas for Tesseract.js before recognition.
+// Steps performed:
+//   1. Scale up if the image is narrower than LOCAL_OCR_MIN_WIDTH (more pixels = better OCR).
+//      The scale is capped so the total pixel count never exceeds LOCAL_OCR_MAX_PIXELS,
+//      preventing browser crashes on memory-constrained devices with very tall photos.
+//   2. Convert to greyscale and boost contrast using manual pixel manipulation.
+//      Manual processing is used instead of ctx.filter because ctx.filter is not
+//      supported in Safari < 18 (released Sept 2024) — the iOS browser most users
+//      on iOS 17 or older will be running. ctx.filter silently does nothing on
+//      those browsers, leaving the image in colour and harming OCR accuracy.
+// Returns a new off-screen canvas; the original src canvas is unchanged.
+function preprocessCanvasForOCR(src) {
+  let scale = src.width < LOCAL_OCR_MIN_WIDTH ? LOCAL_OCR_MIN_WIDTH / src.width : 1
+  // Cap scale so total pixel count stays within LOCAL_OCR_MAX_PIXELS.
+  const scaledPixels = src.width * scale * src.height * scale
+  if (scaledPixels > LOCAL_OCR_MAX_PIXELS) {
+    scale = Math.sqrt(LOCAL_OCR_MAX_PIXELS / (src.width * src.height))
+  }
+  const dst = document.createElement("canvas")
+  dst.width  = Math.round(src.width  * scale)
+  dst.height = Math.round(src.height * scale)
+  // willReadFrequently: true keeps pixel data in CPU memory for fast getImageData.
+  const ctx = dst.getContext("2d", { willReadFrequently: true })
+  ctx.drawImage(src, 0, 0, dst.width, dst.height)
+
+  // Manual luminance-weighted greyscale (ITU-R BT.601) + contrast boost.
+  // factor = 1.8 pushes pixels toward black/white; intercept keeps midtones centred.
+  const imageData = ctx.getImageData(0, 0, dst.width, dst.height)
+  const data = imageData.data
+  const factor = 1.8
+  const intercept = 128 * (1 - factor)
+  for (let i = 0; i < data.length; i += 4) {
+    const grey = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+    const contrasted = factor * grey + intercept
+    const clamped = contrasted < 0 ? 0 : contrasted > 255 ? 255 : contrasted
+    data[i] = data[i + 1] = data[i + 2] = clamped
+    // alpha unchanged
+  }
+  ctx.putImageData(imageData, 0, 0)
+  return dst
+}
+
+// Run on-device OCR via Tesseract.js.
+// INCI ingredient names are always Latin-script, so the English training data
+// covers the vast majority of cosmetic and food labels globally.
+// Uses PSM 11 (SPARSE_TEXT) which tells Tesseract to find as much text as
+// possible without assuming a structured page layout — far better than the
+// default PSM 3 (AUTO) for product labels with scattered text, logos, and
+// varying font sizes spread across the image.
+// Returns the extracted text string, or null if recognition failed/produced nothing.
+async function runLocalOCR(canvas) {
+  const loaded = await loadTesseract()
+  if (!loaded || typeof window.Tesseract === "undefined") return null
+  let worker = null
+  let timeoutId = null
+  try {
+    const prepared = preprocessCanvasForOCR(canvas)
+    // Use the Worker API so we can set Tesseract parameters before recognition.
+    worker = await window.Tesseract.createWorker("eng", LOCAL_OCR_OEM_LSTM, { logger: () => {} })
+    await worker.setParameters({
+      // PSM 11 — Sparse text: find as much text as possible in no particular order.
+      // This is the correct mode for product labels where text is scattered across
+      // logos, nutritional tables, and graphics at varying sizes and orientations.
+      tessedit_pageseg_mode: "11",
+    })
+    const recognizePromise = worker.recognize(prepared)
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error("Local OCR timed out")), LOCAL_OCR_TIMEOUT_MS)
+    })
+    const { data: { text } } = await Promise.race([recognizePromise, timeoutPromise])
+    clearTimeout(timeoutId)
+    if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS) return null
+    return text.trim()
+  } catch (err) {
+    clearTimeout(timeoutId)
+    console.warn("Local OCR (Tesseract) failed:", err)
+    return null
+  } finally {
+    if (worker) {
+      try { await worker.terminate() } catch (e) {}
+    }
+  }
+}
+
 // JPEG quality for the base64 payload sent to the AI Vision backend.
 // 0.85 balances readability vs payload size; label text remains clear.
 const AI_OCR_JPEG_QUALITY = 0.85
@@ -2661,28 +2801,42 @@ async function callAIVisionOCR(canvas) {
 
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
-  if (!supabaseClient) {
+
+  // Try the AI backend first (highest accuracy, multi-language).
+  if (supabaseClient) {
     if (ocrEl) {
-      ocrEl.innerText = t("ocrEngineUnavailable")
+      ocrEl.innerText = t("ocrProcessing")
       ocrEl.classList.add("visible")
     }
-    return
+    const { text: visionText } = await callAIVisionOCR(canvas)
+    if (visionText) {
+      if (ocrEl) {
+        ocrEl.innerText = ""
+        ocrEl.classList.remove("visible")
+      }
+      document.getElementById("ingredients").value = visionText
+      await analyzeIngredients()
+      return
+    }
+    // Backend unavailable or returned no text — fall through to on-device OCR.
   }
+
+  // On-device Tesseract.js OCR fallback — works without any API keys.
   if (ocrEl) {
-    ocrEl.innerText = t("ocrProcessing")
+    ocrEl.innerText = t("ocrLocalProcessing")
     ocrEl.classList.add("visible")
   }
-  const { text: visionText, unavailable } = await callAIVisionOCR(canvas)
-  if (visionText) {
+  const localText = await runLocalOCR(canvas)
+  if (localText) {
     if (ocrEl) {
       ocrEl.innerText = ""
       ocrEl.classList.remove("visible")
     }
-    document.getElementById("ingredients").value = visionText
+    document.getElementById("ingredients").value = localText
     await analyzeIngredients()
   } else {
     if (ocrEl) {
-      ocrEl.innerText = t(unavailable ? "ocrEngineUnavailable" : "ocrFailed")
+      ocrEl.innerText = t("ocrFailed")
       ocrEl.classList.add("visible")
     }
   }
