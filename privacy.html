@@ -254,6 +254,7 @@
     </div>
   </main>
 
+  <script src="config.js"></script>
   <script>
     function toggleNav() {
       const navRight = document.getElementById('navRight');
@@ -283,7 +284,7 @@
     document.documentElement.lang = initialLang;
     document.querySelector('.nav-end .lang-select').value = initialLang;
     if (initialLang !== 'en') {
-      const legalPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
+      const legalPages = new Set(typeof APP_LOCAL_PAGES !== 'undefined' ? APP_LOCAL_PAGES : ['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
       document.querySelectorAll('a[href]').forEach((el) => {
         try {
           const url = new URL(el.getAttribute('href'), window.location.href);

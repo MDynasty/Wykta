@@ -149,7 +149,7 @@
         const url = new URL(href, window.location.href);
         if (url.origin !== window.location.origin) return href;
         const page = url.pathname.split('/').pop() || 'index.html';
-        const localPages = new Set(['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
+        const localPages = new Set(typeof APP_LOCAL_PAGES !== 'undefined' ? APP_LOCAL_PAGES : ['index.html', 'checkout.html', 'contact-sales.html', 'community.html', 'payment-success.html', 'account.html', 'privacy.html', 'terms.html']);
         if (!localPages.has(page)) return href;
         url.searchParams.set('lang', lang);
         return `${url.pathname}${url.search}${url.hash}`;
