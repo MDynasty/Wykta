@@ -2937,224 +2937,29 @@ async function callAIVisionOCR(canvas) {
 }
 
 async function runOCR(canvas) {
-  // iOS Safari fast-path: Tesseract.js is unreliable on this platform (canvas OOM,
-  // CDN language-pack failures).  Skip it entirely and use AI Vision OCR directly.
-  if (isIOSSafari()) {
-    const ocrEl = document.getElementById("ocrResult")
-    if (!supabaseClient) {
-      // Supabase is not configured — AI Vision is unavailable.  Tell the user
-      // immediately rather than running Tesseract for 30 seconds and failing.
-      console.warn("OCR: iOS Safari fast-path — Supabase not connected, AI Vision unavailable")
-      if (ocrEl) {
-        ocrEl.innerText = t("ocrEngineUnavailable")
-        ocrEl.classList.add("visible")
-      }
-      return
-    }
+  const ocrEl = document.getElementById("ocrResult")
+  if (!supabaseClient) {
     if (ocrEl) {
-      ocrEl.innerText = t("ocrAIFallback")
+      ocrEl.innerText = t("ocrEngineUnavailable")
       ocrEl.classList.add("visible")
-    }
-    const visionText = await callAIVisionOCR(canvas)
-    if (visionText) {
-      if (ocrEl) {
-        ocrEl.innerText = visionText
-        ocrEl.classList.add("visible")
-      }
-      document.getElementById("ingredients").value = visionText
-      await analyzeIngredients()
-    } else {
-      if (ocrEl) {
-        ocrEl.innerText = t("ocrFailed")
-        ocrEl.classList.add("visible")
-      }
     }
     return
   }
-
-  // Track whether the failure was engine-load (network/CDN) vs empty recognition (image quality).
-  // Only the first type should show the "network issue" message; the second shows quality tips.
-  // This is declared at function scope so both the inner logic and the outer catch can read it.
-  let workerLoadFailed = false
-  try {
-    const scaled = scaleCanvasForOCR(canvas)
-    const meanLum = imageMeanLuminance(scaled)
-    // 90 is ~35% of the 0-255 luminance scale; below this the image is too
-    // dark for standard grayscale/threshold OCR without brightness correction.
-    const isDark = meanLum < 90
-
-    // Pre-compute reusable intermediate canvases to avoid redundant pixel ops.
-    const gammaBoosted = makeGammaCorrectedCanvas(scaled, 2.2)
-    const contrastStretched = makeContrastStretchedCanvas(scaled)
-
-    // Each candidate is a { psm, makeCanvas } pair.
-    // PSM 6 (assume single uniform block of text) is tried first — ingredient lists
-    // are dense paragraphs and PSM 6 outperforms PSM 11 (sparse/scattered text) on them.
-    // PSM 11 is kept as a fallback for multi-column or unusually laid-out labels.
-    // PSM 3 (fully automatic) is the last resort.
-    const standardCandidates = [
-      { psm: "6",  makeCanvas: () => makeGrayscaleCanvas(scaled) },
-      { psm: "6",  makeCanvas: () => makeThresholdCanvas(scaled, false) },
-      { psm: "11", makeCanvas: () => makeGrayscaleCanvas(scaled) },
-      { psm: "11", makeCanvas: () => makeThresholdCanvas(scaled, false) },
-      { psm: "11", makeCanvas: () => makeThresholdCanvas(scaled, true) },
-      { psm: "6",  makeCanvas: () => contrastStretched },
-      { psm: "6",  makeCanvas: () => makeSharpenedCanvas(scaled) },
-      { psm: "3",  makeCanvas: () => makeGrayscaleCanvas(scaled) },
-    ]
-    const darkCandidates = [
-      { psm: "6",  makeCanvas: () => gammaBoosted },
-      { psm: "6",  makeCanvas: () => makeThresholdCanvas(gammaBoosted, false) },
-      { psm: "11", makeCanvas: () => gammaBoosted },
-      { psm: "11", makeCanvas: () => makeThresholdCanvas(gammaBoosted, false) },
-      { psm: "11", makeCanvas: () => makeThresholdCanvas(gammaBoosted, true) },
-      { psm: "6",  makeCanvas: () => contrastStretched },
-      { psm: "11", makeCanvas: () => makeThresholdCanvas(contrastStretched, false) },
-    ]
-    const candidates = isDark
-      ? [...darkCandidates, ...standardCandidates]
-      : [...standardCandidates, ...darkCandidates]
-
-    const selectedLang = currentLanguage()
-    const primaryOcrLang = ocrPrimaryLanguagePack[selectedLang] || ocrLanguageCodes[selectedLang] || "eng"
-    const backupOcrLang = ocrBackupLanguagePack[selectedLang] || "eng+chi_sim+fra+deu"
-
-    // Score each OCR result combining three signals:
-    //   • ingredient matches × 100 — dictionary hits are the strongest signal
-    //   • Tesseract confidence (0–100) — high confidence beats low even with equal matches
-    //   • text length / 50 — longer extracted text is a weak tiebreaker for non-dict languages
-    // Example: 3 matches + 85 confidence + 300 chars → 385; 0 matches + 70 + 500 → 80.
-    // The ×100 weight ensures a single dictionary hit always beats a zero-match result.
-    function ocrScore(text, ingredientCount, confidence) {
-      return ingredientCount * 100 + (confidence || 0) + Math.floor(text.length / 50)
-    }
-
-    let primaryWorker
-    try {
-      primaryWorker = await getTesseractWorker(primaryOcrLang)
-    } catch (workerErr) {
-      console.warn("OCR: primary worker failed, trying eng fallback", workerErr)
-      try {
-        primaryWorker = await getTesseractWorker("eng")
-      } catch (engErr) {
-        console.warn("OCR: eng worker also failed — Tesseract engine unavailable", engErr)
-        workerLoadFailed = true
-      }
-    }
-
-    let bestText = ""
-    let bestScore = -1
-
-    if (primaryWorker) {
-      let activePsm = null
-      for (const { psm, makeCanvas } of candidates) {
-        try {
-          // Only call setParameters when PSM changes to avoid redundant async round-trips.
-          if (psm !== activePsm) {
-            await primaryWorker.setParameters({ tessedit_pageseg_mode: psm })
-            activePsm = psm
-          }
-          const { data } = await primaryWorker.recognize(makeCanvas())
-          const text = data.text || ""
-          const ingredientCount = extractIngredients(text).length
-          const score = ocrScore(text, ingredientCount, data.confidence)
-          if (score > bestScore) {
-            bestScore = score
-            bestText = text
-          }
-          // Early exit: 3+ ingredient matches AND confidence ≥ 70 means we have a solid result.
-          if (ingredientCount >= 3 && (data.confidence || 0) >= 70) break
-        } catch (recErr) {
-          console.warn("OCR: recognize failed for candidate, skipping", recErr)
-        }
-      }
-    }
-
-    // Backup language pack: try when ingredient matches are low.
-    const bestIngredientCount = extractIngredients(bestText).length
-    if (bestIngredientCount < 2 && backupOcrLang !== primaryOcrLang && !workerLoadFailed) {
-      let backupWorker
-      try {
-        backupWorker = await getTesseractWorker(backupOcrLang)
-      } catch (workerErr) {
-        console.warn("OCR: backup worker failed", workerErr)
-      }
-      if (backupWorker) {
-        let activePsm = null
-        for (const { psm, makeCanvas } of candidates) {
-          try {
-            if (psm !== activePsm) {
-              await backupWorker.setParameters({ tessedit_pageseg_mode: psm })
-              activePsm = psm
-            }
-            const { data } = await backupWorker.recognize(makeCanvas())
-            const text = data.text || ""
-            const ingredientCount = extractIngredients(text).length
-            const score = ocrScore(text, ingredientCount, data.confidence)
-            if (score > bestScore) {
-              bestScore = score
-              bestText = text
-            }
-            if (ingredientCount >= 2 && (data.confidence || 0) >= 70) break
-          } catch (recErr) {
-            console.warn("OCR: backup recognize failed for candidate, skipping", recErr)
-          }
-        }
-      }
-    }
-
-    const ocrEl = document.getElementById("ocrResult")
-
-    // AI Vision OCR fallback: trigger when Tesseract returns no text OR when
-    // it produces OCR noise with no recognisable ingredients — both indicate
-    // the local engine failed (common on mobile where CDN language packs may
-    // silently refuse to load, or where canvas memory limits produce blank output).
-    if ((!bestText.trim() || extractIngredients(bestText).length === 0) && supabaseClient) {
-      if (ocrEl) {
-        ocrEl.innerText = t("ocrAIFallback")
-        ocrEl.classList.add("visible")
-      }
-      const visionText = await callAIVisionOCR(canvas)
-      if (visionText) bestText = visionText
-    }
-
-    if (bestText.trim()) {
-      if (ocrEl) {
-        ocrEl.innerText = bestText
-        ocrEl.classList.add("visible")
-      }
-      document.getElementById("ingredients").value = bestText
-      await analyzeIngredients()
-    } else {
-      if (ocrEl) {
-        ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
-        ocrEl.classList.add("visible")
-      }
-    }
-  } catch (err) {
-    console.error("OCR error:", err)
-    // If the Tesseract pipeline crashed (e.g. canvas memory exhaustion on
-    // mobile), still attempt AI Vision before showing the error message.
-    if (supabaseClient) {
-      const ocrEl = document.getElementById("ocrResult")
-      if (ocrEl) {
-        ocrEl.innerText = t("ocrAIFallback")
-        ocrEl.classList.add("visible")
-      }
-      const visionText = await callAIVisionOCR(canvas)
-      if (visionText) {
-        if (ocrEl) {
-          ocrEl.innerText = visionText
-          ocrEl.classList.add("visible")
-        }
-        document.getElementById("ingredients").value = visionText
-        await analyzeIngredients()
-        return
-      }
-    }
-    const ocrEl = document.getElementById("ocrResult")
+  if (ocrEl) {
+    ocrEl.innerText = t("ocrProcessing")
+    ocrEl.classList.add("visible")
+  }
+  const visionText = await callAIVisionOCR(canvas)
+  if (visionText) {
     if (ocrEl) {
-      ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
+      ocrEl.innerText = ""
+      ocrEl.classList.remove("visible")
+    }
+    document.getElementById("ingredients").value = visionText
+    await analyzeIngredients()
+  } else {
+    if (ocrEl) {
+      ocrEl.innerText = t("ocrFailed")
       ocrEl.classList.add("visible")
     }
   }
