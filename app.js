@@ -402,7 +402,7 @@ function getKnownIngredientMatchers(){
 function normalizeIngredientName(value = ""){
   if(!value) return ""
 
-  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|成分|配料)[:：\s-]*/i, "")
+  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
   const normalized = sanitizeIngredientTerm(withoutHeader)
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
@@ -427,12 +427,90 @@ function extractVocabularyMatches(text = ""){
 
 function isLikelyIngredientToken(token = ""){
   const normalized = sanitizeIngredientTerm(token)
-  if(!normalized || normalized.length < 2) return false
+  if(!normalized || normalized.length < 3) return false
   if(/^\d+([.,]\d+)?$/.test(normalized)) return false
   if(normalized.split(" ").length > 8) return false
+  // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
+  // (e.g. "LS", "OP", "OI", "XRF") — reject them.
+  if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
+  // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
+  // scan-code or batch-number fragments — reject them.
+  if(normalized.length <= 4 && /\d/.test(normalized) && /[a-z]/i.test(normalized)) return false
   return true
 }
 
+
+// Extracts just the ingredient section from full product label text (e.g. OCR of an entire label).
+// Strips product metadata (name, manufacturer, batch number, etc.) that precedes the ingredient list,
+// and — when both a Chinese (成分:) and a Latin INCI (INGREDIENTS:) section are present —
+// selects only the section that matches the user's preferred language to avoid double-counting.
+// Returns the original text unchanged when no known ingredient-section heading is found.
+function findIngredientSection(text, preferredLang) {
+  if (!text || !text.trim()) return text
+  const lang = preferredLang || currentLanguage()
+
+  // Heading patterns that signal the start of an ingredient section
+  const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
+  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
+
+  const zhMatch = zhHeaderRe.exec(text)
+  const laMatch = laHeaderRe.exec(text)
+
+  // No known ingredient heading found.
+  // Check whether the text looks like a nutrition facts / nutritional information panel.
+  // Key signals: "Nutrition Facts" / "Valeur nutritive" / "Nährwerte" heading OR
+  // a combination of ≥2 distinct macronutrient/micronutrient names plus a percentage
+  // value (characteristic of a nutrition table row). When detected without an ingredient
+  // header, return "" so the caller can show a targeted "aim at INGREDIENTS section" message.
+  // Otherwise (no nutrition-facts signals) the text is probably a user-pasted ingredient
+  // list without a header — return it as-is so it can be parsed normally.
+  if (!zhMatch && !laMatch) {
+    const hasNutrifactsHeader = /\bNutrition\s+Facts\b|\bValeur\s+nutritive\b|\bNährwert(?:angaben|information|e)?\b|\b营养成分(?:表)?\b/i.test(text)
+    const macroMatches = text.match(/\b(?:Calories?|Protein|Protéines?|Fat|Fett|Graisses?|Carbohydrate|Glucides?|Sodium|Natrium|Cholesterol|Cholestérol|Sugars?|Sucres?|Fibre|Fiber|Potassium|Eiweiß|Kohlenhydrate|Calcium|Iron|Fer|Vitamine?\s*[A-Za-z0-9]+)\b/gi)
+    const distinctMacros = new Set((macroMatches || []).map(m => m.toLowerCase().replace(/\s+/g, " "))).size
+    const hasPercentageValue = /\b\d+\s*%/.test(text)
+    if (hasNutrifactsHeader || (distinctMacros >= 2 && hasPercentageValue)) return ""
+    return text
+  }
+
+  // After identifying the start of an ingredient section, stop before product-metadata keywords
+  // (batch number, net weight, usage instructions, etc.) that typically follow ingredients.
+  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]/i
+
+  function sliceSection(start, hardEnd) {
+    const rawSlice = text.slice(start, hardEnd).trim()
+    if (!rawSlice) return ""
+    const stopMatch = metadataStopRe.exec(rawSlice)
+    if (stopMatch) {
+      // Return everything before the metadata marker.
+      // If the marker fires right at the start (no ingredient content), fall back
+      // to the raw slice to avoid an empty result — this is still better than
+      // returning the full label text with pre-header metadata.
+      return rawSlice.slice(0, stopMatch.index).trim() || rawSlice
+    }
+    return rawSlice
+  }
+
+  if (lang === "zh") {
+    if (zhMatch) {
+      const start = zhMatch.index + zhMatch[0].length
+      // Stop before the Latin INCI section (same ingredients in different notation)
+      const laStop = (laMatch && laMatch.index > start) ? laMatch.index : text.length
+      return sliceSection(start, laStop) || ""
+    }
+    // No Chinese header but Latin exists — use Latin section as fallback
+    return sliceSection(laMatch.index + laMatch[0].length, text.length) || ""
+  } else {
+    if (laMatch) {
+      const start = laMatch.index + laMatch[0].length
+      // Stop before the Chinese section (if it appears after the Latin header)
+      const zhStop = (zhMatch && zhMatch.index > start) ? zhMatch.index : text.length
+      return sliceSection(start, zhStop) || ""
+    }
+    // No Latin header but Chinese exists — use Chinese section as fallback
+    return sliceSection(zhMatch.index + zhMatch[0].length, text.length) || ""
+  }
+}
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
@@ -783,7 +861,8 @@ const uiMessages = {
     pwaInstallBody: "Install the app for quick access — no App Store needed.",
     pwaInstallBtn: "Add to Home Screen",
     pwaInstallDismiss: "Not now",
-    stopCameraButton: "Stop Camera"
+    stopCameraButton: "Stop Camera",
+    noIngredientSection: "No ingredient list detected in this scan. Aim the camera at the section labeled \"INGREDIENTS:\" on the label and try again."
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -927,7 +1006,8 @@ const uiMessages = {
     pwaInstallBody: "Installez l'app pour un accès rapide — sans App Store.",
     pwaInstallBtn: "Ajouter à l'écran d'accueil",
     pwaInstallDismiss: "Plus tard",
-    stopCameraButton: "Arrêter la caméra"
+    stopCameraButton: "Arrêter la caméra",
+    noIngredientSection: "Aucune liste d'ingrédients détectée dans ce scan. Pointez la caméra vers la section « INGRÉDIENTS : » de l'étiquette et réessayez."
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -1071,7 +1151,8 @@ const uiMessages = {
     pwaInstallBody: "App installieren für schnellen Zugriff — kein App Store nötig.",
     pwaInstallBtn: "Zum Home-Screen hinzufügen",
     pwaInstallDismiss: "Nicht jetzt",
-    stopCameraButton: "Kamera schließen"
+    stopCameraButton: "Kamera schließen",
+    noIngredientSection: "Keine Zutatenliste in diesem Scan erkannt. Bitte Kamera auf den Abschnitt „ZUTATEN:" des Etiketts richten und erneut versuchen."
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -1215,7 +1296,8 @@ const uiMessages = {
     pwaInstallBody: "安装应用快速访问 — 无需应用商店。",
     pwaInstallBtn: "添加到主屏幕",
     pwaInstallDismiss: "暂不",
-    stopCameraButton: "关闭相机"
+    stopCameraButton: "关闭相机",
+    noIngredientSection: "此次扫描未找到成分列表。请将相机对准标签上标有"成分："的部分后重试。"
   }
 }
 
@@ -1299,6 +1381,16 @@ function detectInputLanguage(text = "", ingredients = []){
       if(sample.includes(alias)) scores[lang] += LANGUAGE_SCORE_WEIGHTS.aliasMatch
     })
   })
+
+  // UI-language affinity: INCI ingredient names are always Latin-script even on Chinese products,
+  // so a Chinese label with a full INCI list can score higher for English than for Chinese.
+  // When the user's UI is already set to a specific language and the text contains characters
+  // from that language's script, add a small affinity bonus to prevent INCI names from
+  // overriding the obvious product language context.
+  const uiLang = currentLanguage()
+  if (uiLang === "zh" && chineseCharCount > 0) scores.zh += 10
+  else if (uiLang === "fr" && scores.fr > 0) scores.fr += 5
+  else if (uiLang === "de" && scores.de > 0) scores.de += 5
 
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1])
   const [bestLang, bestScore] = ranked[0]
@@ -2088,15 +2180,27 @@ async function analyzeIngredients(){
   let analysisLanguage = currentLanguage()
   try {
     const text = document.getElementById("ingredients").value
-    let ingredients = extractIngredients(text)
-    analysisLanguage = detectInputLanguage(text, ingredients)
+    // Strip product metadata and choose the language-appropriate ingredient section
+    // (e.g. Chinese 成分: section vs Latin INCI section) before any further parsing.
+    const ingredientText = findIngredientSection(text, currentLanguage())
+
+    // If the scan contained content but no ingredient section was found — most likely
+    // because the user aimed the camera at a nutrition facts panel rather than the
+    // ingredient list — show a targeted message and abort analysis.
+    if (text.trim().length > 0 && !ingredientText.trim()) {
+      displayAIAnalysis(t("noIngredientSection", analysisLanguage), [], { lang: analysisLanguage })
+      return
+    }
+
+    let ingredients = extractIngredients(ingredientText)
+    analysisLanguage = detectInputLanguage(ingredientText, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
     // Build a map from normalized ingredient key → original user-typed token.
     // This preserves the input language and display name (e.g. "芦荟" instead of "aloe vera")
     // for per-ingredient language detection and display in the results.
     const displayNameMap = {}
-    const scriptBoundaryNormalized = (text || "")
+    const scriptBoundaryNormalized = (ingredientText || "")
       .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
       .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
     const rawTokens = scriptBoundaryNormalized
@@ -2114,13 +2218,20 @@ async function analyzeIngredients(){
     // If vocabulary extraction found nothing but there is raw text (e.g. OCR output that
     // doesn't match our ingredient dictionary), split by common delimiters and use those
     // raw tokens so the AI can still analyze whatever was captured or pasted.
-    if (ingredients.length === 0 && text.trim().length > 0) {
-      const rawFallback = text
+    if (ingredients.length === 0 && ingredientText.trim().length > 0) {
+      const rawFallback = ingredientText
         .replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, "$1, $2")
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
         .map(s => s.trim())
-        .filter(s => s.length >= 2 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH)
+        .filter(s => {
+          const l = s.length
+          if (l < 3 || l > MAX_INGREDIENT_TOKEN_LENGTH) return false
+          // Same OCR-noise filters as isLikelyIngredientToken
+          if (l <= 4 && !/[aeiouy]/i.test(s)) return false
+          if (l <= 4 && /\d/.test(s) && /[a-z]/i.test(s)) return false
+          return true
+        })
       if (rawFallback.length > 0) {
         ingredients = rawFallback
         for (const raw of ingredients) {
@@ -2695,6 +2806,19 @@ function preprocessCanvasForOCR(src) {
   return dst
 }
 
+// Checks whether Tesseract output looks like real label text vs. OCR noise.
+// A garbage scan (curled label, blurry photo, logo area) typically yields many
+// 1-3 character fragments and very few proper words.
+// Returns false (unusable) if fewer than 3 words of 4+ characters are found —
+// real ingredient lists always contain at least a few full words (e.g. "AQUA",
+// "WATER", "GLYCERIN") even when the scan is imperfect.
+function isOCRTextUsable(text) {
+  if (!text) return false
+  const words = text.trim().split(/\s+/).filter(w => w.length > 0)
+  const longWordCount = words.filter(w => w.replace(/[^a-z\u4e00-\u9fa5]/gi, "").length >= 4).length
+  return longWordCount >= 3
+}
+
 // Run on-device OCR via Tesseract.js.
 // INCI ingredient names are always Latin-script, so the English training data
 // covers the vast majority of cosmetic and food labels globally.
@@ -2725,7 +2849,12 @@ async function runLocalOCR(canvas) {
     const { data: { text } } = await Promise.race([recognizePromise, timeoutPromise])
     clearTimeout(timeoutId)
     if (!text || text.trim().length < LOCAL_OCR_MIN_CHARS) return null
-    return text.trim()
+    const trimmed = text.trim()
+    if (!isOCRTextUsable(trimmed)) {
+      console.warn("Local OCR: output rejected as noise (too many fragments, not enough real words)")
+      return null
+    }
+    return trimmed
   } catch (err) {
     clearTimeout(timeoutId)
     console.warn("Local OCR (Tesseract) failed:", err)
