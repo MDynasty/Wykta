@@ -57,8 +57,7 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 // OpenAI Vision OCR
 // Uses the same OPENAI_API_KEY as analysis. Accepts a base64-encoded JPEG and
 // returns the raw ingredients text extracted from the product label image.
-// Called by the frontend when Tesseract.js (client-side OCR) returns empty
-// results — common on mobile or when CDN-hosted language packs fail to load.
+// Not rate-limited — the subsequent analyzeIngredients call is.
 // ---------------------------------------------------------------------------
 
 async function extractTextFromImage(imageBase64: string): Promise<string | null> {
@@ -233,8 +232,6 @@ serve(async (req) => {
 
     // ---------------------------------------------------------------------------
     // AI Vision OCR: extract ingredient text from a product label image.
-    // Called when client-side Tesseract OCR returns empty results (e.g. on
-    // mobile where CDN-hosted language packs may silently fail to load).
     // Not rate-limited — the subsequent analyzeIngredients call is.
     // ---------------------------------------------------------------------------
     if (action === "ocrImage") {
