@@ -67,6 +67,24 @@ function getCapacitorCamera() {
     : null
 }
 
+/* -----------------------
+iOS SAFARI DETECTION
+Returns true when running in Safari on an iOS device (iPhone/iPad/iPod)
+but NOT inside a Capacitor native WebView.  Tesseract.js is unreliable on
+this platform — canvas memory limits cause silent blank-pixel returns and
+CDN language-pack downloads regularly stall — so we skip it entirely and
+go straight to AI Vision OCR instead.
+----------------------- */
+function isIOSSafari() {
+  if (isNativeApp()) return false
+  const ua = navigator.userAgent
+  const isIOS = /iP(hone|ad|od)/i.test(ua)
+  // Chrome on iOS identifies as "CriOS", Firefox as "FxiOS", Edge as "EdgiOS".
+  // Real Safari omits those tokens but does include "Safari".
+  const isSafariBrowser = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)
+  return isIOS && isSafariBrowser
+}
+
 function trackEvent(category, action, label) {
   try {
     if (window.gtag) window.gtag('event', action, { event_category: category, event_label: label })
@@ -2701,13 +2719,19 @@ most recognised ingredient tokens. Strategy order:
   5. Gamma-boosted grayscale — brightens underexposed / dark images
   6. Gamma-boosted + adaptive threshold — combines brightness fix with binarisation
   7. Sharpened grayscale — enhances blurry text edges
-Images are scaled up to at least OCR_MIN_WIDTH pixels wide before recognition
-so Tesseract has enough resolution for small label text.
+Images are scaled to OCR_SCALE_WIDTH pixels wide before recognition:
+upscaling small images gives Tesseract enough resolution for fine label text;
+downscaling large images (e.g. 4 K phone photos) prevents canvas memory
+exhaustion in mobile browsers — iOS Safari silently returns blank canvas data
+when memory limits are exceeded, causing Tesseract to produce empty output.
 ----------------------- */
 // Tesseract performs best with label text rendered at roughly 40–50 px per
-// character. Upscaling to 2000 px reliably brings small print above the
-// ~30 px-per-char threshold where LSTM accuracy degrades noticeably.
-const OCR_MIN_WIDTH = 2000
+// character. 2000 px reliably brings small print above the ~30 px-per-char
+// threshold where LSTM accuracy degrades noticeably.
+// Images larger than this are downscaled to the same target: a 4 K phone
+// photo (3024×4032) creates ~48 MB per canvas × 15 preprocessing copies
+// ≈ 720 MB — well beyond iOS Safari's per-process canvas memory budget.
+const OCR_SCALE_WIDTH = 2000
 
 // JPEG quality for the base64 payload sent to the AI Vision backend.
 // 0.85 balances readability vs payload size; label text remains clear.
@@ -2733,10 +2757,11 @@ function resizeCanvasForBackend(src) {
 }
 
 function scaleCanvasForOCR(src) {
-  if (src.width >= OCR_MIN_WIDTH) return src
-  const scale = OCR_MIN_WIDTH / src.width
+  if (src.width === OCR_SCALE_WIDTH) return src
+  // Upscale small images; downscale large ones to prevent mobile memory exhaustion.
+  const scale = OCR_SCALE_WIDTH / src.width
   const scaled = document.createElement("canvas")
-  scaled.width = Math.round(src.width * scale)
+  scaled.width = OCR_SCALE_WIDTH
   scaled.height = Math.round(src.height * scale)
   const ctx = scaled.getContext("2d")
   ctx.imageSmoothingEnabled = true
@@ -2881,7 +2906,72 @@ function imageMeanLuminance(src) {
   return sum / (d.length / 4)
 }
 
+// Sends the canvas image to the Supabase backend for OpenAI Vision OCR.
+// Returns the extracted text string, or null if unavailable or failed.
+// Used both in the normal OCR fallback path and in the error-recovery path.
+async function callAIVisionOCR(canvas) {
+  if (!supabaseClient) return null
+  try {
+    const resized = resizeCanvasForBackend(canvas)
+    const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
+    const invokePromise = supabaseClient.functions.invoke("wykta-backend", {
+      body: {
+        action: "ocrImage",
+        imageBase64,
+        lang: currentLanguage(),
+        sessionId: getOrCreateSessionId(),
+      },
+    })
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("AI Vision OCR timed out")), AI_OCR_TIMEOUT_MS)
+    )
+    const { data: visionData, error: visionErr } = await Promise.race([invokePromise, timeoutPromise])
+    if (!visionErr && visionData && visionData.extractedText && visionData.extractedText.trim()) {
+      return visionData.extractedText.trim()
+    }
+    return null
+  } catch (visionErr) {
+    console.warn("AI Vision OCR failed:", visionErr)
+    return null
+  }
+}
+
 async function runOCR(canvas) {
+  // iOS Safari fast-path: Tesseract.js is unreliable on this platform (canvas OOM,
+  // CDN language-pack failures).  Skip it entirely and use AI Vision OCR directly.
+  if (isIOSSafari()) {
+    const ocrEl = document.getElementById("ocrResult")
+    if (!supabaseClient) {
+      // Supabase is not configured — AI Vision is unavailable.  Tell the user
+      // immediately rather than running Tesseract for 30 seconds and failing.
+      console.warn("OCR: iOS Safari fast-path — Supabase not connected, AI Vision unavailable")
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrEngineUnavailable")
+        ocrEl.classList.add("visible")
+      }
+      return
+    }
+    if (ocrEl) {
+      ocrEl.innerText = t("ocrAIFallback")
+      ocrEl.classList.add("visible")
+    }
+    const visionText = await callAIVisionOCR(canvas)
+    if (visionText) {
+      if (ocrEl) {
+        ocrEl.innerText = visionText
+        ocrEl.classList.add("visible")
+      }
+      document.getElementById("ingredients").value = visionText
+      await analyzeIngredients()
+    } else {
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrFailed")
+        ocrEl.classList.add("visible")
+      }
+    }
+    return
+  }
+
   // Track whether the failure was engine-load (network/CDN) vs empty recognition (image quality).
   // Only the first type should show the "network issue" message; the second shows quality tips.
   // This is declared at function scope so both the inner logic and the outer catch can read it.
@@ -3015,36 +3105,17 @@ async function runOCR(canvas) {
 
     const ocrEl = document.getElementById("ocrResult")
 
-    // AI Vision OCR fallback: when Tesseract returns empty text and the
-    // Supabase backend is available, send the image to OpenAI Vision.
-    // This is the primary fix for mobile devices where Tesseract language
-    // packs silently fail to download from CDN.
-    if (!bestText.trim() && supabaseClient) {
+    // AI Vision OCR fallback: trigger when Tesseract returns no text OR when
+    // it produces OCR noise with no recognisable ingredients — both indicate
+    // the local engine failed (common on mobile where CDN language packs may
+    // silently refuse to load, or where canvas memory limits produce blank output).
+    if ((!bestText.trim() || extractIngredients(bestText).length === 0) && supabaseClient) {
       if (ocrEl) {
         ocrEl.innerText = t("ocrAIFallback")
         ocrEl.classList.add("visible")
       }
-      try {
-        const resized = resizeCanvasForBackend(canvas)
-        const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
-        const invokePromise = supabaseClient.functions.invoke("wykta-backend", {
-          body: {
-            action: "ocrImage",
-            imageBase64,
-            lang: selectedLang,
-            sessionId: getOrCreateSessionId(),
-          },
-        })
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("AI Vision OCR timed out")), AI_OCR_TIMEOUT_MS)
-        )
-        const { data: visionData, error: visionErr } = await Promise.race([invokePromise, timeoutPromise])
-        if (!visionErr && visionData && visionData.extractedText && visionData.extractedText.trim()) {
-          bestText = visionData.extractedText.trim()
-        }
-      } catch (visionErr) {
-        console.warn("AI Vision OCR failed:", visionErr)
-      }
+      const visionText = await callAIVisionOCR(canvas)
+      if (visionText) bestText = visionText
     }
 
     if (bestText.trim()) {
@@ -3062,6 +3133,25 @@ async function runOCR(canvas) {
     }
   } catch (err) {
     console.error("OCR error:", err)
+    // If the Tesseract pipeline crashed (e.g. canvas memory exhaustion on
+    // mobile), still attempt AI Vision before showing the error message.
+    if (supabaseClient) {
+      const ocrEl = document.getElementById("ocrResult")
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrAIFallback")
+        ocrEl.classList.add("visible")
+      }
+      const visionText = await callAIVisionOCR(canvas)
+      if (visionText) {
+        if (ocrEl) {
+          ocrEl.innerText = visionText
+          ocrEl.classList.add("visible")
+        }
+        document.getElementById("ingredients").value = visionText
+        await analyzeIngredients()
+        return
+      }
+    }
     const ocrEl = document.getElementById("ocrResult")
     if (ocrEl) {
       ocrEl.innerText = workerLoadFailed ? t("ocrEngineUnavailable") : t("ocrFailed")
