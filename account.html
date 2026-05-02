@@ -27,7 +27,7 @@
   </svg>
 </div><span>Wykta</span></a>
       <div class="nav-right" id="navRight">
-        <a class="nav-link" href="index.html" id="navWorkflow">Home</a>
+        <a class="nav-link" href="index.html" id="navHome">Home</a>
         <a class="nav-link" href="community.html" id="navCommunity">Community</a>
       </div>
       <div class="nav-end">
@@ -189,7 +189,7 @@
         notFoundTitle: 'No subscription found',
         notFoundBody: 'No active subscription was found for this email. Check the address or get started with Pro.',
         notFoundCheckout: 'Get Pro', notFoundHome: 'Back to Home',
-        navWorkflow: 'How It Works', navCommunity: 'Community',
+        navHome: 'Home', navCommunity: 'Community',
         errRequired: 'Please enter a valid email address.',
         errServer: 'Could not check subscription. Please try again.',
       },
@@ -214,7 +214,7 @@
         notFoundTitle: 'Aucun abonnement trouvé',
         notFoundBody: 'Aucun abonnement actif trouvé pour cet email. Vérifiez l\'adresse ou passez Pro.',
         notFoundCheckout: 'Passer Pro', notFoundHome: 'Accueil',
-        navWorkflow: 'Fonctionnement', navCommunity: 'Communauté',
+        navHome: 'Accueil', navCommunity: 'Communauté',
         errRequired: 'Veuillez saisir une adresse email valide.',
         errServer: 'Impossible de vérifier l\'abonnement. Veuillez réessayer.',
       },
@@ -239,7 +239,7 @@
         notFoundTitle: 'Kein Abonnement gefunden',
         notFoundBody: 'Für diese E-Mail-Adresse wurde kein aktives Abonnement gefunden. Adresse prüfen oder Pro holen.',
         notFoundCheckout: 'Pro holen', notFoundHome: 'Zur Startseite',
-        navWorkflow: 'Funktionsweise', navCommunity: 'Community',
+        navHome: 'Startseite', navCommunity: 'Community',
         errRequired: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.',
         errServer: 'Abonnement konnte nicht geprüft werden. Bitte erneut versuchen.',
       },
@@ -264,7 +264,7 @@
         notFoundTitle: '未找到订阅',
         notFoundBody: '此邮箱未找到有效订阅。请检查邮箱地址，或开始使用专业版。',
         notFoundCheckout: '获取专业版', notFoundHome: '返回首页',
-        navWorkflow: '使用方法', navCommunity: '社区',
+        navHome: '首页', navCommunity: '社区',
         errRequired: '请输入有效的电子邮件地址。',
         errServer: '无法查询订阅，请重试。',
       },
@@ -291,7 +291,7 @@
     document.getElementById('notFoundBody').textContent  = c.notFoundBody;
     document.getElementById('notFoundCheckout').textContent = c.notFoundCheckout;
     document.getElementById('notFoundHome').textContent  = c.notFoundHome;
-    document.getElementById('navWorkflow').textContent   = c.navWorkflow;
+    document.getElementById('navHome').textContent       = c.navHome;
     document.getElementById('navCommunity').textContent  = c.navCommunity;
 
     let lastEmail = '';
