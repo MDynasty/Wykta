@@ -8,6 +8,9 @@ const corsHeaders = {
 }
 
 const FALLBACK_OPENAI_MODEL = "gpt-4o"
+const FALLBACK_GEMINI_MODEL = "gemini-1.5-flash"
+const FALLBACK_GROQ_MODEL = "llama-3.3-70b-versatile"
+const FALLBACK_OPENROUTER_MODEL = "mistralai/mistral-7b-instruct:free"
 
 // ---------------------------------------------------------------------------
 // Free-tier daily AI analysis limit
@@ -130,6 +133,43 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
 }
 
 // ---------------------------------------------------------------------------
+// Gemini Vision OCR fallback
+// Used when OPENAI_API_KEY is absent. Accepts a base64-encoded JPEG.
+// ---------------------------------------------------------------------------
+
+async function extractTextFromImageGemini(imageBase64: string): Promise<string | null> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY")
+  const model = Deno.env.get("GEMINI_MODEL") || FALLBACK_GEMINI_MODEL
+  if (!apiKey) return null
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: OCR_SYSTEM_PROMPT },
+            { inline_data: { mime_type: "image/jpeg", data: imageBase64 } },
+          ],
+        }],
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const errText = await response.text()
+    console.error(`Gemini Vision API error ${response.status}:`, errText)
+    throw new Error(`Gemini Vision API error ${response.status}: ${errText}`)
+  }
+
+  const json = await response.json()
+  return json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null
+}
+
+// ---------------------------------------------------------------------------
 // OpenAI AI analysis
 // Set the OPENAI_API_KEY Supabase secret to enable AI-powered analysis:
 //   supabase secrets set OPENAI_API_KEY=sk-...
@@ -194,6 +234,168 @@ async function analyzeWithOpenAI(
     .map((line) => ensureSourceAttribution(line))
 
   return normalizedLines.join("\n")
+}
+
+// ---------------------------------------------------------------------------
+// Gemini AI analysis (Google)
+// Set GEMINI_API_KEY and optionally GEMINI_MODEL in Supabase secrets.
+// ---------------------------------------------------------------------------
+
+async function analyzeWithGemini(
+  ingredients: string[],
+  _targetLanguage: string,
+): Promise<string | null> {
+  const apiKey = Deno.env.get("GEMINI_API_KEY")
+  const model = Deno.env.get("GEMINI_MODEL") || FALLBACK_GEMINI_MODEL
+  if (!apiKey) return null
+
+  const ingredientList = ingredients.join(", ")
+  const prompt =
+    `You are an expert ingredient analyst for food and skincare products. ` +
+    `Analyze each of the following ingredients and provide a concise description ` +
+    `covering its purpose, category (Food / Skincare / General), and any notable ` +
+    `safety or health considerations. ` +
+    `Include one reliable source reference per ingredient. ` +
+    `IMPORTANT: For each ingredient, respond in the same language in which the ingredient name is written. ` +
+    `Do not translate ingredient names — use the exact name as given. ` +
+    `Format your answer as a plain list, one ingredient per line, like:\n` +
+    `<ingredient name>: [<Category>] <description> | Source: <source>\n\n` +
+    `Ingredients: ${ingredientList}`
+
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.3 },
+      }),
+    },
+  )
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`Gemini API error ${response.status}: ${errText}`)
+  }
+
+  const json = await response.json()
+  const content: string | undefined =
+    json?.candidates?.[0]?.content?.parts?.[0]?.text
+  if (!content) return null
+
+  const ensureSourceAttribution = (line: string) =>
+    /source\s*:/i.test(line) ? line : `${line} | Source: AI model synthesis`
+
+  return content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => ensureSourceAttribution(line))
+    .join("\n")
+}
+
+// ---------------------------------------------------------------------------
+// OpenAI-compatible analysis helper (used for Groq and OpenRouter)
+// ---------------------------------------------------------------------------
+
+async function analyzeWithOpenAICompat(
+  ingredients: string[],
+  _targetLanguage: string,
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  providerName: string,
+): Promise<string | null> {
+  const ingredientList = ingredients.join(", ")
+  const prompt =
+    `You are an expert ingredient analyst for food and skincare products. ` +
+    `Analyze each of the following ingredients and provide a concise description ` +
+    `covering its purpose, category (Food / Skincare / General), and any notable ` +
+    `safety or health considerations. ` +
+    `Include one reliable source reference per ingredient. ` +
+    `IMPORTANT: For each ingredient, respond in the same language in which the ingredient name is written. ` +
+    `Do not translate ingredient names — use the exact name as given. ` +
+    `Format your answer as a plain list, one ingredient per line, like:\n` +
+    `<ingredient name>: [<Category>] <description> | Source: <source>\n\n` +
+    `Ingredients: ${ingredientList}`
+
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 4096,
+      temperature: 0.3,
+    }),
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    throw new Error(`${providerName} API error ${response.status}: ${errText}`)
+  }
+
+  const json = await response.json()
+  const content: string | undefined = json?.choices?.[0]?.message?.content
+  if (!content) return null
+
+  const ensureSourceAttribution = (line: string) =>
+    /source\s*:/i.test(line) ? line : `${line} | Source: AI model synthesis`
+
+  return content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => ensureSourceAttribution(line))
+    .join("\n")
+}
+
+// ---------------------------------------------------------------------------
+// Groq analysis (OpenAI-compatible, fast free tier)
+// Set GROQ_API_KEY and optionally GROQ_MODEL in Supabase secrets.
+// ---------------------------------------------------------------------------
+
+async function analyzeWithGroq(
+  ingredients: string[],
+  targetLanguage: string,
+): Promise<string | null> {
+  const apiKey = Deno.env.get("GROQ_API_KEY")
+  const model = Deno.env.get("GROQ_MODEL") || FALLBACK_GROQ_MODEL
+  if (!apiKey) return null
+  return analyzeWithOpenAICompat(
+    ingredients,
+    targetLanguage,
+    "https://api.groq.com/openai/v1",
+    apiKey,
+    model,
+    "Groq",
+  )
+}
+
+// ---------------------------------------------------------------------------
+// OpenRouter analysis (aggregator, free models available)
+// Set OPENROUTER_API_KEY and optionally OPENROUTER_MODEL in Supabase secrets.
+// ---------------------------------------------------------------------------
+
+async function analyzeWithOpenRouter(
+  ingredients: string[],
+  targetLanguage: string,
+): Promise<string | null> {
+  const apiKey = Deno.env.get("OPENROUTER_API_KEY")
+  const model = Deno.env.get("OPENROUTER_MODEL") || FALLBACK_OPENROUTER_MODEL
+  if (!apiKey) return null
+  return analyzeWithOpenAICompat(
+    ingredients,
+    targetLanguage,
+    "https://openrouter.ai/api/v1",
+    apiKey,
+    model,
+    "OpenRouter",
+  )
 }
 
 const languageContent = {
@@ -268,15 +470,23 @@ serve(async (req) => {
         )
       }
       try {
-        const extractedText = await extractTextFromImage(imageBase64)
-        // Sentinel means OPENAI_API_KEY is not configured — tell the client so it
-        // can show "engine unavailable" rather than blaming image quality.
+        let extractedText = await extractTextFromImage(imageBase64)
+        // If OpenAI key absent, try Gemini Vision as fallback.
         if (extractedText === OCR_NO_API_KEY) {
-          console.warn('Vision OCR: OPENAI_API_KEY not set; OCR unavailable')
-          return new Response(
-            JSON.stringify({ extractedText: null, ocrUnavailable: true }),
-            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
-          )
+          console.log('Vision OCR: OpenAI key absent, trying Gemini Vision...')
+          try {
+            extractedText = await extractTextFromImageGemini(imageBase64)
+          } catch (geminiErr) {
+            console.warn('Gemini Vision OCR error:', geminiErr)
+            extractedText = null
+          }
+          if (!extractedText) {
+            console.warn('Vision OCR: all providers unavailable')
+            return new Response(
+              JSON.stringify({ extractedText: null, ocrUnavailable: true }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+            )
+          }
         }
         console.log('Vision OCR extracted text length:', extractedText?.length ?? 0)
         return new Response(
@@ -323,27 +533,38 @@ serve(async (req) => {
       )
     }
 
-    // 2. Try AI analysis (requires OPENAI_API_KEY secret)
-    try {
-      const aiAnalysis = await analyzeWithOpenAI(inputIngredients, aiLanguage)
-      if (aiAnalysis) {
-        console.log('Using AI analysis')
-        return new Response(
-          JSON.stringify({
-            analysis: `${languagePack.title}:\n${aiAnalysis}`,
-            remaining: Math.max(0, remaining - 1),
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
-        )
+    // 2. Try AI analysis — provider fallback chain:
+    //    OpenAI → Gemini → Groq → OpenRouter
+    const providers: Array<{ name: string; fn: () => Promise<string | null> }> = [
+      { name: "OpenAI",      fn: () => analyzeWithOpenAI(inputIngredients, aiLanguage) },
+      { name: "Gemini",      fn: () => analyzeWithGemini(inputIngredients, aiLanguage) },
+      { name: "Groq",        fn: () => analyzeWithGroq(inputIngredients, aiLanguage) },
+      { name: "OpenRouter",  fn: () => analyzeWithOpenRouter(inputIngredients, aiLanguage) },
+    ]
+
+    for (const provider of providers) {
+      try {
+        const aiAnalysis = await provider.fn()
+        if (aiAnalysis) {
+          console.log(`Using ${provider.name} analysis`)
+          return new Response(
+            JSON.stringify({
+              analysis: `${languagePack.title}:\n${aiAnalysis}`,
+              remaining: Math.max(0, remaining - 1),
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+          )
+        }
+        console.log(`${provider.name}: key not configured, skipping`)
+      } catch (err) {
+        console.warn(`${provider.name} analysis failed:`, err)
       }
-    } catch (aiErr) {
-      console.warn('AI analysis failed:', aiErr)
     }
 
-    // 3. No AI key configured — return empty analysis so the frontend falls through
+    // 3. No AI provider configured — return empty analysis so the frontend falls through
     // to its own rich open-data fallback chain (Open Food Facts, Open Beauty Facts,
     // Wikidata) which can resolve virtually any ingredient.
-    console.log('OPENAI_API_KEY not set; deferring to frontend open-data fallback.')
+    console.log('No AI provider key configured; deferring to frontend open-data fallback.')
     return new Response(
       JSON.stringify({ analysis: '', remaining }),
       {
