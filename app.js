@@ -67,6 +67,24 @@ function getCapacitorCamera() {
     : null
 }
 
+/* -----------------------
+iOS SAFARI DETECTION
+Returns true when running in Safari on an iOS device (iPhone/iPad/iPod)
+but NOT inside a Capacitor native WebView.  Tesseract.js is unreliable on
+this platform — canvas memory limits cause silent blank-pixel returns and
+CDN language-pack downloads regularly stall — so we skip it entirely and
+go straight to AI Vision OCR instead.
+----------------------- */
+function isIOSSafari() {
+  if (isNativeApp()) return false
+  const ua = navigator.userAgent
+  const isIOS = /iP(hone|ad|od)/i.test(ua)
+  // Chrome on iOS identifies as "CriOS", Firefox as "FxiOS", Edge as "EdgiOS".
+  // Real Safari omits those tokens but does include "Safari".
+  const isSafariBrowser = /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua)
+  return isIOS && isSafariBrowser
+}
+
 function trackEvent(category, action, label) {
   try {
     if (window.gtag) window.gtag('event', action, { event_category: category, event_label: label })
@@ -2919,6 +2937,41 @@ async function callAIVisionOCR(canvas) {
 }
 
 async function runOCR(canvas) {
+  // iOS Safari fast-path: Tesseract.js is unreliable on this platform (canvas OOM,
+  // CDN language-pack failures).  Skip it entirely and use AI Vision OCR directly.
+  if (isIOSSafari()) {
+    const ocrEl = document.getElementById("ocrResult")
+    if (!supabaseClient) {
+      // Supabase is not configured — AI Vision is unavailable.  Tell the user
+      // immediately rather than running Tesseract for 30 seconds and failing.
+      console.warn("OCR: iOS Safari fast-path — Supabase not connected, AI Vision unavailable")
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrEngineUnavailable")
+        ocrEl.classList.add("visible")
+      }
+      return
+    }
+    if (ocrEl) {
+      ocrEl.innerText = t("ocrAIFallback")
+      ocrEl.classList.add("visible")
+    }
+    const visionText = await callAIVisionOCR(canvas)
+    if (visionText) {
+      if (ocrEl) {
+        ocrEl.innerText = visionText
+        ocrEl.classList.add("visible")
+      }
+      document.getElementById("ingredients").value = visionText
+      await analyzeIngredients()
+    } else {
+      if (ocrEl) {
+        ocrEl.innerText = t("ocrFailed")
+        ocrEl.classList.add("visible")
+      }
+    }
+    return
+  }
+
   // Track whether the failure was engine-load (network/CDN) vs empty recognition (image quality).
   // Only the first type should show the "network issue" message; the second shows quality tips.
   // This is declared at function scope so both the inner logic and the outer catch can read it.
