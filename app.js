@@ -2456,7 +2456,7 @@ async function scanBarcode() {
       // Look up product on OFF
       const product = await lookupProductByBarcode(barcode)
       if (!product || !product.ingredients) {
-        if (ocrEl) ocrEl.innerText = t("barcodeNotFound", lang)
+        if (ocrEl) ocrEl.innerText = t("barcodeNoIngredients", lang)
         showProductInfoBanner("", null, lang)
         return
       }
