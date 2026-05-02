@@ -85,7 +85,7 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
             type: "image_url",
             image_url: {
               url: `data:image/jpeg;base64,${imageBase64}`,
-              detail: "high",
+              detail: "auto",
             },
           },
         ],

@@ -2709,7 +2709,12 @@ so Tesseract has enough resolution for small label text.
 // ~30 px-per-char threshold where LSTM accuracy degrades noticeably.
 const OCR_MIN_WIDTH = 2000
 
-// Cap canvas dimensions for the AI Vision OCR backend call.
+// JPEG quality for the base64 payload sent to the AI Vision backend.
+// 0.85 balances readability vs payload size; label text remains clear.
+const AI_OCR_JPEG_QUALITY = 0.85
+// Timeout (ms) for the AI Vision OCR backend call.
+const AI_OCR_TIMEOUT_MS = 20000
+
 // Keeps the JPEG payload small (~200–400 KB) while preserving enough
 // resolution for OpenAI Vision to read dense label text.
 const AI_OCR_MAX_WIDTH = 1024
@@ -2727,7 +2732,7 @@ function resizeCanvasForBackend(src) {
   return dst
 }
 
-
+function scaleCanvasForOCR(src) {
   if (src.width >= OCR_MIN_WIDTH) return src
   const scale = OCR_MIN_WIDTH / src.width
   const scaled = document.createElement("canvas")
@@ -3021,7 +3026,7 @@ async function runOCR(canvas) {
       }
       try {
         const resized = resizeCanvasForBackend(canvas)
-        const imageBase64 = resized.toDataURL("image/jpeg", 0.85).split(",")[1]
+        const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
         const invokePromise = supabaseClient.functions.invoke("wykta-backend", {
           body: {
             action: "ocrImage",
@@ -3031,7 +3036,7 @@ async function runOCR(canvas) {
           },
         })
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("AI Vision OCR timed out")), 20000)
+          setTimeout(() => reject(new Error("AI Vision OCR timed out")), AI_OCR_TIMEOUT_MS)
         )
         const { data: visionData, error: visionErr } = await Promise.race([invokePromise, timeoutPromise])
         if (!visionErr && visionData && visionData.extractedText && visionData.extractedText.trim()) {
