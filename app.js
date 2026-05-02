@@ -862,7 +862,7 @@ const uiMessages = {
     pwaInstallBtn: "Add to Home Screen",
     pwaInstallDismiss: "Not now",
     stopCameraButton: "Stop Camera",
-    noIngredientSection: "No ingredient list detected in this scan. Aim the camera at the section labelled \"INGREDIENTS:\" on the label and try again."
+    noIngredientSection: "No ingredient list detected in this scan. Aim the camera at the section labeled \"INGREDIENTS:\" on the label and try again."
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -2815,7 +2815,7 @@ function preprocessCanvasForOCR(src) {
 function isOCRTextUsable(text) {
   if (!text) return false
   const words = text.trim().split(/\s+/).filter(w => w.length > 0)
-  const longWordCount = words.filter(w => (w.match(/[a-z\u4e00-\u9fa5]/gi) || []).length >= 4).length
+  const longWordCount = words.filter(w => w.replace(/[^a-z\u4e00-\u9fa5]/gi, "").length >= 4).length
   return longWordCount >= 3
 }
 
