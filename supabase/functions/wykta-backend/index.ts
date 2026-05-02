@@ -473,22 +473,22 @@ serve(async (req) => {
         let extractedText = await extractTextFromImage(imageBase64)
         // If OpenAI key absent, try Gemini Vision as fallback.
         if (extractedText === OCR_NO_API_KEY) {
-          console.log('Vision OCR: OpenAI key absent, trying Gemini Vision...')
+          console.log("Vision OCR: OpenAI key absent, trying Gemini Vision...")
           try {
             extractedText = await extractTextFromImageGemini(imageBase64)
           } catch (geminiErr) {
-            console.warn('Gemini Vision OCR error:', geminiErr)
+            console.warn("Gemini Vision OCR error:", geminiErr)
             extractedText = null
           }
           if (!extractedText) {
-            console.warn('Vision OCR: all providers unavailable')
+            console.warn("Vision OCR: all providers unavailable")
             return new Response(
               JSON.stringify({ extractedText: null, ocrUnavailable: true }),
               { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
             )
           }
         }
-        console.log('Vision OCR extracted text length:', extractedText?.length ?? 0)
+        console.log("Vision OCR extracted text length:", extractedText?.length ?? 0)
         return new Response(
           JSON.stringify({ extractedText: extractedText || null }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
@@ -564,7 +564,7 @@ serve(async (req) => {
     // 3. No AI provider configured — return empty analysis so the frontend falls through
     // to its own rich open-data fallback chain (Open Food Facts, Open Beauty Facts,
     // Wikidata) which can resolve virtually any ingredient.
-    console.log('No AI provider key configured; deferring to frontend open-data fallback.')
+    console.log("No AI provider key configured; deferring to frontend open-data fallback.")
     return new Response(
       JSON.stringify({ analysis: '', remaining }),
       {
