@@ -431,7 +431,7 @@ function isLikelyIngredientToken(token = ""){
   if(/^\d+([.,]\d+)?$/.test(normalized)) return false
   if(normalized.split(" ").length > 8) return false
   // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
-  // (e.g. "LS", "OP", "OI", "BIR") — reject them.
+  // (e.g. "LS", "OP", "OI", "XRF") — reject them.
   if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
   // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
   // scan-code or batch-number fragments — reject them.
@@ -464,13 +464,17 @@ function findIngredientSection(text, preferredLang) {
   const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]/i
 
   function sliceSection(start, hardEnd) {
-    const slice = text.slice(start, hardEnd)
-    const stopMatch = metadataStopRe.exec(slice)
-    // If the stop marker fires, return everything before it.
-    // If it doesn't fire, return the whole slice.
-    // Do NOT fall back to the full original text on empty result — that would
-    // reintroduce the product metadata we just stripped.
-    return stopMatch ? slice.slice(0, stopMatch.index).trim() : slice.trim()
+    const rawSlice = text.slice(start, hardEnd).trim()
+    if (!rawSlice) return ""
+    const stopMatch = metadataStopRe.exec(rawSlice)
+    if (stopMatch) {
+      // Return everything before the metadata marker.
+      // If the marker fires right at the start (no ingredient content), fall back
+      // to the raw slice to avoid an empty result — this is still better than
+      // returning the full label text with pre-header metadata.
+      return rawSlice.slice(0, stopMatch.index).trim() || rawSlice
+    }
+    return rawSlice
   }
 
   if (lang === "zh") {
@@ -478,19 +482,19 @@ function findIngredientSection(text, preferredLang) {
       const start = zhMatch.index + zhMatch[0].length
       // Stop before the Latin INCI section (same ingredients in different notation)
       const laStop = (laMatch && laMatch.index > start) ? laMatch.index : text.length
-      return sliceSection(start, laStop) || text
+      return sliceSection(start, laStop) || ""
     }
     // No Chinese header but Latin exists — use Latin section as fallback
-    return sliceSection(laMatch.index + laMatch[0].length, text.length) || text
+    return sliceSection(laMatch.index + laMatch[0].length, text.length) || ""
   } else {
     if (laMatch) {
       const start = laMatch.index + laMatch[0].length
       // Stop before the Chinese section (if it appears after the Latin header)
       const zhStop = (zhMatch && zhMatch.index > start) ? zhMatch.index : text.length
-      return sliceSection(start, zhStop) || text
+      return sliceSection(start, zhStop) || ""
     }
     // No Latin header but Chinese exists — use Chinese section as fallback
-    return sliceSection(zhMatch.index + zhMatch[0].length, text.length) || text
+    return sliceSection(zhMatch.index + zhMatch[0].length, text.length) || ""
   }
 }
 
@@ -2784,7 +2788,7 @@ function preprocessCanvasForOCR(src) {
 function isOCRTextUsable(text) {
   if (!text) return false
   const words = text.trim().split(/\s+/).filter(w => w.length > 0)
-  const longWordCount = words.filter(w => w.replace(/[^a-z\u4e00-\u9fa5]/gi, "").length >= 4).length
+  const longWordCount = words.filter(w => (w.match(/[a-z\u4e00-\u9fa5]/gi) || []).length >= 4).length
   return longWordCount >= 3
 }
 
