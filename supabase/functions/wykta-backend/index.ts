@@ -79,18 +79,18 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
         content: [
           {
             type: "text",
-            text: "Extract ONLY the ingredients list text from this product label image. Output the raw ingredients text exactly as printed, preserving commas and other separators between ingredient names. Do not add any explanation, headers, or extra formatting. If there is no ingredients list visible in the image, output an empty string.",
+            text: "Find and extract the complete list of ingredients from this product label image. The ingredients section may be headed by 'INGREDIENTS', '成分', '配料', '原料', 'Ingrédients', 'Zutaten', or a similar label in any language. Output ONLY the ingredient names exactly as printed on the label, preserving all original separators (commas, slashes, semicolons, etc.). Do not add any explanation, headers, or extra formatting. If no ingredients section is visible in the image, output an empty string.",
           },
           {
             type: "image_url",
             image_url: {
               url: `data:image/jpeg;base64,${imageBase64}`,
-              detail: "auto",
+              detail: "high",
             },
           },
         ],
       }],
-      max_tokens: 1024,
+      max_tokens: 2048,
       temperature: 0.1,
     }),
   })
