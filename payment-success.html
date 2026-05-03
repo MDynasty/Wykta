@@ -19,7 +19,7 @@
   </svg>
 </div><span>Wykta</span></a>
       <div class="nav-right" id="navRight">
-        <a class="nav-link" href="community.html">Community</a>
+        <a class="nav-link" href="community.html" id="navCommunity">Community</a>
       </div>
       <div class="nav-end">
         <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
@@ -47,15 +47,15 @@
       <div style="margin-top:18px; display:flex; gap:10px; flex-wrap:wrap;">
         <a class="btn btn-primary" id="communityBtn" href="community.html">Join Community</a>
         <button class="btn btn-secondary" id="manageSubBtn" onclick="openCustomerPortal()" style="display:none;">Manage Subscription</button>
-        <a class="btn btn-secondary" href="index.html">Back to Home</a>
+        <a class="btn btn-secondary" id="backToHomeBtn" href="index.html">Back to Home</a>
       </div>
       <p id="manageSubNote" style="font-size:12px;color:var(--text-3);margin-top:10px;display:none;">Cancel, change plan, or download invoices via the Stripe Customer Portal.</p>
     </section>
 
     <section class="card" id="errorCard" style="display:none;">
-      <h2 class="card-title">Payment not confirmed</h2>
+      <h2 class="card-title" id="errorCardTitle">Payment not confirmed</h2>
       <div id="errorMsg" style="color:var(--text-2); margin-bottom:16px;"></div>
-      <a class="btn btn-secondary" href="checkout.html">Return to checkout</a>
+      <a class="btn btn-secondary" id="returnToCheckoutBtn" href="checkout.html">Return to checkout</a>
     </section>
   </main>
 
@@ -119,6 +119,13 @@
         date: 'Paid at', settlement: 'Settlement', settlementNote: 'Stripe balance → bank payout (1–2 business days)',
         statusPaid: 'Paid', noSession: 'No session ID found. Please return to checkout.',
         failed: 'Payment could not be verified. If you believe this is an error, contact support.',
+        navCommunity: 'Community',
+        errorCardTitle: 'Payment not confirmed', returnToCheckout: 'Return to checkout',
+        backToHome: 'Back to Home', manageSubBtn: 'Manage Subscription',
+        manageSubNote: 'Cancel, change plan, or download invoices via the Stripe Customer Portal.',
+        unableToVerify: 'Unable to Verify Payment',
+        managing: 'Opening…',
+        footerPrivacy: 'Privacy Policy', footerTerms: 'Terms of Service',
       },
       fr: {
         verifying: 'Vérification du paiement…', verifyingNote: 'Veuillez patienter pendant la confirmation Stripe.',
@@ -128,6 +135,13 @@
         date: 'Date', settlement: 'Règlement', settlementNote: 'Solde Stripe → virement bancaire (1–2 jours ouvrés)',
         statusPaid: 'Payé', noSession: 'Aucun identifiant de session. Veuillez revenir au paiement.',
         failed: 'Paiement non vérifié. En cas d\'erreur, contactez le support.',
+        navCommunity: 'Communauté',
+        errorCardTitle: 'Paiement non confirmé', returnToCheckout: 'Retour au paiement',
+        backToHome: 'Retour à l\'accueil', manageSubBtn: 'Gérer l\'abonnement',
+        manageSubNote: 'Annulez, changez d\'offre ou téléchargez vos factures via le portail Stripe.',
+        unableToVerify: 'Impossible de vérifier le paiement',
+        managing: 'Ouverture…',
+        footerPrivacy: 'Politique de confidentialité', footerTerms: 'Conditions d\'utilisation',
       },
       de: {
         verifying: 'Zahlung wird überprüft…', verifyingNote: 'Bitte warten, während die Zahlung von Stripe bestätigt wird.',
@@ -137,6 +151,13 @@
         date: 'Bezahlt am', settlement: 'Abrechnung', settlementNote: 'Stripe-Guthaben → Banküberweisung (1–2 Werktage)',
         statusPaid: 'Bezahlt', noSession: 'Keine Session-ID. Bitte kehren Sie zum Checkout zurück.',
         failed: 'Zahlung konnte nicht verifiziert werden. Bitte kontaktieren Sie den Support.',
+        navCommunity: 'Community',
+        errorCardTitle: 'Zahlung nicht bestätigt', returnToCheckout: 'Zurück zum Checkout',
+        backToHome: 'Zur Startseite', manageSubBtn: 'Abonnement verwalten',
+        manageSubNote: 'Kündigen, Tarif wechseln oder Rechnungen herunterladen über das Stripe-Kundenportal.',
+        unableToVerify: 'Zahlung kann nicht verifiziert werden',
+        managing: 'Wird geöffnet…',
+        footerPrivacy: 'Datenschutzerklärung', footerTerms: 'Nutzungsbedingungen',
       },
       zh: {
         verifying: '正在验证付款…', verifyingNote: '请稍候，我们正在通过 Stripe 确认您的付款。',
@@ -146,6 +167,13 @@
         date: '付款时间', settlement: '结算路径', settlementNote: 'Stripe 余额 → 银行账户出款（1-2工作日）',
         statusPaid: '已支付', noSession: '未找到会话 ID，请返回结算页。',
         failed: '无法验证付款。如有疑问，请联系支持。',
+        navCommunity: '社区',
+        errorCardTitle: '付款未确认', returnToCheckout: '返回结算',
+        backToHome: '返回首页', manageSubBtn: '管理订阅',
+        manageSubNote: '通过 Stripe 客户门户取消、更改套餐或下载发票。',
+        unableToVerify: '无法验证付款',
+        managing: '正在打开…',
+        footerPrivacy: '隐私政策', footerTerms: '服务条款',
       },
     };
     const c = copy[document.documentElement.lang] || copy.en;
@@ -154,9 +182,17 @@
     document.getElementById('heroSubtitle').textContent = c.verifyingNote;
     document.getElementById('communityBtn').textContent = c.communityBtn;
     document.getElementById('communityBtn').href = `community.html?lang=${encodeURIComponent(document.documentElement.lang)}`;
+    document.getElementById('navCommunity').textContent = c.navCommunity;
+    document.getElementById('errorCardTitle').textContent = c.errorCardTitle;
+    document.getElementById('returnToCheckoutBtn').textContent = c.returnToCheckout;
+    document.getElementById('backToHomeBtn').textContent = c.backToHome;
+    document.getElementById('manageSubBtn').textContent = c.manageSubBtn;
+    document.getElementById('manageSubNote').textContent = c.manageSubNote;
+    document.getElementById('footerPrivacy').textContent = c.footerPrivacy;
+    document.getElementById('footerTerms').textContent = c.footerTerms;
 
     function showError(msg) {
-      document.getElementById('heroTitle').textContent = 'Unable to Verify Payment';
+      document.getElementById('heroTitle').textContent = c.unableToVerify;
       document.getElementById('heroSubtitle').textContent = '';
       document.getElementById('errorMsg').textContent = msg;
       document.getElementById('errorCard').style.display = '';
@@ -200,7 +236,7 @@
         return;
       }
       btn.disabled = true;
-      btn.textContent = 'Opening…';
+      btn.textContent = c.managing;
       try {
         const endpoint = `${SUPABASE_URL}/functions/v1/customer-portal`;
         const returnUrl = new URL('index.html', window.location.href).href;
@@ -218,12 +254,12 @@
         } else {
           alert(result.error || 'Could not open Customer Portal.');
           btn.disabled = false;
-          btn.textContent = 'Manage Subscription';
+          btn.textContent = c.manageSubBtn;
         }
       } catch (err) {
         console.error('customer-portal error:', err);
         btn.disabled = false;
-        btn.textContent = 'Manage Subscription';
+        btn.textContent = c.manageSubBtn;
       }
     }
 
@@ -264,8 +300,8 @@
   </script>
   <footer style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);margin-top:40px;">
     Wykta &copy; 2026 &nbsp;&middot;&nbsp;
-    <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a> &nbsp;&middot;&nbsp;
-    <a href="terms.html" style="color:var(--brand);">Terms of Service</a>
+    <a href="privacy.html" style="color:var(--brand);" id="footerPrivacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="terms.html" style="color:var(--brand);" id="footerTerms">Terms of Service</a>
   </footer>
 </body>
 </html>

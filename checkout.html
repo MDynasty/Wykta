@@ -27,8 +27,8 @@
   </svg>
 </div><span>Wykta</span></a>
       <div class="nav-right" id="navRight">
-        <a class="nav-link" href="index.html">Home</a>
-        <a class="nav-link" href="community.html">Community</a>
+        <a class="nav-link" href="index.html" id="navHome">Home</a>
+        <a class="nav-link" href="community.html" id="navCommunity">Community</a>
       </div>
       <div class="nav-end">
         <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
@@ -105,8 +105,8 @@
         <p style="margin-top:14px; font-size:12px; color:var(--text-3);" id="stripeNote">
           Secured by Stripe. Payment methods are selected on Stripe's hosted page and depend on region, currency, plan, and device eligibility.
         </p>
-        <p style="margin-top:10px; font-size:11px; color:var(--text-3);">
-          By continuing you agree to our <a href="terms.html" style="color:var(--brand);">Terms of Service</a> and acknowledge our <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a>.
+        <p style="margin-top:10px; font-size:11px; color:var(--text-3);" id="disclaimerPara">
+          By continuing you agree to our <a href="terms.html" style="color:var(--brand);" id="disclaimerTerms">Terms of Service</a> and acknowledge our <a href="privacy.html" style="color:var(--brand);" id="disclaimerPrivacy">Privacy Policy</a>.
           You can cancel at any time via the Stripe Customer Portal.
         </p>
       </article>
@@ -182,6 +182,11 @@
         submitLabel: 'Continue to secure payment →',
         stripeNote: "Secured by Stripe. Your payment method is selected on Stripe's hosted page.",
         planLabels: { 'pro-monthly': 'Pro Monthly', 'pro-annual': 'Pro Annual', enterprise: 'Enterprise — Custom Scope' },
+        navHome: 'Home', navCommunity: 'Community',
+        cancelledText: 'Payment was cancelled. You can try again below.',
+        enterpriseText: 'Enterprise plans are tailored to your requirements. Continue to share team size, required integrations, and workflow needs.',
+        disclaimerHtml: 'By continuing you agree to our <a href="terms.html" style="color:var(--brand);">Terms of Service</a> and acknowledge our <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a>. You can cancel at any time via the Stripe Customer Portal.',
+        footerPrivacy: 'Privacy Policy', footerTerms: 'Terms of Service',
       },
       fr: {
         currency: 'EUR', monthly: 2.99, annual: 21.99,
@@ -193,6 +198,11 @@
         submitLabel: 'Continuer vers le paiement sécurisé →',
         stripeNote: 'Sécurisé par Stripe. Le mode de paiement est sélectionné sur la page Stripe.',
         planLabels: { 'pro-monthly': 'Pro Mensuel', 'pro-annual': 'Pro Annuel', enterprise: 'Entreprise — Périmètre sur mesure' },
+        navHome: 'Accueil', navCommunity: 'Communauté',
+        cancelledText: 'Paiement annulé. Vous pouvez réessayer ci-dessous.',
+        enterpriseText: 'Les offres entreprise sont adaptées à vos besoins. Partagez la taille de votre équipe, les intégrations requises et les besoins de workflow.',
+        disclaimerHtml: 'En continuant, vous acceptez nos <a href="terms.html" style="color:var(--brand);">Conditions d\'utilisation</a> et reconnaissez notre <a href="privacy.html" style="color:var(--brand);">Politique de confidentialité</a>. Vous pouvez annuler à tout moment via le portail Stripe.',
+        footerPrivacy: 'Politique de confidentialité', footerTerms: 'Conditions d\'utilisation',
       },
       de: {
         currency: 'EUR', monthly: 2.99, annual: 21.99,
@@ -204,6 +214,11 @@
         submitLabel: 'Zum sicheren Bezahlvorgang →',
         stripeNote: 'Gesichert durch Stripe. Die Zahlungsart wird auf der Stripe-Seite gewählt.',
         planLabels: { 'pro-monthly': 'Pro Monatlich', 'pro-annual': 'Pro Jährlich', enterprise: 'Enterprise — Individueller Umfang' },
+        navHome: 'Startseite', navCommunity: 'Community',
+        cancelledText: 'Zahlung abgebrochen. Sie können es unten erneut versuchen.',
+        enterpriseText: 'Enterprise-Tarife werden auf Ihre Anforderungen zugeschnitten. Teilen Sie uns Teamgröße, benötigte Integrationen und Workflow-Anforderungen mit.',
+        disclaimerHtml: 'Mit dem Fortfahren akzeptieren Sie unsere <a href="terms.html" style="color:var(--brand);">Nutzungsbedingungen</a> und bestätigen unsere <a href="privacy.html" style="color:var(--brand);">Datenschutzerklärung</a>. Sie können jederzeit über das Stripe-Kundenportal kündigen.',
+        footerPrivacy: 'Datenschutzerklärung', footerTerms: 'Nutzungsbedingungen',
       },
       zh: {
         currency: 'CNY', monthly: 18, annual: 128,
@@ -215,6 +230,11 @@
         submitLabel: '继续前往安全支付 →',
         stripeNote: '由 Stripe 加密保障。支付方式在 Stripe 托管页中选择。',
         planLabels: { 'pro-monthly': '专业版（月付）', 'pro-annual': '专业版（年付）', enterprise: '企业版 — 按需求定制' },
+        navHome: '首页', navCommunity: '社区',
+        cancelledText: '付款已取消，您可以在下方重新尝试。',
+        enterpriseText: '企业版方案根据您的需求量身定制。请告知团队规模、所需集成和工作流需求。',
+        disclaimerHtml: '继续即表示您同意我们的<a href="terms.html" style="color:var(--brand);">服务条款</a>并确认已阅读我们的<a href="privacy.html" style="color:var(--brand);">隐私政策</a>。您可随时通过 Stripe 客户门户取消订阅。',
+        footerPrivacy: '隐私政策', footerTerms: '服务条款',
       },
     };
 
@@ -227,6 +247,13 @@
     document.getElementById('labelEmail').textContent = m.labelEmail;
     document.getElementById('submitLabel').textContent = m.submitLabel;
     document.getElementById('stripeNote').textContent = m.stripeNote;
+    document.getElementById('navHome').textContent = m.navHome;
+    document.getElementById('navCommunity').textContent = m.navCommunity;
+    document.getElementById('cancelledBanner').textContent = m.cancelledText;
+    document.getElementById('enterpriseNote').textContent = m.enterpriseText;
+    document.getElementById('disclaimerPara').innerHTML = m.disclaimerHtml;
+    document.getElementById('footerPrivacy').textContent = m.footerPrivacy;
+    document.getElementById('footerTerms').textContent = m.footerTerms;
 
     // Render plan options with localized prices
     const planEl = document.getElementById('plan');
@@ -316,8 +343,8 @@
   </script>
   <footer style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);margin-top:40px;">
     Wykta &copy; 2026 &nbsp;&middot;&nbsp;
-    <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a> &nbsp;&middot;&nbsp;
-    <a href="terms.html" style="color:var(--brand);">Terms of Service</a>
+    <a href="privacy.html" style="color:var(--brand);" id="footerPrivacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="terms.html" style="color:var(--brand);" id="footerTerms">Terms of Service</a>
   </footer>
 </body>
 </html>
