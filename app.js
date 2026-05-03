@@ -740,6 +740,7 @@ const uiMessages = {
     captureButton: "Capture Label",
     valueTitle: "Why users pay for Wykta",
     valueSubtitle: "Simple pricing that grows with you. Start free, upgrade when you're ready.",
+    pricingTitle: "Pricing",
     billingMonthly: "Monthly",
     billingAnnual: "Annual",
     billingDiscount: "Save 20%",
@@ -853,6 +854,7 @@ const uiMessages = {
     captureButton: "Capturer l'étiquette",
     valueTitle: "Pourquoi les utilisateurs paient Wykta",
     valueSubtitle: "Des tarifs simples qui évoluent avec vous. Commencez gratuitement, passez Pro quand vous êtes prêt.",
+    pricingTitle: "Tarifs",
     billingMonthly: "Mensuel",
     billingAnnual: "Annuel",
     billingDiscount: "Économisez 20 %",
@@ -966,6 +968,7 @@ const uiMessages = {
     captureButton: "Etikett erfassen",
     valueTitle: "Warum Nutzer für Wykta zahlen",
     valueSubtitle: "Einfache Preisgestaltung, die mit Ihnen wächst. Kostenlos starten, jederzeit upgraden.",
+    pricingTitle: "Preise",
     billingMonthly: "Monatlich",
     billingAnnual: "Jährlich",
     billingDiscount: "20 % sparen",
@@ -1079,6 +1082,7 @@ const uiMessages = {
     captureButton: "拍摄标签",
     valueTitle: "用户愿意为 Wykta 付费的原因",
     valueSubtitle: "清晰透明的定价，随您需求成长。免费开始，随时升级。",
+    pricingTitle: "价格方案",
     billingMonthly: "按月",
     billingAnnual: "按年",
     billingDiscount: "节省 20%",
@@ -2297,6 +2301,12 @@ async function scanBarcode() {
   const cameraPanel = document.getElementById("cameraPanel")
   if (cameraPanel) cameraPanel.style.display = ""
 
+  // Show video, hide any previous snapshot
+  const videoForBarcode = document.getElementById("camera")
+  if (videoForBarcode) videoForBarcode.style.display = ""
+  const snapshotForBarcode = document.getElementById("snapshot")
+  if (snapshotForBarcode) snapshotForBarcode.style.display = "none"
+
   // Show barcode overlay
   const overlay = document.getElementById("barcodeOverlay")
   const scanningLabel = document.getElementById("barcodeScanningLabel")
@@ -2403,9 +2413,10 @@ async function startScan(){
     const cameraPanel = document.getElementById("cameraPanel")
     if (cameraPanel) cameraPanel.style.display = ""
 
-    // Hide any previous snapshot
+    // Hide any previous snapshot, show video
     const snapshot = document.getElementById("snapshot")
     if (snapshot) snapshot.style.display = "none"
+    video.style.display = ""
 
     // Re-enable the Open Camera button (text stays as-is)
     if (openBtn) {
@@ -2481,10 +2492,10 @@ async function capture(){
   }
 
   // Show snapshot preview so user sees what was captured
+  // Hide live video, show canvas inside camera-wrapper
+  video.style.display = "none"
   canvas.style.display = "block"
   canvas.style.width = "100%"
-  canvas.style.borderRadius = "var(--radius)"
-  canvas.style.marginBottom = "10px"
 
   // Reset the open-camera button back to its original label
   const openBtn = document.getElementById("openCameraBtn")
@@ -2555,13 +2566,13 @@ async function captureNative() {
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext("2d")
       ctx.drawImage(img, 0, 0)
-      // Show camera panel and snapshot preview
+      // Show camera panel and snapshot preview; hide live video
       const cameraPanel = document.getElementById("cameraPanel")
       if (cameraPanel) cameraPanel.style.display = ""
+      const video = document.getElementById("camera")
+      if (video) video.style.display = "none"
       canvas.style.display = "block"
       canvas.style.width = "100%"
-      canvas.style.borderRadius = "var(--radius)"
-      canvas.style.marginBottom = "10px"
       runOCR(canvas)
     }
     img.onerror = () => {
@@ -2880,8 +2891,9 @@ async function handleImageUpload(input) {
       ctx.drawImage(img, 0, 0)
       canvas.style.display = "block"
       canvas.style.width = "100%"
-      canvas.style.borderRadius = "var(--radius)"
-      canvas.style.marginBottom = "10px"
+      // Hide live video since we're showing the uploaded image
+      const videoEl = document.getElementById("camera")
+      if (videoEl) videoEl.style.display = "none"
       URL.revokeObjectURL(url)
       // Show camera panel so the uploaded preview and OCR result are visible
       const cameraPanel = document.getElementById("cameraPanel")
