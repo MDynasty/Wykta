@@ -1310,6 +1310,12 @@ function localizeStaticUI(){
     node.setAttribute("placeholder", t(key))
   })
 
+  document.querySelectorAll("[data-i18n-aria-label]").forEach((node) => {
+    const key = node.getAttribute("data-i18n-aria-label")
+    if(!key) return
+    node.setAttribute("aria-label", t(key))
+  })
+
   // Sync <html lang> attribute with current UI language
   const lang = currentLanguage()
   document.documentElement.lang = lang
@@ -3157,9 +3163,9 @@ document.addEventListener("DOMContentLoaded", () => {
     banner.className = "pwa-install-banner"
     banner.setAttribute("role", "banner")
     banner.innerHTML = `
-      <p><strong>${escapeHtml(t("pwaInstallTitle", lang))}</strong><br>${escapeHtml(t("pwaInstallBody", lang))}</p>
-      <button class="btn btn-primary btn-sm" id="pwaInstallBtn">${escapeHtml(t("pwaInstallBtn", lang))}</button>
-      <button class="pwa-close" aria-label="${escapeHtml(t("pwaInstallDismiss", lang))}" id="pwaCloseBtn">×</button>
+      <p><strong data-i18n="pwaInstallTitle">${escapeHtml(t("pwaInstallTitle", lang))}</strong><br><span data-i18n="pwaInstallBody">${escapeHtml(t("pwaInstallBody", lang))}</span></p>
+      <button class="btn btn-primary btn-sm" id="pwaInstallBtn" data-i18n="pwaInstallBtn">${escapeHtml(t("pwaInstallBtn", lang))}</button>
+      <button class="pwa-close" data-i18n-aria-label="pwaInstallDismiss" aria-label="${escapeHtml(t("pwaInstallDismiss", lang))}" id="pwaCloseBtn">×</button>
     `
     const main = document.querySelector(".main")
     if (main) main.insertBefore(banner, main.firstChild)
