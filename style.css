@@ -1341,7 +1341,7 @@ input[type="file"].visually-hidden {
 @media (max-width: 920px) {
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
-    grid-template-columns: repeat(3, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, minmax(200px, 1fr));
     padding-bottom: 12px;
   }
   .plan-card      { scroll-snap-align: start; }
@@ -1378,7 +1378,7 @@ input[type="file"].visually-hidden {
   .btn-row   { gap: 6px; }
   .btn-row .btn, .btn-row label.btn { flex-shrink: 0; }
   .main { gap: 32px; }
-  .hero { padding: 40px 16px 0; text-align: left; }
+  .hero { padding: 40px 30px 0; text-align: left; }
   .hero-badge,
   .hero-title,
   .hero-sub,
@@ -1399,7 +1399,7 @@ input[type="file"].visually-hidden {
   /* === Hero: switch from flex-column/align-items:center to normal block flow.
      This eliminates the need for per-child align-self overrides and gives
      clean, predictable left-aligned layout on phone. === */
-  .hero        { display: block; padding: 28px 0 0; text-align: left; }
+  .hero        { display: block; padding: 28px 18px 0; text-align: left; }
   .hero-badge  { margin-bottom: 18px; }
   .hero-title  { font-size: 28px; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 16px; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
