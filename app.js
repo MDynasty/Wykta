@@ -2510,6 +2510,11 @@ camera-wrapper. Called after label capture or image upload.
 ----------------------- */
 
 function showCanvasPreview(canvas) {
+  // Always make the camera panel visible when displaying a preview — this makes
+  // the function self-contained and robust regardless of call order.
+  const panel = document.getElementById("cameraPanel")
+  if (panel) panel.style.display = ""
+
   const video = document.getElementById("camera")
   if (video) video.style.display = "none"
   // Populate the <img> preview for reliable cross-browser photo display.
@@ -2531,8 +2536,7 @@ function showCanvasPreview(canvas) {
   }
   // Scroll the camera panel into view so the user can see the captured photo,
   // especially on mobile where the panel may be above the fold.
-  const panel = document.getElementById("cameraPanel")
-  if (panel && panel.style.display !== "none") {
+  if (panel) {
     setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60)
   }
 }
