@@ -26,8 +26,8 @@
   </svg>
 </div><span>Wykta</span></a>
       <div class="nav-right" id="navRight">
-        <a class="nav-link" href="checkout.html">Checkout</a>
-        <a class="nav-link" href="contact-sales.html">Contact Sales</a>
+        <a class="nav-link" href="checkout.html" id="navCheckout">Checkout</a>
+        <a class="nav-link" href="contact-sales.html" id="navContactSales">Contact Sales</a>
       </div>
       <div class="nav-end">
         <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
@@ -184,6 +184,8 @@
           { label: 'GitHub: transparent roadmap, issues, and release history', btn: 'Open GitHub', url: 'https://github.com/MDynasty/Wykta' },
           { label: 'Email updates: major releases and service notices', btn: 'Contact Sales', url: 'contact-sales.html' },
         ],
+        navCheckout: 'Checkout', navContactSales: 'Contact Sales',
+        footerPrivacy: 'Privacy Policy', footerTerms: 'Terms of Service',
       },
       fr: {
         title: 'Rejoindre la communauté Wykta',
@@ -204,8 +206,10 @@
           { label: 'Discord : Q&R produit et discussions de release', btn: 'Discord', url: 'https://discord.gg/wykta' },
           { label: 'WeChat : support CN et partenariats (WeChat ID : wykta_cn)', btn: 'WeChat', url: 'https://www.wechat.com' },
           { label: 'GitHub : roadmap, issues et historique publics', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
-          { label: 'Mises à jour email : releases majeures et annonces service', btn: 'Contacter Sales', url: 'contact-sales.html' },
+          { label: 'Mises à jour email : releases majeures et annonces service', btn: 'Contacter les ventes', url: 'contact-sales.html' },
         ],
+        navCheckout: 'Paiement', navContactSales: 'Contacter les ventes',
+        footerPrivacy: 'Politique de confidentialité', footerTerms: 'Conditions d\'utilisation',
       },
       de: {
         title: 'Der Wykta-Community beitreten',
@@ -228,6 +232,8 @@
           { label: 'GitHub: öffentliche Roadmap, Issues und Releases', btn: 'GitHub', url: 'https://github.com/MDynasty/Wykta' },
           { label: 'E-Mail-Updates: wichtige Releases und Service-Hinweise', btn: 'Sales kontaktieren', url: 'contact-sales.html' },
         ],
+        navCheckout: 'Checkout', navContactSales: 'Vertrieb kontaktieren',
+        footerPrivacy: 'Datenschutzerklärung', footerTerms: 'Nutzungsbedingungen',
       },
       zh: {
         title: '加入 Wykta 社区', subtitle: '保留最实用的核心渠道：更新通知、使用支持、公开进展透明可见。',
@@ -249,6 +255,8 @@
           { label: 'GitHub：公开路线图、Issue 与版本记录（透明化）', btn: '打开 GitHub', url: 'https://github.com/MDynasty/Wykta' },
           { label: '邮件更新：重大功能发布与服务通知', btn: '联系销售', url: 'contact-sales.html' },
         ],
+        navCheckout: '结算', navContactSales: '联系销售',
+        footerPrivacy: '隐私政策', footerTerms: '服务条款',
       },
     };
     const c = copy[lang] || copy.en;
@@ -267,6 +275,10 @@
     document.getElementById('labelOtp').textContent = c.labelOtp;
     document.getElementById('otpLabel').textContent = c.otpLabel;
     document.getElementById('resendLabel').textContent = c.resendLabel;
+    document.getElementById('navCheckout').textContent = c.navCheckout;
+    document.getElementById('navContactSales').textContent = c.navContactSales;
+    document.getElementById('footerPrivacy').textContent = c.footerPrivacy;
+    document.getElementById('footerTerms').textContent = c.footerTerms;
 
     function getExternalLinkAttributes(url) {
       return /^https?:/i.test(url) ? 'target="_blank" rel="noopener"' : '';
@@ -420,8 +432,8 @@
   </script>
   <footer style="text-align:center;padding:24px 16px;font-size:12px;color:var(--text-3);border-top:1px solid var(--border);margin-top:40px;">
     Wykta &copy; 2026 &nbsp;&middot;&nbsp;
-    <a href="privacy.html" style="color:var(--brand);">Privacy Policy</a> &nbsp;&middot;&nbsp;
-    <a href="terms.html" style="color:var(--brand);">Terms of Service</a>
+    <a href="privacy.html" style="color:var(--brand);" id="footerPrivacy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+    <a href="terms.html" style="color:var(--brand);" id="footerTerms">Terms of Service</a>
   </footer>
 </body>
 </html>

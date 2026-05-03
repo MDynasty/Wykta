@@ -19,8 +19,8 @@
   </svg>
 </div><span>Wykta</span></a>
       <div class="nav-right" id="navRight">
-        <a class="nav-link" href="checkout.html">Checkout</a>
-        <a class="nav-link" href="community.html">Community</a>
+        <a class="nav-link" href="checkout.html" id="navCheckout">Checkout</a>
+        <a class="nav-link" href="community.html" id="navCommunity">Community</a>
       </div>
       <div class="nav-end">
         <select class="lang-select" aria-label="Language" onchange="setLang(this.value)">
@@ -46,7 +46,7 @@
       <article class="card">
         <h2 class="card-title" id="formTitle">Enterprise request</h2>
         <p id="directContact" style="font-size:13px; color:var(--text-2); margin-bottom:16px;">
-          Or email directly: <a href="mailto:sales@wykta.app" style="color:var(--brand, #34d399); font-weight:600;">sales@wykta.app</a>
+          <span id="directContactLabel">Or email directly:</span> <a href="mailto:sales@wykta.app" style="color:var(--brand, #34d399); font-weight:600;">sales@wykta.app</a>
         </p>
         <form id="salesForm">
           <div class="field">
@@ -151,6 +151,8 @@
         ],
         success: 'Request sent! We will be in touch within 1 business day.',
         error: 'Submission failed. Please try again or email us directly.',
+        navCheckout: 'Checkout', navCommunity: 'Community',
+        directContact: 'Or email directly:',
       },
       fr: {
         title: 'Contacter l\'équipe commerciale',
@@ -168,6 +170,8 @@
         ],
         success: 'Demande envoyée ! Nous reviendrons vers vous sous 1 jour ouvré.',
         error: 'Échec de l\'envoi. Réessayez ou contactez-nous directement.',
+        navCheckout: 'Paiement', navCommunity: 'Communauté',
+        directContact: 'Ou contactez-nous directement :',
       },
       de: {
         title: 'Vertrieb kontaktieren',
@@ -185,6 +189,8 @@
         ],
         success: 'Anfrage gesendet! Wir melden uns innerhalb 1 Werktags.',
         error: 'Übermittlung fehlgeschlagen. Bitte erneut versuchen.',
+        navCheckout: 'Checkout', navCommunity: 'Community',
+        directContact: 'Oder direkt per E-Mail:',
       },
       zh: {
         title: '联系销售', subtitle: '告诉我们您的团队规模和需求，我们将在1个工作日内回复。',
@@ -201,6 +207,8 @@
         ],
         success: '申请已发送！我们将在1个工作日内与您联系。',
         error: '提交失败，请重试或直接发邮件联系我们。',
+        navCheckout: '结算', navCommunity: '社区',
+        directContact: '或直接发邮件：',
       },
     };
     const c = copy[lang] || copy.en;
@@ -217,6 +225,9 @@
     document.getElementById('nextTitle').textContent = c.nextTitle;
     const ul = document.getElementById('nextSteps');
     c.steps.forEach(s => ul.insertAdjacentHTML('beforeend', `<li>${s}</li>`));
+    document.getElementById('navCheckout').textContent = c.navCheckout;
+    document.getElementById('navCommunity').textContent = c.navCommunity;
+    document.getElementById('directContactLabel').textContent = c.directContact;
 
     document.getElementById('salesForm').addEventListener('submit', async (e) => {
       e.preventDefault();
