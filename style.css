@@ -1378,9 +1378,13 @@ input[type="file"].visually-hidden {
   .btn-row   { gap: 6px; }
   .btn-row .btn, .btn-row label.btn { flex-shrink: 0; }
   .main { gap: 32px; }
-  .hero { padding: 48px 30px 0; text-align: left; }
+  .hero { padding: 40px 16px 0; text-align: left; }
   .hero-badge,
+  .hero-title,
+  .hero-sub,
   .hero-cta { align-self: flex-start; }
+  .hero-title { width: 100%; }
+  .hero-sub { margin-left: 0; max-width: 100%; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
   /* Feature chips: single scrollable horizontal row on tablet/phone */
@@ -1389,18 +1393,39 @@ input[type="file"].visually-hidden {
 }
 
 @media (max-width: 600px) {
-  .main      { padding: 22px 14px 52px; gap: 24px; }
-  .hero      { padding: 32px 20px 0; text-align: left; }
+  /* === Layout === */
+  .main        { padding: 20px 16px 60px; gap: 20px; }
+
+  /* === Hero: switch from flex-column/align-items:center to normal block flow.
+     This eliminates the need for per-child align-self overrides and gives
+     clean, predictable left-aligned layout on phone. === */
+  .hero        { display: block; padding: 28px 0 0; text-align: left; }
+  .hero-badge  { margin-bottom: 18px; }
+  .hero-title  { font-size: 28px; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 16px; }
+  .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
+  /* Full-width CTA — easier to tap on small screens */
+  .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
+  /* Chips: horizontal scroll row */
+  .hero .chips { display: flex; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+                 -webkit-overflow-scrolling: touch; padding-bottom: 4px; margin-top: 20px;
+                 width: 100%; box-sizing: border-box; gap: 8px; }
+  .chip        { white-space: nowrap; }
+
+  /* === Cards === */
   .card,
-  .plan-card { padding: 20px; }
-  .btn       { font-size: 13px; padding: 10px 14px; }
-  .hero-sub  { font-size: 15px; }
-  .chips     { gap: 6px; }
+  .plan-card   { padding: 18px; }
+
+  /* === Buttons === */
+  .btn         { font-size: 13px; padding: 10px 14px; }
+
+  /* === Billing toggle === */
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
-  .pricing-grid { grid-template-columns: 1fr; padding-bottom: 0; }
-  .pricing-scroll-wrap { overflow-x: visible; scroll-snap-type: none; }
+
+  /* === Pricing: single column stack, disable horizontal scroll === */
+  .pricing-grid           { grid-template-columns: 1fr; padding-bottom: 0; }
+  .pricing-scroll-wrap    { overflow-x: visible; scroll-snap-type: none; }
   .pricing-scroll-wrap::after { display: none; }
-  .plan-card { scroll-snap-align: none; }
+  .plan-card              { scroll-snap-align: none; }
 }
 
 /* ===================================================
