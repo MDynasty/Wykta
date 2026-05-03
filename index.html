@@ -111,12 +111,12 @@
 <div id="cookieBanner" role="dialog" aria-live="polite" aria-label="Cookie consent">
   <div class="cookie-inner">
     <p class="cookie-text">
-      We use optional analytics cookies to improve Wykta. Your ingredient text is never stored.
-      See our <a href="privacy.html">Privacy Policy</a>.
+      <span data-i18n="cookieText">We use optional analytics cookies to improve Wykta. Your ingredient text is never stored.</span>
+      <span> </span><a href="privacy.html" data-i18n="footerPrivacy">Privacy Policy</a>.
     </p>
     <div class="cookie-actions">
-      <button class="cookie-btn" onclick="declineCookies()">Decline</button>
-      <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()">Accept analytics</button>
+      <button class="cookie-btn" onclick="declineCookies()" data-i18n="cookieDecline">Decline</button>
+      <button class="cookie-btn cookie-btn-accept" onclick="acceptCookies()" data-i18n="cookieAccept">Accept analytics</button>
     </div>
   </div>
 </div>
@@ -134,7 +134,7 @@
             </linearGradient>
           </defs>
           <!-- Leaf outline -->
-          <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(168,85,247,0.10)"/>
+          <path d="M11 2.5C11 2.5 4 7.5 4 13C4 16.3 7.1 18.5 11 18.5C14.9 18.5 18 16.3 18 13C18 7.5 11 2.5 11 2.5Z" stroke="url(#leafGrad)" stroke-width="1.55" stroke-linecap="round" fill="rgba(74,222,128,0.10)"/>
           <!-- Center vein -->
           <path d="M11 4.5V17" stroke="url(#leafGrad)" stroke-width="1" stroke-linecap="round" opacity="0.45"/>
           <!-- Checkmark -->
@@ -169,6 +169,8 @@
     <h1 class="hero-title" id="heroTitle">
       <span data-i18n="heroTitlePrefix">Know exactly what's</span> <span class="gradient-text" data-i18n="heroTitleHighlight">in your products</span>
     </h1>
+    <p class="hero-sub" data-i18n="heroSubtitle">Scan food or skincare labels instantly, detect hidden allergens, and make confident choices about what goes in and on your body.</p>
+    <a class="hero-cta" href="#ingredients" data-i18n="heroCta">Check your ingredients free →</a>
     <div class="chips">
       <span class="chip" data-i18n="chipCoverage">Food + Skincare Coverage</span>
       <span class="chip" data-i18n="chipLanguage">4-Language Support</span>
@@ -255,6 +257,8 @@
       <div class="camera-wrapper" id="cameraWrapper">
         <video id="camera" autoplay playsinline muted></video>
         <canvas id="snapshot" style="display:none;"></canvas>
+        <!-- Image preview: shown after capture or upload (more reliable cross-browser than canvas alone) -->
+        <img id="imagePreview" alt="Captured label" style="display:none; width:100%; height:auto; border-radius:0;">
         <!-- In-camera capture/stop buttons (label scan mode) -->
         <div class="camera-live-actions" id="cameraLiveActions" style="display:none;">
           <button class="btn btn-primary btn-sm" onclick="capture()">
@@ -411,7 +415,7 @@
     <p class="footer-copyright">
       Wykta &copy; 2026 &mdash; <span data-i18n="footerTagline">Know what goes in and on your body.</span>
       &nbsp;&middot;&nbsp;
-      <button onclick="resetCookieConsent()" style="background:none;border:none;padding:0;font-size:inherit;color:inherit;cursor:pointer;text-decoration:underline;">Cookie settings</button>
+      <button onclick="resetCookieConsent()" style="background:none;border:none;padding:0;font-size:inherit;color:inherit;cursor:pointer;text-decoration:underline;" data-i18n="cookieSettings">Cookie settings</button>
     </p>
   </footer>
 
