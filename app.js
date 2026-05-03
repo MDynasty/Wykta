@@ -1359,6 +1359,26 @@ function localizeStaticUI(){
       }
     }
   }
+
+  // Re-translate any OCR status message that is currently visible and matches a known
+  // single-key i18n value.  Composite messages (e.g. barcode number appended) are left
+  // as-is because they contain dynamic data that cannot be reconstructed from the key alone.
+  const ocrEl = document.getElementById("ocrResult")
+  if(ocrEl && ocrEl.classList.contains("visible")){
+    const ocrText = ocrEl.innerText.trim()
+    if(ocrText){
+      const retranslatableKeys = ["ocrFailed", "cameraAccessFailed", "ocrLocalProcessing",
+        "ocrProcessing", "barcodeNoIngredients", "barcodeIngredientsLoaded"]
+      const langs = Object.keys(uiMessages)
+      let matched = false
+      for(const key of retranslatableKeys){
+        if(matched) break
+        for(const l of langs){
+          if(uiMessages[l][key] === ocrText){ ocrEl.innerText = t(key); matched = true; break }
+        }
+      }
+    }
+  }
 }
 
 function escapeHtml(text) {
@@ -2329,11 +2349,13 @@ async function scanBarcode() {
   const cameraPanel = document.getElementById("cameraPanel")
   if (cameraPanel) cameraPanel.style.display = ""
 
-  // Show video, hide any previous snapshot
+  // Show video, hide any previous snapshot or image preview
   const videoForBarcode = document.getElementById("camera")
   if (videoForBarcode) videoForBarcode.style.display = ""
   const snapshotForBarcode = document.getElementById("snapshot")
   if (snapshotForBarcode) snapshotForBarcode.style.display = "none"
+  const previewImgForBarcode = document.getElementById("imagePreview")
+  if (previewImgForBarcode) { previewImgForBarcode.style.display = "none"; previewImgForBarcode.src = "" }
 
   // Show barcode overlay
   const overlay = document.getElementById("barcodeOverlay")
@@ -2934,9 +2956,13 @@ async function handleImageUpload(input) {
     ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
-  // Show camera panel immediately so the processing message is visible
+  // Show camera panel immediately so the processing message is visible.
+  // Also hide the video right away so no blank/black frame flashes before the
+  // uploaded image preview appears in img.onload below.
   const cameraPanel = document.getElementById("cameraPanel")
   if (cameraPanel) cameraPanel.style.display = ""
+  const videoElForUpload = document.getElementById("camera")
+  if (videoElForUpload) videoElForUpload.style.display = "none"
 
   try {
     const url = URL.createObjectURL(file)
