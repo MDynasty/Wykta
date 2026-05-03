@@ -1378,7 +1378,9 @@ input[type="file"].visually-hidden {
   .btn-row   { gap: 6px; }
   .btn-row .btn, .btn-row label.btn { flex-shrink: 0; }
   .main { gap: 32px; }
-  .hero { padding: 48px 30px 0; text-align: left; align-items: flex-start; }
+  .hero { padding: 48px 30px 0; text-align: left; }
+  .hero-badge,
+  .hero-cta { align-self: flex-start; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
   /* Feature chips: single scrollable horizontal row on tablet/phone */
@@ -1388,7 +1390,7 @@ input[type="file"].visually-hidden {
 
 @media (max-width: 600px) {
   .main      { padding: 22px 14px 52px; gap: 24px; }
-  .hero      { padding: 32px 20px 0; text-align: left; align-items: flex-start; }
+  .hero      { padding: 32px 20px 0; text-align: left; }
   .card,
   .plan-card { padding: 20px; }
   .btn       { font-size: 13px; padding: 10px 14px; }
