@@ -831,7 +831,11 @@ const uiMessages = {
     pwaInstallBtn: "Add to Home Screen",
     pwaInstallDismiss: "Not now",
     stopCameraButton: "Stop Camera",
-    noIngredientSection: "No ingredient list detected in this scan. Aim the camera at the section labeled \"INGREDIENTS:\" on the label and try again."
+    noIngredientSection: "No ingredient list detected in this scan. Aim the camera at the section labeled \"INGREDIENTS:\" on the label and try again.",
+    cookieText: "We use optional analytics cookies to improve Wykta. Your ingredient text is never stored.",
+    cookieDecline: "Decline",
+    cookieAccept: "Accept analytics",
+    cookieSettings: "Cookie settings"
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
@@ -945,7 +949,11 @@ const uiMessages = {
     pwaInstallBtn: "Ajouter à l'écran d'accueil",
     pwaInstallDismiss: "Plus tard",
     stopCameraButton: "Arrêter la caméra",
-    noIngredientSection: "Aucune liste d'ingrédients détectée dans ce scan. Pointez la caméra vers la section « INGRÉDIENTS : » de l'étiquette et réessayez."
+    noIngredientSection: "Aucune liste d'ingrédients détectée dans ce scan. Pointez la caméra vers la section « INGRÉDIENTS : » de l'étiquette et réessayez.",
+    cookieText: "Nous utilisons des cookies analytiques optionnels pour améliorer Wykta. Votre texte de composition n'est jamais stocké.",
+    cookieDecline: "Refuser",
+    cookieAccept: "Accepter l'analyse",
+    cookieSettings: "Paramètres cookies"
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
@@ -1059,7 +1067,11 @@ const uiMessages = {
     pwaInstallBtn: "Zum Home-Screen hinzufügen",
     pwaInstallDismiss: "Nicht jetzt",
     stopCameraButton: "Kamera schließen",
-    noIngredientSection: "Keine Zutatenliste in diesem Scan erkannt. Bitte Kamera auf den Abschnitt „ZUTATEN:" des Etiketts richten und erneut versuchen."
+    noIngredientSection: "Keine Zutatenliste in diesem Scan erkannt. Bitte Kamera auf den Abschnitt „ZUTATEN:" des Etiketts richten und erneut versuchen.",
+    cookieText: "Wir verwenden optionale Analyse-Cookies zur Verbesserung von Wykta. Ihre Inhaltsstofftexte werden nie gespeichert.",
+    cookieDecline: "Ablehnen",
+    cookieAccept: "Analyse akzeptieren",
+    cookieSettings: "Cookie-Einstellungen"
   },
   zh: {
     heroBadge: "AI 驱动的成分智能",
@@ -1173,7 +1185,11 @@ const uiMessages = {
     pwaInstallBtn: "添加到主屏幕",
     pwaInstallDismiss: "暂不",
     stopCameraButton: "关闭相机",
-    noIngredientSection: "此次扫描未找到成分列表。请将相机对准标签上标有"成分："的部分后重试。"
+    noIngredientSection: "此次扫描未找到成分列表。请将相机对准标签上标有"成分："的部分后重试。",
+    cookieText: "我们使用可选分析 Cookie 来改善 Wykta。您的成分文本永远不会被存储。",
+    cookieDecline: "拒绝",
+    cookieAccept: "接受分析",
+    cookieSettings: "Cookie 设置"
   }
 }
 
@@ -1281,8 +1297,10 @@ function detectInputLanguage(text = "", ingredients = []){
 }
 
 function localizeStaticUI(){
-  if(!cachedI18nNodes) cachedI18nNodes = [...document.querySelectorAll("[data-i18n]")]
-  if(!cachedI18nPlaceholderNodes) cachedI18nPlaceholderNodes = [...document.querySelectorAll("[data-i18n-placeholder]")]
+  // Always rebuild from the live DOM so newly shown elements (e.g. after display:none
+  // sections become visible) and any nodes added since the last call are included.
+  cachedI18nNodes = [...document.querySelectorAll("[data-i18n]")]
+  cachedI18nPlaceholderNodes = [...document.querySelectorAll("[data-i18n-placeholder]")]
 
   cachedI18nNodes.forEach((node) => {
     const key = node.getAttribute("data-i18n")
@@ -1313,10 +1331,8 @@ function localizeStaticUI(){
   const analysisEl = document.getElementById("ingredientResult")
   const warningEl = document.getElementById("interactionWarnings")
   const analysisPlaceholderValues = Object.values(uiMessages).map(m => m.analysisPlaceholder)
-  const warningPlaceholderValues = [
-    ...Object.values(uiMessages).map(m => m.warningPlaceholder),
-    ...Object.values(uiMessages).map(m => m.noConflicts)
-  ]
+  const noConflictsValues = Object.values(uiMessages).map(m => m.noConflicts)
+  const warningPlaceholderValues = Object.values(uiMessages).map(m => m.warningPlaceholder)
 
   if(analysisEl){
     const currentText = analysisEl.innerText.trim()
@@ -1327,8 +1343,40 @@ function localizeStaticUI(){
 
   if(warningEl){
     const currentText = warningEl.innerText.trim()
-    if(!currentText || warningPlaceholderValues.includes(currentText)){
-      warningEl.innerText = t("warningPlaceholder")
+    if(!warningEl.children.length){
+      // Plain-text state (placeholder set via innerText on a previous call):
+      // re-translate if it matches any known placeholder value.
+      if(!currentText || warningPlaceholderValues.includes(currentText)){
+        warningEl.innerText = t("warningPlaceholder")
+      }
+    } else {
+      // warningEl has child elements.  Three cases:
+      // 1. Initial empty-state with data-i18n span — already handled by the forEach loop above.
+      // 2. "No conflicts" state set by displayInteractions([], ...) — re-translate in-place.
+      // 3. Actual warning cards from an analysis — leave them as-is (untranslated dynamic content).
+      if(noConflictsValues.includes(currentText)){
+        displayInteractions([], lang)
+      }
+    }
+  }
+
+  // Re-translate any OCR status message that is currently visible and matches a known
+  // single-key i18n value.  Composite messages (e.g. barcode number appended) are left
+  // as-is because they contain dynamic data that cannot be reconstructed from the key alone.
+  const ocrEl = document.getElementById("ocrResult")
+  if(ocrEl && ocrEl.classList.contains("visible")){
+    const ocrText = ocrEl.innerText.trim()
+    if(ocrText){
+      const retranslatableKeys = ["ocrFailed", "cameraAccessFailed", "ocrLocalProcessing",
+        "ocrProcessing", "barcodeNoIngredients", "barcodeIngredientsLoaded"]
+      const langs = Object.keys(uiMessages)
+      let matched = false
+      for(const key of retranslatableKeys){
+        if(matched) break
+        for(const l of langs){
+          if(uiMessages[l][key] === ocrText){ ocrEl.innerText = t(key); matched = true; break }
+        }
+      }
     }
   }
 }
@@ -2301,11 +2349,13 @@ async function scanBarcode() {
   const cameraPanel = document.getElementById("cameraPanel")
   if (cameraPanel) cameraPanel.style.display = ""
 
-  // Show video, hide any previous snapshot
+  // Show video, hide any previous snapshot or image preview
   const videoForBarcode = document.getElementById("camera")
   if (videoForBarcode) videoForBarcode.style.display = ""
   const snapshotForBarcode = document.getElementById("snapshot")
   if (snapshotForBarcode) snapshotForBarcode.style.display = "none"
+  const previewImgForBarcode = document.getElementById("imagePreview")
+  if (previewImgForBarcode) { previewImgForBarcode.style.display = "none"; previewImgForBarcode.src = "" }
 
   // Show barcode overlay
   const overlay = document.getElementById("barcodeOverlay")
@@ -2413,9 +2463,11 @@ async function startScan(){
     const cameraPanel = document.getElementById("cameraPanel")
     if (cameraPanel) cameraPanel.style.display = ""
 
-    // Hide any previous snapshot, show video
+    // Hide any previous snapshot and image preview, show video
     const snapshot = document.getElementById("snapshot")
     if (snapshot) snapshot.style.display = "none"
+    const previewImg = document.getElementById("imagePreview")
+    if (previewImg) { previewImg.style.display = "none"; previewImg.src = "" }
     video.style.display = ""
 
     // Re-enable the Open Camera button (text stays as-is)
@@ -2460,8 +2512,29 @@ camera-wrapper. Called after label capture or image upload.
 function showCanvasPreview(canvas) {
   const video = document.getElementById("camera")
   if (video) video.style.display = "none"
-  canvas.style.display = "block"
-  canvas.style.width = "100%"
+  // Populate the <img> preview for reliable cross-browser photo display.
+  // Using canvas.toDataURL() ensures the image is available even after the
+  // original object URL is revoked (which happens synchronously after onload).
+  const preview = document.getElementById("imagePreview")
+  if (preview) {
+    try {
+      preview.src = canvas.toDataURL("image/jpeg", 0.88) // quality 0.88 balances visual fidelity and file size
+      preview.style.display = "block"
+    } catch (e) {
+      // toDataURL may fail on tainted canvases (cross-origin); fall back to canvas display
+      canvas.style.display = "block"
+      canvas.style.width = "100%"
+    }
+  } else {
+    canvas.style.display = "block"
+    canvas.style.width = "100%"
+  }
+  // Scroll the camera panel into view so the user can see the captured photo,
+  // especially on mobile where the panel may be above the fold.
+  const panel = document.getElementById("cameraPanel")
+  if (panel && panel.style.display !== "none") {
+    setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60)
+  }
 }
 
 /* -----------------------
@@ -2883,9 +2956,13 @@ async function handleImageUpload(input) {
     ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
-  // Show camera panel immediately so the processing message is visible
+  // Show camera panel immediately so the processing message is visible.
+  // Also hide the video right away so no blank/black frame flashes before the
+  // uploaded image preview appears in img.onload below.
   const cameraPanel = document.getElementById("cameraPanel")
   if (cameraPanel) cameraPanel.style.display = ""
+  const videoElForUpload = document.getElementById("camera")
+  if (videoElForUpload) videoElForUpload.style.display = "none"
 
   try {
     const url = URL.createObjectURL(file)
