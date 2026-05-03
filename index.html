@@ -98,7 +98,7 @@
 #cookieBanner { display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: var(--surface); border-top: 1px solid var(--border); padding: 14px 20px; box-shadow: 0 -4px 24px rgba(0,0,0,0.08); }
 .cookie-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; justify-content: space-between; }
 .cookie-text { font-size: 13px; color: var(--text-2); flex: 1; min-width: 220px; }
-.cookie-text a { color: var(--brand); }
+.cookie-text a { color: var(--brand); margin-left: 4px; }
 .cookie-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .cookie-btn { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1px solid var(--border-2); background: var(--surface-2); color: var(--text); }
 .cookie-btn-accept { background: var(--brand); color: #fff; border-color: var(--brand); }
@@ -112,7 +112,7 @@
   <div class="cookie-inner">
     <p class="cookie-text">
       <span data-i18n="cookieText">We use optional analytics cookies to improve Wykta. Your ingredient text is never stored.</span>
-      <a href="privacy.html" data-i18n="footerPrivacy" style="margin-left:4px;">Privacy Policy</a>.
+      <a href="privacy.html" data-i18n="footerPrivacy">Privacy Policy</a>.
     </p>
     <div class="cookie-actions">
       <button class="cookie-btn" onclick="declineCookies()" data-i18n="cookieDecline">Decline</button>

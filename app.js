@@ -1297,8 +1297,10 @@ function detectInputLanguage(text = "", ingredients = []){
 }
 
 function localizeStaticUI(){
-  if(!cachedI18nNodes) cachedI18nNodes = [...document.querySelectorAll("[data-i18n]")]
-  if(!cachedI18nPlaceholderNodes) cachedI18nPlaceholderNodes = [...document.querySelectorAll("[data-i18n-placeholder]")]
+  // Always rebuild from the live DOM so newly shown elements (e.g. after display:none
+  // sections become visible) and any nodes added since the last call are included.
+  cachedI18nNodes = [...document.querySelectorAll("[data-i18n]")]
+  cachedI18nPlaceholderNodes = [...document.querySelectorAll("[data-i18n-placeholder]")]
 
   cachedI18nNodes.forEach((node) => {
     const key = node.getAttribute("data-i18n")
@@ -1329,10 +1331,8 @@ function localizeStaticUI(){
   const analysisEl = document.getElementById("ingredientResult")
   const warningEl = document.getElementById("interactionWarnings")
   const analysisPlaceholderValues = Object.values(uiMessages).map(m => m.analysisPlaceholder)
-  const warningPlaceholderValues = [
-    ...Object.values(uiMessages).map(m => m.warningPlaceholder),
-    ...Object.values(uiMessages).map(m => m.noConflicts)
-  ]
+  const noConflictsValues = Object.values(uiMessages).map(m => m.noConflicts)
+  const warningPlaceholderValues = Object.values(uiMessages).map(m => m.warningPlaceholder)
 
   if(analysisEl){
     const currentText = analysisEl.innerText.trim()
@@ -1343,8 +1343,20 @@ function localizeStaticUI(){
 
   if(warningEl){
     const currentText = warningEl.innerText.trim()
-    if(!currentText || warningPlaceholderValues.includes(currentText)){
-      warningEl.innerText = t("warningPlaceholder")
+    if(!warningEl.children.length){
+      // Plain-text state (placeholder set via innerText on a previous call):
+      // re-translate if it matches any known placeholder value.
+      if(!currentText || warningPlaceholderValues.includes(currentText)){
+        warningEl.innerText = t("warningPlaceholder")
+      }
+    } else {
+      // warningEl has child elements.  Three cases:
+      // 1. Initial empty-state with data-i18n span — already handled by the forEach loop above.
+      // 2. "No conflicts" state set by displayInteractions([], ...) — re-translate in-place.
+      // 3. Actual warning cards from an analysis — leave them as-is (untranslated dynamic content).
+      if(noConflictsValues.includes(currentText)){
+        displayInteractions([], lang)
+      }
     }
   }
 }
@@ -2484,7 +2496,7 @@ function showCanvasPreview(canvas) {
   const preview = document.getElementById("imagePreview")
   if (preview) {
     try {
-      preview.src = canvas.toDataURL("image/jpeg", 0.88) // 0.88: good visual quality at ~60% of PNG size
+      preview.src = canvas.toDataURL("image/jpeg", 0.88) // quality 0.88 balances visual fidelity and file size
       preview.style.display = "block"
     } catch (e) {
       // toDataURL may fail on tainted canvases (cross-origin); fall back to canvas display
@@ -2494,6 +2506,12 @@ function showCanvasPreview(canvas) {
   } else {
     canvas.style.display = "block"
     canvas.style.width = "100%"
+  }
+  // Scroll the camera panel into view so the user can see the captured photo,
+  // especially on mobile where the panel may be above the fold.
+  const panel = document.getElementById("cameraPanel")
+  if (panel && panel.style.display !== "none") {
+    setTimeout(() => panel.scrollIntoView({ behavior: "smooth", block: "nearest" }), 60)
   }
 }
 
