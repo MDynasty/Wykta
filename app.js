@@ -2452,6 +2452,19 @@ async function startScan(){
 }
 
 /* -----------------------
+SHOW CANVAS PREVIEW
+Hides the live video feed and shows the snapshot canvas inside the
+camera-wrapper. Called after label capture or image upload.
+----------------------- */
+
+function showCanvasPreview(canvas) {
+  const video = document.getElementById("camera")
+  if (video) video.style.display = "none"
+  canvas.style.display = "block"
+  canvas.style.width = "100%"
+}
+
+/* -----------------------
 CAPTURE IMAGE
 ----------------------- */
 
@@ -2493,9 +2506,7 @@ async function capture(){
 
   // Show snapshot preview so user sees what was captured
   // Hide live video, show canvas inside camera-wrapper
-  video.style.display = "none"
-  canvas.style.display = "block"
-  canvas.style.width = "100%"
+  showCanvasPreview(canvas)
 
   // Reset the open-camera button back to its original label
   const openBtn = document.getElementById("openCameraBtn")
@@ -2569,10 +2580,7 @@ async function captureNative() {
       // Show camera panel and snapshot preview; hide live video
       const cameraPanel = document.getElementById("cameraPanel")
       if (cameraPanel) cameraPanel.style.display = ""
-      const video = document.getElementById("camera")
-      if (video) video.style.display = "none"
-      canvas.style.display = "block"
-      canvas.style.width = "100%"
+      showCanvasPreview(canvas)
       runOCR(canvas)
     }
     img.onerror = () => {
@@ -2889,11 +2897,7 @@ async function handleImageUpload(input) {
       canvas.height = img.naturalHeight
       const ctx = canvas.getContext("2d")
       ctx.drawImage(img, 0, 0)
-      canvas.style.display = "block"
-      canvas.style.width = "100%"
-      // Hide live video since we're showing the uploaded image
-      const videoEl = document.getElementById("camera")
-      if (videoEl) videoEl.style.display = "none"
+      showCanvasPreview(canvas)
       URL.revokeObjectURL(url)
       // Show camera panel so the uploaded preview and OCR result are visible
       const cameraPanel = document.getElementById("cameraPanel")

@@ -361,7 +361,7 @@ input[type="file"].visually-hidden {
   animation: titleReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
 }
 
-.chips {
+.hero .chips {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -471,8 +471,12 @@ input[type="file"].visually-hidden {
   margin-top: 18px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  /* Extra right padding leaves a gap that hints overflow when scrollable */
   padding-bottom: 4px;
+  padding-right: 4px;
+  scrollbar-width: none; /* hide scrollbar on Firefox */
 }
+.btn-row::-webkit-scrollbar { display: none; }
 
 .btn {
   display: inline-flex;
