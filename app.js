@@ -2484,7 +2484,7 @@ function showCanvasPreview(canvas) {
   const preview = document.getElementById("imagePreview")
   if (preview) {
     try {
-      preview.src = canvas.toDataURL("image/jpeg", 0.88)
+      preview.src = canvas.toDataURL("image/jpeg", 0.88) // 0.88: good visual quality at ~60% of PNG size
       preview.style.display = "block"
     } catch (e) {
       // toDataURL may fail on tainted canvases (cross-origin); fall back to canvas display
