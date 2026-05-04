@@ -70,7 +70,7 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 const OCR_SYSTEM_PROMPT =
   "You are a product label OCR assistant. " +
   "Step 1: look for the ingredients / components section on the label. " +
-  "It may be headed by keywords such as 'INGREDIENTS', 'INCI', 'Ingrédients', 'Zutaten', " +
+  "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
   "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
   "If you find that section, output ONLY the ingredient names exactly as printed, " +
   "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) — " +

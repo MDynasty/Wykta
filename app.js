@@ -402,7 +402,7 @@ function getKnownIngredientMatchers(){
 function normalizeIngredientName(value = ""){
   if(!value) return ""
 
-  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
+  const withoutHeader = String(value).replace(/^(ingredients?|contains?|contient?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
   const normalized = sanitizeIngredientTerm(withoutHeader)
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
@@ -436,6 +436,26 @@ function isLikelyIngredientToken(token = ""){
   // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
   // scan-code or batch-number fragments — reject them.
   if(normalized.length <= 4 && /\d/.test(normalized) && /[a-z]/i.test(normalized)) return false
+  // OCR garbage: single-word tokens (no spaces) that start with an impossible consonant
+  // cluster (3+ consonants before the first vowel) are not valid INCI/food ingredient names.
+  // e.g. "RNTEARIR" (starts with RNT). Multi-word tokens are excluded from this check
+  // because multi-word INCI names can begin with abbreviations like "DMDM HYDANTOIN".
+  // CJK tokens are also excluded — Chinese ingredient names don't follow Latin phonotactics.
+  const hasSingleWord = !normalized.includes(" ")
+  const asciiOnly = normalized.replace(/[^a-z]/gi, "")
+  // \u4e00-\u9fa5 = CJK Unified Ideographs (Chinese characters)
+  if (hasSingleWord && asciiOnly.length >= 5 && !/[\u4e00-\u9fa5]/.test(normalized)) {
+    const leadConsonantMatch = asciiOnly.match(/^([^aeiouy]+)/i)
+    if (leadConsonantMatch) {
+      const lead = leadConsonantMatch[1].toLowerCase()
+      // Allowlist of recognised English/Latin initial consonant clusters (digraphs and
+      // trigraphs) that appear in real INCI names: bl/br/cl/cr/dr/fl/fr/gl/gr/ph/pl/pr/
+      // sc/sh/sk/sl/sm/sn/sp/st/sw/th/tr/wh/wr/ch/gh/kn/gn/mn and chr/str/spr/spl/
+      // scr/thr/shr/phr/sch. Any other 3+ consonant lead is rejected as OCR noise.
+      const validClusters = /^(bl|br|cl|cr|dr|fl|fr|gl|gr|ph|pl|pr|sc|sh|sk|sl|sm|sn|sp|st|sw|th|tr|wh|wr|ch|gh|kn|gn|mn|chr|str|spr|spl|scr|thr|shr|phr|sch)/
+      if (lead.length >= 3 && !validClusters.test(lead)) return false
+    }
+  }
   return true
 }
 
@@ -451,7 +471,7 @@ function findIngredientSection(text, preferredLang) {
 
   // Heading patterns that signal the start of an ingredient section
   const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
-  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
+  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bCONTAINS\s*[:/]|\bCONTIENT\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
 
   const zhMatch = zhHeaderRe.exec(text)
   const laMatch = laHeaderRe.exec(text)
