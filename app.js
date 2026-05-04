@@ -487,9 +487,10 @@ function findIngredientSection(text, preferredLang) {
 
   // Heading patterns that signal the start of an ingredient section.
   // Separators include : / and also a newline (INGREDIENTS\nWater...) or a dash/em-dash
-  // (OCR sometimes reads colons as dashes).
+  // (OCR sometimes reads colons as dashes). A trailing space before an uppercase word
+  // is also accepted (e.g. "INGREDIENTS AQUA" as OCR'd from a label without a colon).
   const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
-  const laHeaderRe = /\bINGREDIENTS?\s*[:/\-–—\n]|\bCONTAINS\s*[:/\-–—\n]|\bCONTIENT\s*[:/\-–—\n]|\bINCI\s*[:/\-–—\n]|Ingrédients?\s*[:/\-–—\n]|Inhaltsstoffe?\s*[:/\-–—\n]/i
+  const laHeaderRe = /\bINGREDIENTS?\s*[:/\-–—\n]|\bINGREDIENTS?\s+(?=[A-ZÀÂÇÉÈÊËÎÏÔÛÙÜŸŒÆ])|\bCONTAINS\s*[:/\-–—\n]|\bCONTIENT\s*[:/\-–—\n]|\bINCI\s*[:/\-–—\n]|Ingrédients?\s*[:/\-–—\n]|Inhaltsstoffe?\s*[:/\-–—\n]/i
 
   const zhMatch = zhHeaderRe.exec(text)
   const laMatch = laHeaderRe.exec(text)
@@ -2947,29 +2948,24 @@ async function callAIVisionOCR(canvas) {
 }
 
 // Builds the OCR system prompt for the direct client-side Gemini Vision call.
-// Includes a language-preference hint so that when a label has ingredient sections
-// in multiple languages or scripts, the AI returns the section matching the UI language.
+// The prompt asks the AI to transcribe ALL visible label text without filtering.
+// Section selection (Chinese vs Latin INCI vs other languages) is handled
+// deterministically by findIngredientSection() on the client, which is more
+// reliable than asking the AI to pick the right section.
 // Mirrors the server-side buildOCRSystemPrompt() in the edge function.
-function buildOCRDirectPrompt(lang) {
-  const langHints = {
-    zh: "If the label has ingredient sections in multiple languages or scripts, prefer the Chinese-language section (headed by 成分, 配料, 原料, 成份, or equivalent) and output only those ingredient names. Do not output the INCI or Latin-script section.",
-    fr: "If the label has ingredient sections in multiple languages, prefer the French-language section (headed by Ingrédients, Contient, or equivalent) and output only those ingredient names.",
-    de: "If the label has ingredient sections in multiple languages, prefer the German-language section (headed by Inhaltsstoffe, Zutaten, or equivalent) and output only those ingredient names.",
-    en: "If the label has ingredient sections in multiple languages, prefer the English or INCI Latin-script section (headed by INGREDIENTS, CONTAINS, or equivalent) and output only those ingredient names.",
-  }
-  const hint = langHints[lang] || langHints.en
+// The lang parameter is accepted for API compatibility but no longer alters the prompt.
+function buildOCRDirectPrompt(_lang) {
   return (
     "You are a product label OCR assistant. " +
-    "Step 1: look for the ingredients / components section on the label. " +
-    "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
-    "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
-    hint + " " +
-    "If you find that section, output ONLY the ingredient names exactly as printed, " +
-    "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) and excluding " +
-    "section headers, brand names, addresses, certifications, and any other non-ingredient text. " +
-    "Step 2: if you cannot identify a clearly labelled ingredients section, output ALL the text " +
-    "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
-    "Never output an empty response — always return whatever text is legible on the label."
+    "Your task is to accurately read and transcribe ALL visible text from the product label image. " +
+    "Output the complete label text exactly as it is printed, preserving: " +
+    "all ingredient sections in every language present on the label (e.g. sections headed by " +
+    "'INGREDIENTS', 'Ingrédients', '成分', '配料', '原料', 'Inhaltsstoffe', or any equivalent term), " +
+    "all section headings and markers, all separators (commas, slashes, semicolons, asterisks, etc.), " +
+    "and the original text structure. " +
+    "Do NOT skip, filter, or omit any section of the label. " +
+    "If any text is unclear or partially legible, output your best reading. " +
+    "Never output an empty response — always return whatever text is visible on the label."
   )
 }
 

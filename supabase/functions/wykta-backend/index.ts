@@ -66,32 +66,23 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 // ---------------------------------------------------------------------------
 
 // Builds the OCR system prompt for Vision OCR calls.
-// Includes a language-preference hint so that when a label has ingredient sections
-// in multiple languages or scripts, the AI returns the section matching the UI language.
-function buildOCRSystemPrompt(lang: string): string {
-  const langHints: Record<string, string> = {
-    zh: "If the label has ingredient sections in multiple languages or scripts, prefer the Chinese-language section (headed by 成分, 配料, 原料, 成份, or equivalent) and output only those ingredient names. Do not output the INCI or Latin-script section.",
-    fr: "If the label has ingredient sections in multiple languages, prefer the French-language section (headed by Ingrédients, Contient, or equivalent) and output only those ingredient names.",
-    de: "If the label has ingredient sections in multiple languages, prefer the German-language section (headed by Inhaltsstoffe, Zutaten, or equivalent) and output only those ingredient names.",
-    en: "If the label has ingredient sections in multiple languages, prefer the English or INCI Latin-script section (headed by INGREDIENTS, CONTAINS, or equivalent) and output only those ingredient names.",
-  }
-  const hint = langHints[lang] || langHints.en
+// The prompt asks the AI to transcribe ALL visible label text without filtering.
+// Section selection (Chinese vs Latin INCI vs other languages) is handled
+// deterministically by findIngredientSection() on the client, which is more
+// reliable than asking the AI to pick the right section.
+// The lang parameter is accepted for API compatibility but no longer alters the prompt.
+function buildOCRSystemPrompt(_lang: string): string {
   return (
     "You are a product label OCR assistant. " +
-    "Step 1: look for the ingredients / components section on the label. " +
-    "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
-    "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
-    hint + " " +
-    "If you find that section, output ONLY the ingredient names exactly as printed, " +
-    "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) — " +
-    "do NOT include: section headers, manufacturer names, brand names, lot numbers, batch codes, " +
-    "registration numbers, addresses, websites, phone numbers, distribution info ('Made in', 'Distributed by', 'Imported by'), " +
-    "certifications, copyright notices, or any other non-ingredient text. " +
-    "Stop the output when the ingredient list ends; do not continue into manufacturing or contact information. " +
-    "Step 2: if you cannot identify a clearly labelled ingredients section " +
-    "(e.g. because the heading is cropped, absent, or ambiguous), output ALL the text " +
-    "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
-    "Never output an empty response — always return whatever text is legible on the label."
+    "Your task is to accurately read and transcribe ALL visible text from the product label image. " +
+    "Output the complete label text exactly as it is printed, preserving: " +
+    "all ingredient sections in every language present on the label (e.g. sections headed by " +
+    "'INGREDIENTS', 'Ingrédients', '成分', '配料', '原料', 'Inhaltsstoffe', or any equivalent term), " +
+    "all section headings and markers, all separators (commas, slashes, semicolons, asterisks, etc.), " +
+    "and the original text structure. " +
+    "Do NOT skip, filter, or omit any section of the label. " +
+    "If any text is unclear or partially legible, output your best reading. " +
+    "Never output an empty response — always return whatever text is visible on the label."
   )
 }
 
@@ -573,10 +564,10 @@ serve(async (req) => {
         )
       }
 
-      // Build a language-aware OCR prompt so the AI returns the ingredient section
-      // matching the user's UI language when the label has multiple language sections.
-      const ocrLang = normalizeLanguage(lang || 'en')
-      const ocrPrompt = buildOCRSystemPrompt(ocrLang)
+      // Build the OCR prompt (language-agnostic: always transcribes all visible text).
+      // Section selection by language is handled deterministically by findIngredientSection()
+      // on the client, which is more reliable than asking the AI to pick the right section.
+      const ocrPrompt = buildOCRSystemPrompt(normalizeLanguage(lang || 'en'))
 
       // Provider chain: OpenAI → Gemini → Groq → OpenRouter
       // Returns null when a provider's API key is absent (skip to next).
