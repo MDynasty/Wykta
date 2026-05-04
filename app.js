@@ -477,83 +477,8 @@ function isLikelyIngredientToken(token = ""){
 
 
 // Extracts just the ingredient section from full product label text (e.g. OCR of an entire label).
-// Strips product metadata (name, manufacturer, batch number, etc.) that precedes the ingredient list,
-// and — when both a Chinese (成分:) and a Latin INCI (INGREDIENTS:) section are present —
-// selects only the section that matches the user's preferred language to avoid double-counting.
-// Returns the original text unchanged when no known ingredient-section heading is found.
-function findIngredientSection(text, preferredLang) {
-  if (!text || !text.trim()) return text
-  const lang = preferredLang || currentLanguage()
-
-  // Heading patterns that signal the start of an ingredient section.
-  // Separators include : / and also a newline (INGREDIENTS\nWater...) or a dash/em-dash
-  // (OCR sometimes reads colons as dashes). A trailing space before an uppercase word
-  // is also accepted (e.g. "INGREDIENTS AQUA" as OCR'd from a label without a colon).
-  const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
-  const laHeaderRe = /\bINGREDIENTS?\s*[:/\-–—\n]|\bINGREDIENTS?\s+(?=[A-ZÀÂÇÉÈÊËÎÏÔÛÙÜŸŒÆ])|\bCONTAINS\s*[:/\-–—\n]|\bCONTIENT\s*[:/\-–—\n]|\bINCI\s*[:/\-–—\n]|Ingrédients?\s*[:/\-–—\n]|Inhaltsstoffe?\s*[:/\-–—\n]/i
-
-  const zhMatch = zhHeaderRe.exec(text)
-  const laMatch = laHeaderRe.exec(text)
-
-  // No known ingredient heading found.
-  // Check whether the text looks like a nutrition facts / nutritional information panel.
-  // Key signals: "Nutrition Facts" / "Valeur nutritive" / "Nährwerte" heading OR
-  // a combination of ≥2 distinct macronutrient/micronutrient names plus a percentage
-  // value (characteristic of a nutrition table row). When detected without an ingredient
-  // header, return "" so the caller can show a targeted "aim at INGREDIENTS section" message.
-  // Otherwise (no nutrition-facts signals) the text is probably a user-pasted ingredient
-  // list without a header — return it as-is so it can be parsed normally.
-  if (!zhMatch && !laMatch) {
-    const hasNutrifactsHeader = /\bNutrition\s+Facts\b|\bValeur\s+nutritive\b|\bNährwert(?:angaben|information|e)?\b|\b营养成分(?:表)?\b/i.test(text)
-    const macroMatches = text.match(/\b(?:Calories?|Protein|Protéines?|Fat|Fett|Graisses?|Carbohydrate|Glucides?|Sodium|Natrium|Cholesterol|Cholestérol|Sugars?|Sucres?|Fibre|Fiber|Potassium|Eiweiß|Kohlenhydrate|Calcium|Iron|Fer|Vitamine?\s*[A-Za-z0-9]+)\b/gi)
-    const distinctMacros = new Set((macroMatches || []).map(m => m.toLowerCase().replace(/\s+/g, " "))).size
-    const hasPercentageValue = /\b\d+\s*%/.test(text)
-    if (hasNutrifactsHeader || (distinctMacros >= 2 && hasPercentageValue)) return ""
-    return text
-  }
-
-  // After identifying the start of an ingredient section, stop before product-metadata keywords
-  // (batch number, net weight, manufacturer info, usage instructions, etc.) that typically
-  // follow the ingredient list on both Chinese and Latin-script labels.
-  // The order of alternates matters: more-specific company/address patterns fire before
-  // the broader "Made in" pattern, cutting off company name + address + registration code
-  // that sit between the last INCI ingredient and the country-of-origin statement.
-  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]|\b(?:Lot\s*(?:No?\.?\s*)?[#:\-–]|Batch\s*(?:No?\.?\s*)?[#:\-–]|(?:Manufactured|Distributed|Imported|Packaged|Produced|Bottled|Packed)\s+(?:by|for)\b|Made\s+in\b|Produced\s+in\b|Product\s+of\b|Fabriqu[eé]s?\s+(?:en|au|par)\b|Import[eé]\s+par\b|Distribu[eé]\s+par\b|Produit\s+(?:de|par)\b|Questions?\s+or\s+Comments?\b|For\s+more\s+information\b|www\.[a-z]+|Laboratoires?\b|GmbH\b|Ltd\.?\b|Inc\.?\b|Corp\.?\b|S\.A\.S\.?\b|SAS\b|SARL\b|B\.V\.?\b|\d+\s*,?\s*(?:avenue|rue|boulevard|all[eé]e|strasse|street|place)\s+[A-Z])|©/i
-
-  function sliceSection(start, hardEnd) {
-    const rawSlice = text.slice(start, hardEnd).trim()
-    if (!rawSlice) return ""
-    const stopMatch = metadataStopRe.exec(rawSlice)
-    if (stopMatch) {
-      // Return everything before the metadata marker.
-      // If the marker fires right at the start (no ingredient content), fall back
-      // to the raw slice to avoid an empty result — this is still better than
-      // returning the full label text with pre-header metadata.
-      return rawSlice.slice(0, stopMatch.index).trim() || rawSlice
-    }
-    return rawSlice
-  }
-
-  if (lang === "zh") {
-    if (zhMatch) {
-      const start = zhMatch.index + zhMatch[0].length
-      // Stop before the Latin INCI section (same ingredients in different notation)
-      const laStop = (laMatch && laMatch.index > start) ? laMatch.index : text.length
-      return sliceSection(start, laStop) || ""
-    }
-    // No Chinese header but Latin exists — use Latin section as fallback
-    return sliceSection(laMatch.index + laMatch[0].length, text.length) || ""
-  } else {
-    if (laMatch) {
-      const start = laMatch.index + laMatch[0].length
-      // Stop before the Chinese section (if it appears after the Latin header)
-      const zhStop = (zhMatch && zhMatch.index > start) ? zhMatch.index : text.length
-      return sliceSection(start, zhStop) || ""
-    }
-    // No Latin header but Chinese exists — use Chinese section as fallback
-    return sliceSection(zhMatch.index + zhMatch[0].length, text.length) || ""
-  }
-}
+// findIngredientSection is defined in ingredient-section.js (loaded before app.js).
+// See that file for full implementation and documentation.
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
