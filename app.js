@@ -456,6 +456,17 @@ function isLikelyIngredientToken(token = ""){
       if (lead.length >= 3 && !validClusters.test(lead)) return false
     }
   }
+  // Multi-word OCR garbage: tokens of 2-4 words where EVERY word either has no vowels
+  // or is only 1-2 letters are almost certainly address/code fragments
+  // (e.g. "LSE SBF", "BIR Raa E"). Real INCI multi-word names always have at least
+  // one word with a vowel and >= 3 letters (e.g. "sodium lauryl sulfate", "aloe vera").
+  if (!hasSingleWord && !/[\u4e00-\u9fa5]/.test(normalized)) {
+    const words = normalized.trim().split(/\s+/)
+    if (words.length >= 2 && words.length <= 4) {
+      const allWordsAreFiller = words.every(w => w.length <= 2 || !/[aeiouy]/i.test(w))
+      if (allWordsAreFiller) return false
+    }
+  }
   return true
 }
 
@@ -471,7 +482,7 @@ function findIngredientSection(text, preferredLang) {
 
   // Heading patterns that signal the start of an ingredient section
   const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
-  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bCONTAINS\s*[:/]|\bCONTIENT\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
+  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bCONTAINS\s*[:/\-–—]|\bCONTIENT\s*[:/\-–—]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
 
   const zhMatch = zhHeaderRe.exec(text)
   const laMatch = laHeaderRe.exec(text)
@@ -494,8 +505,9 @@ function findIngredientSection(text, preferredLang) {
   }
 
   // After identifying the start of an ingredient section, stop before product-metadata keywords
-  // (batch number, net weight, usage instructions, etc.) that typically follow ingredients.
-  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]/i
+  // (batch number, net weight, manufacturer info, usage instructions, etc.) that typically
+  // follow the ingredient list on both Chinese and Latin-script labels.
+  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]|\b(?:Lot\s*(?:No?\.?\s*)?[#:\-–]|Batch\s*(?:No?\.?\s*)?[#:\-–]|(?:Manufactured|Distributed|Imported|Packaged|Produced|Bottled|Packed)\s+(?:by|for)\b|Made\s+in\b|Produced\s+in\b|Product\s+of\b|Fabriqu[eé]s?\s+(?:en|au|par)\b|Import[eé]\s+par\b|Distribu[eé]\s+par\b|Produit\s+(?:de|par)\b|Questions?\s+or\s+Comments?\b|For\s+more\s+information\b|www\.[a-z]+)|©/i
 
   function sliceSection(start, hardEnd) {
     const rawSlice = text.slice(start, hardEnd).trim()
