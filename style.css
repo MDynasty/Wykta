@@ -1407,6 +1407,8 @@ input[type="file"].visually-hidden {
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
   .hero-badge  { margin-bottom: 18px; }
+  /* clamp min (12px) must stay low so the English title fits in one line on narrow phones (≥320px).
+     At 375px: 3.8vw = ~14px; text ≈ 282px < 307px usable — raising the min breaks single-line. */
   .hero-title  { font-size: clamp(12px, 3.8vw, 24px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
   /* Full-width CTA — easier to tap on small screens */
@@ -1414,7 +1416,7 @@ input[type="file"].visually-hidden {
   /* Chips: 2×2 grid on phone — all 4 visible, no scroll */
   .hero .chips { display: flex; flex-wrap: wrap; overflow-x: visible; justify-content: center;
                  margin-top: 20px; width: 100%; box-sizing: border-box; gap: 8px; }
-  .chip        { flex: 1 1 calc(50% - 4px); white-space: normal; text-align: center;
+  .chip        { flex: 1 1 calc(50% - 4px); /* 4px = half of 8px gap */ white-space: normal; text-align: center;
                  font-size: 11px; padding: 5px 8px; }
 
   /* === Cards === */
