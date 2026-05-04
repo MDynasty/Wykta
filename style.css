@@ -298,16 +298,11 @@ input[type="file"].visually-hidden {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 22px;
-  border-radius: 999px;
   font-size: clamp(16px, 2.2vw, 24px);
   font-weight: 700;
   letter-spacing: 0.01em;
-  background: linear-gradient(135deg, rgba(129, 140, 248, 0.16), rgba(34, 211, 238, 0.10));
-  border: 1px solid rgba(167, 139, 250, 0.40);
   color: var(--brand);
-  margin-bottom: 28px;
-  box-shadow: 0 2px 12px rgba(129, 140, 248, 0.18), inset 0 1px 0 rgba(255,255,255,0.07);
+  margin-bottom: 14px;
   animation: badgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -1412,7 +1407,7 @@ input[type="file"].visually-hidden {
      This eliminates the need for per-child align-self overrides and gives
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
-  .hero-badge  { margin-bottom: 20px; font-size: clamp(13px, 3.8vw, 18px); padding: 8px 16px; }
+  .hero-badge  { margin-bottom: 12px; font-size: clamp(13px, 3.8vw, 18px); }
   /* Keep title font scaled with viewport; vw-based size prevents overflow.
      At 375px: 4.5vw ≈ 17px — fits on a single line at that size. */
   .hero-title  { font-size: clamp(16px, 4.5vw, 28px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
