@@ -297,17 +297,16 @@ input[type="file"].visually-hidden {
 .hero-badge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 16px;
+  gap: 8px;
+  padding: 10px 22px;
   border-radius: 999px;
-  font-size: 11.5px;
+  font-size: clamp(16px, 2.2vw, 24px);
   font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
   background: linear-gradient(135deg, rgba(129, 140, 248, 0.16), rgba(34, 211, 238, 0.10));
   border: 1px solid rgba(167, 139, 250, 0.40);
   color: var(--brand);
-  margin-bottom: 26px;
+  margin-bottom: 28px;
   box-shadow: 0 2px 12px rgba(129, 140, 248, 0.18), inset 0 1px 0 rgba(255,255,255,0.07);
   animation: badgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -328,11 +327,12 @@ input[type="file"].visually-hidden {
 }
 
 .hero-title {
-  font-size: clamp(32px, 5.8vw, 64px);
+  font-size: clamp(32px, 4.8vw, 54px);
   font-weight: 900;
   line-height: 1.10;
   letter-spacing: -0.032em;
   margin-bottom: 22px;
+  white-space: nowrap;
   animation: titleReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
@@ -392,13 +392,15 @@ input[type="file"].visually-hidden {
   justify-content: center;
   gap: 10px;
   margin-top: 28px;
-  /* hide scrollbar on all screen sizes (swipe still works on touch) */
+  max-width: 520px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 .hero .chips::-webkit-scrollbar { display: none; }
 
 .chip {
+  flex: 1 1 calc(50% - 5px);
+  max-width: calc(50% - 5px);
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 13px;
@@ -406,6 +408,9 @@ input[type="file"].visually-hidden {
   background: rgba(129, 140, 248, 0.10);
   border: 1px solid rgba(129, 140, 248, 0.28);
   color: var(--brand);
+  text-align: center;
+  white-space: normal;
+  box-sizing: border-box;
 }
 
 /* === CARD BASE === */
@@ -1345,13 +1350,9 @@ input[type="file"].visually-hidden {
   }
   .plan-card      { scroll-snap-align: start; }
   .sub-grid       { grid-template-columns: 1fr; }
-  /* Reduce font enough so the English title fits on one line at 768px */
-  .hero-title     { font-size: 32px; }
-  /* Feature chips: all 4 visible in one row — each chip stretches equally, text wraps inside */
-  .hero .chips    { flex-wrap: nowrap; overflow-x: visible; justify-content: flex-start;
-                    width: 100%; box-sizing: border-box; }
-  .chip           { flex: 1 1 0; min-width: 0; white-space: normal; text-align: center;
-                    font-size: 11px; padding: 6px 8px; }
+  /* Feature chips: keep 2×2 grid at all widths */
+  .hero .chips    { max-width: 100%; }
+  .chip           { font-size: 12px; padding: 7px 10px; }
 }
 
 @media (max-width: 768px) {
@@ -1393,9 +1394,9 @@ input[type="file"].visually-hidden {
   .hero-sub { margin-left: 0; max-width: 100%; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
-  /* Feature chips: all 4 visible in one row, no scroll */
-  .hero .chips { flex-wrap: nowrap; overflow-x: visible; justify-content: flex-start; width: 100%; box-sizing: border-box; }
-  /* chip styles cascade from ≤920px (flex:1 1 0, nowrap text, 11px font) */
+  /* Feature chips: keep 2×2 grid */
+  .hero .chips { flex-wrap: wrap; justify-content: center; max-width: 100%; width: 100%; box-sizing: border-box; }
+  /* chip styles cascade from base (flex: 1 1 calc(50% - 5px)) */
 }
 
 @media (max-width: 600px) {
@@ -1406,17 +1407,17 @@ input[type="file"].visually-hidden {
      This eliminates the need for per-child align-self overrides and gives
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
-  .hero-badge  { margin-bottom: 18px; }
-  /* clamp min (12px) must stay low so the English title fits in one line on narrow phones (≥320px).
-     At 375px: 3.8vw = ~14px; text ≈ 282px < 307px usable — raising the min breaks single-line. */
-  .hero-title  { font-size: clamp(12px, 3.8vw, 24px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
+  .hero-badge  { margin-bottom: 20px; font-size: clamp(13px, 3.8vw, 18px); padding: 8px 16px; }
+  /* Keep title on one line on narrow phones; vw-based size scales with viewport.
+     At 375px: 4.5vw ≈ 17px — fits on a single line. */
+  .hero-title  { font-size: clamp(14px, 4.5vw, 28px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; white-space: nowrap; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
   /* Full-width CTA — easier to tap on small screens */
   .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
   /* Chips: 2×2 grid on phone — all 4 visible, no scroll */
   .hero .chips { display: flex; flex-wrap: wrap; overflow-x: visible; justify-content: center;
-                 margin-top: 20px; width: 100%; box-sizing: border-box; gap: 8px; }
-  .chip        { flex: 1 1 calc(50% - 4px); /* 4px = half of 8px gap */ white-space: normal; text-align: center;
+                 margin-top: 16px; width: 100%; box-sizing: border-box; gap: 8px; max-width: 100%; }
+  .chip        { flex: 1 1 calc(50% - 4px); max-width: calc(50% - 4px); /* 4px = half of 8px gap */ white-space: normal; text-align: center;
                  font-size: 11px; padding: 5px 8px; }
 
   /* === Cards === */
