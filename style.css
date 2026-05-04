@@ -1375,8 +1375,8 @@ input[type="file"].visually-hidden {
     border-bottom: 1px solid var(--border);
     color: var(--text-2);
   }
-  .btn-row   { gap: 6px; }
-  .btn-row .btn, .btn-row label.btn { flex-shrink: 0; }
+  .btn-row   { gap: 6px; flex-wrap: wrap; overflow-x: visible; padding-right: 0; justify-content: flex-start; }
+  .btn-row .btn, .btn-row label.btn { flex: 1 1 auto; min-width: 0; }
   .main { gap: 32px; }
   .hero { padding: 40px 30px 0; text-align: left; }
   .hero-badge,
@@ -1417,6 +1417,8 @@ input[type="file"].visually-hidden {
 
   /* === Buttons === */
   .btn         { font-size: 13px; padding: 10px 14px; }
+  /* On phone, cap buttons at ~half-width so they form a 2×2 grid */
+  .btn-row .btn, .btn-row label.btn { flex: 1 1 calc(50% - 3px); }
 
   /* === Billing toggle === */
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
