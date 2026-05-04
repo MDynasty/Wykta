@@ -11,6 +11,8 @@ const FALLBACK_OPENAI_MODEL = "gpt-4o"
 const FALLBACK_GEMINI_MODEL = "gemini-1.5-flash"
 const FALLBACK_GROQ_MODEL = "llama-3.3-70b-versatile"
 const FALLBACK_OPENROUTER_MODEL = "mistralai/mistral-7b-instruct:free"
+const FALLBACK_GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+const FALLBACK_OPENROUTER_VISION_MODEL = "meta-llama/llama-3.2-11b-vision-instruct:free"
 
 // ---------------------------------------------------------------------------
 // Free-tier daily AI analysis limit
@@ -145,7 +147,7 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
 async function extractTextFromImageGemini(imageBase64: string): Promise<string | null> {
   const apiKey = Deno.env.get("GEMINI_API_KEY")
   const model = Deno.env.get("GEMINI_MODEL") || FALLBACK_GEMINI_MODEL
-  if (!apiKey) return null
+  if (!apiKey) return OCR_NO_API_KEY
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -174,6 +176,88 @@ async function extractTextFromImageGemini(imageBase64: string): Promise<string |
 
   const json = await response.json()
   return json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null
+}
+
+// ---------------------------------------------------------------------------
+// Generic OpenAI-compatible Vision OCR helper
+// Shared by Groq and OpenRouter providers.
+// ---------------------------------------------------------------------------
+
+async function extractTextFromImageOpenAICompat(
+  imageBase64: string,
+  baseUrl: string,
+  apiKey: string,
+  model: string,
+  providerName: string,
+): Promise<string | null> {
+  const response = await fetch(`${baseUrl}/chat/completions`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: OCR_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${imageBase64}`,
+                detail: "high",
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 4096,
+      temperature: 0.1,
+    }),
+  })
+
+  if (!response.ok) {
+    const errText = await response.text()
+    console.error(`${providerName} Vision API error ${response.status}:`, errText)
+    throw new Error(`${providerName} Vision API error ${response.status}: ${errText}`)
+  }
+
+  const json = await response.json()
+  const text = json?.choices?.[0]?.message?.content?.trim() || null
+  if (!text) {
+    console.warn(`${providerName} Vision OCR: model returned empty content; finish_reason:`, json?.choices?.[0]?.finish_reason)
+  }
+  return text
+}
+
+// ---------------------------------------------------------------------------
+// Groq Vision OCR fallback
+// Uses GROQ_API_KEY. Set GROQ_VISION_MODEL to override the default model.
+// ---------------------------------------------------------------------------
+
+async function extractTextFromImageGroq(imageBase64: string): Promise<string | null> {
+  const apiKey = Deno.env.get("GROQ_API_KEY")
+  const model = Deno.env.get("GROQ_VISION_MODEL") || FALLBACK_GROQ_VISION_MODEL
+  if (!apiKey) return OCR_NO_API_KEY
+  return extractTextFromImageOpenAICompat(
+    imageBase64, "https://api.groq.com/openai/v1", apiKey, model, "Groq",
+  )
+}
+
+// ---------------------------------------------------------------------------
+// OpenRouter Vision OCR fallback
+// Uses OPENROUTER_API_KEY. Set OPENROUTER_VISION_MODEL to override the default model.
+// ---------------------------------------------------------------------------
+
+async function extractTextFromImageOpenRouter(imageBase64: string): Promise<string | null> {
+  const apiKey = Deno.env.get("OPENROUTER_API_KEY")
+  const model = Deno.env.get("OPENROUTER_VISION_MODEL") || FALLBACK_OPENROUTER_VISION_MODEL
+  if (!apiKey) return OCR_NO_API_KEY
+  return extractTextFromImageOpenAICompat(
+    imageBase64, "https://openrouter.ai/api/v1", apiKey, model, "OpenRouter",
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -474,37 +558,53 @@ serve(async (req) => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
         )
       }
-      try {
-        let extractedText = await extractTextFromImage(imageBase64)
-        // If OpenAI key absent, try Gemini Vision as fallback.
-        if (extractedText === OCR_NO_API_KEY) {
-          console.log("Vision OCR: OpenAI key absent, trying Gemini Vision...")
-          try {
-            extractedText = await extractTextFromImageGemini(imageBase64)
-          } catch (geminiErr) {
-            console.warn("Gemini Vision OCR error:", geminiErr)
-            extractedText = null
+
+      // Provider chain: OpenAI → Gemini → Groq → OpenRouter
+      // Returns null when a provider's API key is absent (skip to next).
+      // Throws on API errors (caught below per-provider).
+      const visionProviders: Array<{ name: string; fn: () => Promise<string | null> }> = [
+        { name: "OpenAI",     fn: () => extractTextFromImage(imageBase64) },
+        { name: "Gemini",     fn: () => extractTextFromImageGemini(imageBase64) },
+        { name: "Groq",       fn: () => extractTextFromImageGroq(imageBase64) },
+        { name: "OpenRouter", fn: () => extractTextFromImageOpenRouter(imageBase64) },
+      ]
+
+      let extractedText: string | null = null
+      let anyKeyConfigured = false
+
+      for (const provider of visionProviders) {
+        try {
+          const result = await provider.fn()
+          if (result === OCR_NO_API_KEY) {
+            console.log(`Vision OCR: ${provider.name} key absent, skipping`)
+            continue
           }
-          if (!extractedText) {
-            console.warn("Vision OCR: all providers unavailable")
-            return new Response(
-              JSON.stringify({ extractedText: null, ocrUnavailable: true }),
-              { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
-            )
+          anyKeyConfigured = true
+          if (result) {
+            extractedText = result
+            console.log(`Vision OCR: ${provider.name} succeeded, text length: ${result.length}`)
+            break
           }
+          console.log(`Vision OCR: ${provider.name} returned empty text, trying next provider`)
+        } catch (providerErr) {
+          anyKeyConfigured = true
+          console.warn(`Vision OCR: ${provider.name} error:`, providerErr)
         }
-        console.log("Vision OCR extracted text length:", extractedText?.length ?? 0)
+      }
+
+      if (!anyKeyConfigured) {
+        console.warn("Vision OCR: no provider keys configured")
         return new Response(
-          JSON.stringify({ extractedText: extractedText || null }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
-        )
-      } catch (visionErr) {
-        console.warn("Vision OCR error:", visionErr)
-        return new Response(
-          JSON.stringify({ extractedText: null }),
+          JSON.stringify({ extractedText: null, ocrUnavailable: true }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
         )
       }
+
+      console.log("Vision OCR extracted text length:", extractedText?.length ?? 0)
+      return new Response(
+        JSON.stringify({ extractedText: extractedText || null }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 },
+      )
     }
 
     const normalizedLanguage = normalizeLanguage(lang)
