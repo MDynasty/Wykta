@@ -2946,26 +2946,39 @@ async function callAIVisionOCR(canvas) {
   }
 }
 
-// System prompt for the direct client-side Gemini Vision OCR call.
-// Mirrors the server-side OCR_SYSTEM_PROMPT in the edge function.
-const OCR_DIRECT_SYSTEM_PROMPT =
-  "You are a product label OCR assistant. " +
-  "Step 1: look for the ingredients / components section on the label. " +
-  "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
-  "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
-  "If you find that section, output ONLY the ingredient names exactly as printed, " +
-  "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) and excluding " +
-  "section headers, brand names, addresses, certifications, and any other non-ingredient text. " +
-  "Step 2: if you cannot identify a clearly labelled ingredients section, output ALL the text " +
-  "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
-  "Never output an empty response — always return whatever text is legible on the label."
+// Builds the OCR system prompt for the direct client-side Gemini Vision call.
+// Includes a language-preference hint so that when a label has ingredient sections
+// in multiple languages or scripts, the AI returns the section matching the UI language.
+// Mirrors the server-side buildOCRSystemPrompt() in the edge function.
+function buildOCRDirectPrompt(lang) {
+  const langHints = {
+    zh: "If the label has ingredient sections in multiple languages or scripts, prefer the Chinese-language section (headed by 成分, 配料, 原料, 成份, or equivalent) and output only those ingredient names. Do not output the INCI or Latin-script section.",
+    fr: "If the label has ingredient sections in multiple languages, prefer the French-language section (headed by Ingrédients, Contient, or equivalent) and output only those ingredient names.",
+    de: "If the label has ingredient sections in multiple languages, prefer the German-language section (headed by Inhaltsstoffe, Zutaten, or equivalent) and output only those ingredient names.",
+    en: "If the label has ingredient sections in multiple languages, prefer the English or INCI Latin-script section (headed by INGREDIENTS, CONTAINS, or equivalent) and output only those ingredient names.",
+  }
+  const hint = langHints[lang] || langHints.en
+  return (
+    "You are a product label OCR assistant. " +
+    "Step 1: look for the ingredients / components section on the label. " +
+    "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
+    "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
+    hint + " " +
+    "If you find that section, output ONLY the ingredient names exactly as printed, " +
+    "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) and excluding " +
+    "section headers, brand names, addresses, certifications, and any other non-ingredient text. " +
+    "Step 2: if you cannot identify a clearly labelled ingredients section, output ALL the text " +
+    "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
+    "Never output an empty response — always return whatever text is legible on the label."
+  )
+}
 
 // Calls the Gemini Vision API directly from the browser using the optional
 // geminiApiKey declared in config.js.  This provides AI-quality OCR without
 // requiring a configured Supabase backend.
 // Returns { text: string } on success or { text: null } when the key is absent
 // or the request fails.
-async function callGeminiVisionDirect(canvas) {
+async function callGeminiVisionDirect(canvas, lang) {
   if (typeof geminiApiKey === "undefined" || !geminiApiKey || !geminiApiKey.trim()) {
     return { text: null }
   }
@@ -2978,7 +2991,7 @@ async function callGeminiVisionDirect(canvas) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: OCR_DIRECT_SYSTEM_PROMPT }] },
+        system_instruction: { parts: [{ text: buildOCRDirectPrompt(lang || currentLanguage()) }] },
         contents: [{ parts: [{ inline_data: { mime_type: "image/jpeg", data: imageBase64 } }] }],
         generationConfig: { maxOutputTokens: 4096, temperature: 0.1 },
       }),
@@ -3024,7 +3037,7 @@ async function runOCR(canvas) {
 
   // Direct client-side Gemini Vision fallback (uses geminiApiKey from config.js).
   // Works without a Supabase backend; requires a free key from aistudio.google.com.
-  const { text: directText } = await callGeminiVisionDirect(canvas)
+  const { text: directText } = await callGeminiVisionDirect(canvas, currentLanguage())
   if (directText) {
     if (ocrEl) {
       ocrEl.innerText = ""
@@ -3077,6 +3090,12 @@ async function handleImageUpload(input) {
     ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
+  // Clear any stale preview from a previous upload so the old image is not
+  // still visible while the new image is loading.
+  const stalePreview = document.getElementById("imagePreview")
+  if (stalePreview) { stalePreview.style.display = "none"; stalePreview.src = "" }
+  canvas.style.display = "none"
+
   // Show camera panel immediately so the processing message is visible.
   // Also hide the video right away so no blank/black frame flashes before the
   // uploaded image preview appears in img.onload below.
