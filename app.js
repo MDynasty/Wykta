@@ -2810,14 +2810,15 @@ function preprocessCanvasForOCR(src) {
 // Checks whether Tesseract output looks like real label text vs. OCR noise.
 // A garbage scan (curled label, blurry photo, logo area) typically yields many
 // 1-3 character fragments and very few proper words.
-// Returns false (unusable) if fewer than 3 words of 4+ characters are found —
-// real ingredient lists always contain at least a few full words (e.g. "AQUA",
-// "WATER", "GLYCERIN") even when the scan is imperfect.
+// Returns false (unusable) if fewer than 2 words of 4+ characters are found —
+// real ingredient lists always contain at least one or two full words (e.g. "AQUA",
+// "WATER", "GLYCERIN") even when the scan is imperfect. Two is the minimum
+// because some very short lists (e.g. "Water, Glycerin") are genuinely valid.
 function isOCRTextUsable(text) {
   if (!text) return false
   const words = text.trim().split(/\s+/).filter(w => w.length > 0)
   const longWordCount = words.filter(w => w.replace(/[^a-z\u4e00-\u9fa5]/gi, "").length >= 4).length
-  return longWordCount >= 3
+  return longWordCount >= 2
 }
 
 // Run on-device OCR via Tesseract.js.
@@ -2833,10 +2834,26 @@ async function runLocalOCR(canvas) {
   if (!loaded || typeof window.Tesseract === "undefined") return null
   let worker = null
   let timeoutId = null
+  // Live progress element — updated by the Tesseract logger below.
+  const ocrEl = document.getElementById("ocrResult")
   try {
     const prepared = preprocessCanvasForOCR(canvas)
     // Use the Worker API so we can set Tesseract parameters before recognition.
-    worker = await window.Tesseract.createWorker("eng", LOCAL_OCR_OEM_LSTM, { logger: () => {} })
+    // The logger receives status/progress events from the worker; we use them to
+    // show a live percentage so users know the OCR is still running (not frozen).
+    worker = await window.Tesseract.createWorker("eng", LOCAL_OCR_OEM_LSTM, {
+      logger: (m) => {
+        if (!ocrEl) return
+        if (m.status === "recognizing text" && typeof m.progress === "number") {
+          const pct = Math.round(m.progress * 100)
+          ocrEl.innerText = `${t("ocrLocalProcessing")} ${pct}%`
+        } else if (m.status === "loading tesseract core" || m.status === "initializing tesseract") {
+          ocrEl.innerText = `${t("ocrLocalProcessing")} (loading…)`
+        } else if (m.status === "loading language traineddata" || m.status === "initializing api") {
+          ocrEl.innerText = `${t("ocrLocalProcessing")} (initializing…)`
+        }
+      },
+    })
     await worker.setParameters({
       // PSM 11 — Sparse text: find as much text as possible in no particular order.
       // This is the correct mode for product labels where text is scattered across
@@ -2929,10 +2946,64 @@ async function callAIVisionOCR(canvas) {
   }
 }
 
+// System prompt for the direct client-side Gemini Vision OCR call.
+// Mirrors the server-side OCR_SYSTEM_PROMPT in the edge function.
+const OCR_DIRECT_SYSTEM_PROMPT =
+  "You are a product label OCR assistant. " +
+  "Step 1: look for the ingredients / components section on the label. " +
+  "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
+  "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
+  "If you find that section, output ONLY the ingredient names exactly as printed, " +
+  "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) and excluding " +
+  "section headers, brand names, addresses, certifications, and any other non-ingredient text. " +
+  "Step 2: if you cannot identify a clearly labelled ingredients section, output ALL the text " +
+  "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
+  "Never output an empty response — always return whatever text is legible on the label."
+
+// Calls the Gemini Vision API directly from the browser using the optional
+// geminiApiKey declared in config.js.  This provides AI-quality OCR without
+// requiring a configured Supabase backend.
+// Returns { text: string } on success or { text: null } when the key is absent
+// or the request fails.
+async function callGeminiVisionDirect(canvas) {
+  if (typeof geminiApiKey === "undefined" || !geminiApiKey || !geminiApiKey.trim()) {
+    return { text: null }
+  }
+  try {
+    const resized = resizeCanvasForBackend(canvas)
+    const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
+    const model = "gemini-1.5-flash"
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey.trim()}`
+    const fetchPromise = fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: OCR_DIRECT_SYSTEM_PROMPT }] },
+        contents: [{ parts: [{ inline_data: { mime_type: "image/jpeg", data: imageBase64 } }] }],
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.1 },
+      }),
+    })
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Direct Gemini Vision timed out")), AI_OCR_TIMEOUT_MS)
+    )
+    const response = await Promise.race([fetchPromise, timeoutPromise])
+    if (!response.ok) {
+      console.warn("Direct Gemini Vision API error:", response.status)
+      return { text: null }
+    }
+    const json = await response.json()
+    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null
+    return { text }
+  } catch (err) {
+    console.warn("Direct Gemini Vision failed:", err)
+    return { text: null }
+  }
+}
+
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
 
-  // Try the AI backend first (highest accuracy, multi-language).
+  // Try the Supabase AI backend first (highest accuracy, multi-language).
   if (supabaseClient) {
     if (ocrEl) {
       ocrEl.innerText = t("ocrProcessing")
@@ -2948,7 +3019,20 @@ async function runOCR(canvas) {
       await analyzeIngredients()
       return
     }
-    // Backend unavailable or returned no text — fall through to on-device OCR.
+    // Backend unavailable or returned no text — fall through.
+  }
+
+  // Direct client-side Gemini Vision fallback (uses geminiApiKey from config.js).
+  // Works without a Supabase backend; requires a free key from aistudio.google.com.
+  const { text: directText } = await callGeminiVisionDirect(canvas)
+  if (directText) {
+    if (ocrEl) {
+      ocrEl.innerText = ""
+      ocrEl.classList.remove("visible")
+    }
+    document.getElementById("ingredients").value = directText
+    await analyzeIngredients()
+    return
   }
 
   // On-device Tesseract.js OCR fallback — works without any API keys.
