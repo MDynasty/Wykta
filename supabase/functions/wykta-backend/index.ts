@@ -70,11 +70,14 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 const OCR_SYSTEM_PROMPT =
   "You are a product label OCR assistant. " +
   "Step 1: look for the ingredients / components section on the label. " +
-  "It may be headed by keywords such as 'INGREDIENTS', 'INCI', 'Ingrédients', 'Zutaten', " +
+  "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
   "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
   "If you find that section, output ONLY the ingredient names exactly as printed, " +
   "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) — " +
-  "no headers, no explanations, no extra formatting. " +
+  "do NOT include: section headers, manufacturer names, brand names, lot numbers, batch codes, " +
+  "registration numbers, addresses, websites, phone numbers, distribution info ('Made in', 'Distributed by', 'Imported by'), " +
+  "certifications, copyright notices, or any other non-ingredient text. " +
+  "Stop the output when the ingredient list ends; do not continue into manufacturing or contact information. " +
   "Step 2: if you cannot identify a clearly labelled ingredients section " +
   "(e.g. because the heading is cropped, absent, or ambiguous), output ALL the text " +
   "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
