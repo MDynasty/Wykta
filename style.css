@@ -1345,11 +1345,13 @@ input[type="file"].visually-hidden {
   }
   .plan-card      { scroll-snap-align: start; }
   .sub-grid       { grid-template-columns: 1fr; }
-  .hero-title     { font-size: 34px; }
-  /* Feature chips: single scrollable horizontal row on tablet */
-  .hero .chips    { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
-                    -webkit-overflow-scrolling: touch; }
-  .chip           { white-space: nowrap; }
+  /* Reduce font enough so the English title fits on one line at 768px */
+  .hero-title     { font-size: 32px; }
+  /* Feature chips: all 4 visible in one row — each chip stretches equally, text wraps inside */
+  .hero .chips    { flex-wrap: nowrap; overflow-x: visible; justify-content: flex-start;
+                    width: 100%; box-sizing: border-box; }
+  .chip           { flex: 1 1 0; min-width: 0; white-space: normal; text-align: center;
+                    font-size: 11px; padding: 6px 8px; }
 }
 
 @media (max-width: 768px) {
@@ -1391,9 +1393,9 @@ input[type="file"].visually-hidden {
   .hero-sub { margin-left: 0; max-width: 100%; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
-  /* Feature chips: single scrollable horizontal row on tablet/phone */
-  .hero .chips { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
-  .chip  { white-space: nowrap; }
+  /* Feature chips: all 4 visible in one row, no scroll */
+  .hero .chips { flex-wrap: nowrap; overflow-x: visible; justify-content: flex-start; width: 100%; box-sizing: border-box; }
+  /* chip styles cascade from ≤920px (flex:1 1 0, nowrap text, 11px font) */
 }
 
 @media (max-width: 600px) {
@@ -1405,15 +1407,15 @@ input[type="file"].visually-hidden {
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
   .hero-badge  { margin-bottom: 18px; }
-  .hero-title  { font-size: 28px; line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 16px; }
+  .hero-title  { font-size: clamp(12px, 3.8vw, 24px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
   /* Full-width CTA — easier to tap on small screens */
   .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
-  /* Chips: horizontal scroll row */
-  .hero .chips { display: flex; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
-                 -webkit-overflow-scrolling: touch; margin-top: 20px;
-                 width: 100%; box-sizing: border-box; gap: 8px; }
-  .chip        { white-space: nowrap; }
+  /* Chips: 2×2 grid on phone — all 4 visible, no scroll */
+  .hero .chips { display: flex; flex-wrap: wrap; overflow-x: visible; justify-content: center;
+                 margin-top: 20px; width: 100%; box-sizing: border-box; gap: 8px; }
+  .chip        { flex: 1 1 calc(50% - 4px); white-space: normal; text-align: center;
+                 font-size: 11px; padding: 5px 8px; }
 
   /* === Cards === */
   .card,
