@@ -491,17 +491,12 @@ input[type="file"].visually-hidden {
 /* === BUTTONS === */
 .btn-row {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 18px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  /* Extra right padding leaves a gap that hints overflow when scrollable */
   padding-bottom: 4px;
-  padding-right: 4px;
-  scrollbar-width: none; /* hide scrollbar on Firefox */
 }
-.btn-row::-webkit-scrollbar { display: none; }
+.btn-row .btn, .btn-row label.btn { flex: 1 1 auto; min-width: 0; }
 
 .btn {
   display: inline-flex;
@@ -1376,7 +1371,8 @@ input[type="file"].visually-hidden {
     color: var(--text-2);
   }
   .btn-row   { gap: 6px; }
-  .btn-row .btn, .btn-row label.btn { flex-shrink: 0; }
+  /* 2×2 grid on tablet: each button takes half the row width */
+  .btn-row .btn, .btn-row label.btn { flex: 1 1 calc(50% - 3px); }
   .main { gap: 32px; }
   .hero { padding: 40px 30px 0; text-align: left; }
   .hero-badge,
