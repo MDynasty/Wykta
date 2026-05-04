@@ -1383,9 +1383,11 @@ input[type="file"].visually-hidden {
   .hero-sub { margin-left: 0; max-width: 100%; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
-  /* Feature chips: wrap to multiple lines so all chips are visible without scrolling */
-  .hero .chips { flex-wrap: wrap; overflow-x: visible; justify-content: flex-start; width: 100%; box-sizing: border-box; }
-  .chip  { white-space: nowrap; }
+  /* Feature chips: single horizontal row, swipeable by touch, no visible scrollbar */
+  .hero .chips { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch;
+                 scrollbar-width: none; -ms-overflow-style: none; width: 100%; box-sizing: border-box; }
+  .hero .chips::-webkit-scrollbar { display: none; }
+  .chip  { white-space: nowrap; flex-shrink: 0; }
 }
 
 @media (max-width: 600px) {
@@ -1397,15 +1399,17 @@ input[type="file"].visually-hidden {
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
   .hero-badge  { margin-bottom: 18px; }
-  /* Shrink hero title so "Know exactly what's in your products" stays on one line */
-  .hero-title  { font-size: clamp(14px, 4vw, 28px); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 16px; }
+  /* Shrink hero title so it fits on one line; clamp scales with vw for a readable size */
+  .hero-title  { font-size: clamp(13px, 4.5vw, 28px); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 16px; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
   /* Full-width CTA — easier to tap on small screens */
   .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
-  /* Chips: wrap to multiple lines so all chips are visible without horizontal scroll */
-  .hero .chips { display: flex; flex-wrap: wrap; overflow-x: visible; justify-content: flex-start;
+  /* Chips: single horizontal row, swipeable, no visible scrollbar */
+  .hero .chips { display: flex; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+                 -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
                  margin-top: 20px; width: 100%; box-sizing: border-box; gap: 8px; }
-  .chip        { white-space: nowrap; }
+  .hero .chips::-webkit-scrollbar { display: none; }
+  .chip        { white-space: nowrap; flex-shrink: 0; }
 
   /* === Cards === */
   .card,
