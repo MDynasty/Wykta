@@ -18,3 +18,14 @@ const APP_LOCAL_PAGES = ["index.html","checkout.html","contact-sales.html","comm
 // plausibleDomain: your site domain registered with plausible.io, e.g. "wykta.app"
 const gaId = ""
 const plausibleDomain = ""
+
+// Optional: Direct Gemini API key for Vision OCR.
+// When set, the app calls the Gemini Vision API directly from the browser,
+// providing AI-quality image recognition without requiring a configured
+// Supabase backend.  Get a free key at https://aistudio.google.com/apikey
+//
+// SECURITY: this key is visible in client-side code and network requests.
+// ALWAYS restrict the key to your domain at:
+//   https://console.cloud.google.com/apis/credentials
+// Unrestricted keys can be extracted and abused by third parties.
+const geminiApiKey = ""

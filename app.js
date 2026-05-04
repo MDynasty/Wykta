@@ -2929,10 +2929,64 @@ async function callAIVisionOCR(canvas) {
   }
 }
 
+// System prompt for the direct client-side Gemini Vision OCR call.
+// Mirrors the server-side OCR_SYSTEM_PROMPT in the edge function.
+const OCR_DIRECT_SYSTEM_PROMPT =
+  "You are a product label OCR assistant. " +
+  "Step 1: look for the ingredients / components section on the label. " +
+  "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
+  "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
+  "If you find that section, output ONLY the ingredient names exactly as printed, " +
+  "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) and excluding " +
+  "section headers, brand names, addresses, certifications, and any other non-ingredient text. " +
+  "Step 2: if you cannot identify a clearly labelled ingredients section, output ALL the text " +
+  "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
+  "Never output an empty response — always return whatever text is legible on the label."
+
+// Calls the Gemini Vision API directly from the browser using the optional
+// geminiApiKey declared in config.js.  This provides AI-quality OCR without
+// requiring a configured Supabase backend.
+// Returns { text: string } on success or { text: null } when the key is absent
+// or the request fails.
+async function callGeminiVisionDirect(canvas) {
+  if (typeof geminiApiKey === "undefined" || !geminiApiKey || !geminiApiKey.trim()) {
+    return { text: null }
+  }
+  try {
+    const resized = resizeCanvasForBackend(canvas)
+    const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
+    const model = "gemini-1.5-flash"
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey.trim()}`
+    const fetchPromise = fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: OCR_DIRECT_SYSTEM_PROMPT }] },
+        contents: [{ parts: [{ inline_data: { mime_type: "image/jpeg", data: imageBase64 } }] }],
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.1 },
+      }),
+    })
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Direct Gemini Vision timed out")), AI_OCR_TIMEOUT_MS)
+    )
+    const response = await Promise.race([fetchPromise, timeoutPromise])
+    if (!response.ok) {
+      console.warn("Direct Gemini Vision API error:", response.status)
+      return { text: null }
+    }
+    const json = await response.json()
+    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null
+    return { text }
+  } catch (err) {
+    console.warn("Direct Gemini Vision failed:", err)
+    return { text: null }
+  }
+}
+
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
 
-  // Try the AI backend first (highest accuracy, multi-language).
+  // Try the Supabase AI backend first (highest accuracy, multi-language).
   if (supabaseClient) {
     if (ocrEl) {
       ocrEl.innerText = t("ocrProcessing")
@@ -2948,7 +3002,20 @@ async function runOCR(canvas) {
       await analyzeIngredients()
       return
     }
-    // Backend unavailable or returned no text — fall through to on-device OCR.
+    // Backend unavailable or returned no text — fall through.
+  }
+
+  // Direct client-side Gemini Vision fallback (uses geminiApiKey from config.js).
+  // Works without a Supabase backend; requires a free key from aistudio.google.com.
+  const { text: directText } = await callGeminiVisionDirect(canvas)
+  if (directText) {
+    if (ocrEl) {
+      ocrEl.innerText = ""
+      ocrEl.classList.remove("visible")
+    }
+    document.getElementById("ingredients").value = directText
+    await analyzeIngredients()
+    return
   }
 
   // On-device Tesseract.js OCR fallback — works without any API keys.

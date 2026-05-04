@@ -114,6 +114,9 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
               type: "image_url",
               image_url: {
                 url: `data:image/jpeg;base64,${imageBase64}`,
+                // detail: "high" is intentional: ingredient labels use small print
+                // that requires more image tiles for accurate reading.
+                // Non-OpenAI providers that don't recognise this field ignore it safely.
                 detail: "high",
               },
             },
