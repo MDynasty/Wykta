@@ -65,31 +65,32 @@ async function checkAndRecordAiUsage(sessionId: string): Promise<{ allowed: bool
 // Not rate-limited — the subsequent analyzeIngredients call is.
 // ---------------------------------------------------------------------------
 
-// System prompt for the Vision OCR call.
-// Step 1 – find the ingredients section by its heading and return only those names.
-// Step 2 – if no clear heading is present, return all visible label text so the
-//          client-side parser can still attempt ingredient extraction.
-const OCR_SYSTEM_PROMPT =
-  "You are a product label OCR assistant. " +
-  "Step 1: look for the ingredients / components section on the label. " +
-  "It may be headed by keywords such as 'INGREDIENTS', 'CONTAINS', 'CONTIENT', 'INCI', 'Ingrédients', 'Zutaten', " +
-  "'成分', '配料', '原料', '成份', '组成', '配方', or any equivalent term in any language. " +
-  "If you find that section, output ONLY the ingredient names exactly as printed, " +
-  "preserving all original separators (commas, slashes, semicolons, asterisks, etc.) — " +
-  "do NOT include: section headers, manufacturer names, brand names, lot numbers, batch codes, " +
-  "registration numbers, addresses, websites, phone numbers, distribution info ('Made in', 'Distributed by', 'Imported by'), " +
-  "certifications, copyright notices, or any other non-ingredient text. " +
-  "Stop the output when the ingredient list ends; do not continue into manufacturing or contact information. " +
-  "Step 2: if you cannot identify a clearly labelled ingredients section " +
-  "(e.g. because the heading is cropped, absent, or ambiguous), output ALL the text " +
-  "that is visible on the label exactly as printed, preserving line breaks as spaces. " +
-  "Never output an empty response — always return whatever text is legible on the label."
+// Builds the OCR system prompt for Vision OCR calls.
+// The prompt asks the AI to transcribe ALL visible label text without filtering.
+// Section selection (Chinese vs Latin INCI vs other languages) is handled
+// deterministically by findIngredientSection() on the client, which is more
+// reliable than asking the AI to pick the right section.
+// The lang parameter is accepted for API compatibility but no longer alters the prompt.
+function buildOCRSystemPrompt(_lang: string): string {
+  return (
+    "You are a product label OCR assistant. " +
+    "Your task is to accurately read and transcribe ALL visible text from the product label image. " +
+    "Output the complete label text exactly as it is printed, preserving: " +
+    "all ingredient sections in every language present on the label (e.g. sections headed by " +
+    "'INGREDIENTS', 'Ingrédients', '成分', '配料', '原料', 'Inhaltsstoffe', or any equivalent term), " +
+    "all section headings and markers, all separators (commas, slashes, semicolons, asterisks, etc.), " +
+    "and the original text structure. " +
+    "Do NOT skip, filter, or omit any section of the label. " +
+    "If any text is unclear or partially legible, output your best reading. " +
+    "Never output an empty response — always return whatever text is visible on the label."
+  )
+}
 
 // Sentinel returned when the OpenAI API key is not configured in Supabase secrets.
 // Distinguishes "engine not available" from "model returned no text".
 const OCR_NO_API_KEY = "__NO_API_KEY__"
 
-async function extractTextFromImage(imageBase64: string): Promise<string | null> {
+async function extractTextFromImage(imageBase64: string, systemPrompt: string): Promise<string | null> {
   const apiKey = Deno.env.get("OPENAI_API_KEY")
   const model = Deno.env.get("OPENAI_MODEL") || FALLBACK_OPENAI_MODEL
   if (!apiKey) return OCR_NO_API_KEY
@@ -105,7 +106,7 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
       messages: [
         {
           role: "system",
-          content: OCR_SYSTEM_PROMPT,
+          content: systemPrompt,
         },
         {
           role: "user",
@@ -147,7 +148,7 @@ async function extractTextFromImage(imageBase64: string): Promise<string | null>
 // Used when OPENAI_API_KEY is absent. Accepts a base64-encoded JPEG.
 // ---------------------------------------------------------------------------
 
-async function extractTextFromImageGemini(imageBase64: string): Promise<string | null> {
+async function extractTextFromImageGemini(imageBase64: string, systemPrompt: string): Promise<string | null> {
   const apiKey = Deno.env.get("GEMINI_API_KEY")
   const model = Deno.env.get("GEMINI_MODEL") || FALLBACK_GEMINI_MODEL
   if (!apiKey) return OCR_NO_API_KEY
@@ -159,7 +160,7 @@ async function extractTextFromImageGemini(imageBase64: string): Promise<string |
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         system_instruction: {
-          parts: [{ text: OCR_SYSTEM_PROMPT }],
+          parts: [{ text: systemPrompt }],
         },
         contents: [{
           parts: [
@@ -192,6 +193,7 @@ async function extractTextFromImageOpenAICompat(
   apiKey: string,
   model: string,
   providerName: string,
+  systemPrompt: string,
 ): Promise<string | null> {
   const response = await fetch(`${baseUrl}/chat/completions`, {
     method: "POST",
@@ -202,7 +204,7 @@ async function extractTextFromImageOpenAICompat(
     body: JSON.stringify({
       model,
       messages: [
-        { role: "system", content: OCR_SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         {
           role: "user",
           content: [
@@ -240,12 +242,12 @@ async function extractTextFromImageOpenAICompat(
 // Uses GROQ_API_KEY. Set GROQ_VISION_MODEL to override the default model.
 // ---------------------------------------------------------------------------
 
-async function extractTextFromImageGroq(imageBase64: string): Promise<string | null> {
+async function extractTextFromImageGroq(imageBase64: string, systemPrompt: string): Promise<string | null> {
   const apiKey = Deno.env.get("GROQ_API_KEY")
   const model = Deno.env.get("GROQ_VISION_MODEL") || FALLBACK_GROQ_VISION_MODEL
   if (!apiKey) return OCR_NO_API_KEY
   return extractTextFromImageOpenAICompat(
-    imageBase64, "https://api.groq.com/openai/v1", apiKey, model, "Groq",
+    imageBase64, "https://api.groq.com/openai/v1", apiKey, model, "Groq", systemPrompt,
   )
 }
 
@@ -254,12 +256,12 @@ async function extractTextFromImageGroq(imageBase64: string): Promise<string | n
 // Uses OPENROUTER_API_KEY. Set OPENROUTER_VISION_MODEL to override the default model.
 // ---------------------------------------------------------------------------
 
-async function extractTextFromImageOpenRouter(imageBase64: string): Promise<string | null> {
+async function extractTextFromImageOpenRouter(imageBase64: string, systemPrompt: string): Promise<string | null> {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY")
   const model = Deno.env.get("OPENROUTER_VISION_MODEL") || FALLBACK_OPENROUTER_VISION_MODEL
   if (!apiKey) return OCR_NO_API_KEY
   return extractTextFromImageOpenAICompat(
-    imageBase64, "https://openrouter.ai/api/v1", apiKey, model, "OpenRouter",
+    imageBase64, "https://openrouter.ai/api/v1", apiKey, model, "OpenRouter", systemPrompt,
   )
 }
 
@@ -562,14 +564,19 @@ serve(async (req) => {
         )
       }
 
+      // Build the OCR prompt (language-agnostic: always transcribes all visible text).
+      // Section selection by language is handled deterministically by findIngredientSection()
+      // on the client, which is more reliable than asking the AI to pick the right section.
+      const ocrPrompt = buildOCRSystemPrompt(normalizeLanguage(lang || 'en'))
+
       // Provider chain: OpenAI → Gemini → Groq → OpenRouter
       // Returns null when a provider's API key is absent (skip to next).
       // Throws on API errors (caught below per-provider).
       const visionProviders: Array<{ name: string; fn: () => Promise<string | null> }> = [
-        { name: "OpenAI",     fn: () => extractTextFromImage(imageBase64) },
-        { name: "Gemini",     fn: () => extractTextFromImageGemini(imageBase64) },
-        { name: "Groq",       fn: () => extractTextFromImageGroq(imageBase64) },
-        { name: "OpenRouter", fn: () => extractTextFromImageOpenRouter(imageBase64) },
+        { name: "OpenAI",     fn: () => extractTextFromImage(imageBase64, ocrPrompt) },
+        { name: "Gemini",     fn: () => extractTextFromImageGemini(imageBase64, ocrPrompt) },
+        { name: "Groq",       fn: () => extractTextFromImageGroq(imageBase64, ocrPrompt) },
+        { name: "OpenRouter", fn: () => extractTextFromImageOpenRouter(imageBase64, ocrPrompt) },
       ]
 
       let extractedText: string | null = null
