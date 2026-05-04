@@ -467,6 +467,11 @@ function isLikelyIngredientToken(token = ""){
       if (allWordsAreFiller) return false
     }
   }
+  // Single-word tokens containing a run of 5 or more consecutive digits are almost certainly
+  // registration/lot/authorization codes (e.g. "EAH-NXA06372", "CPNP12345678") rather than
+  // INCI names — the highest E-number is E1521 (4 digits), and PEG numbers top out at 4 digits.
+  // CI colorant numbers ("CI 77891") are multi-word after sanitization so hasSingleWord=false.
+  if (hasSingleWord && /\d{5,}/.test(normalized)) return false
   return true
 }
 
@@ -480,9 +485,11 @@ function findIngredientSection(text, preferredLang) {
   if (!text || !text.trim()) return text
   const lang = preferredLang || currentLanguage()
 
-  // Heading patterns that signal the start of an ingredient section
+  // Heading patterns that signal the start of an ingredient section.
+  // Separators include : / and also a newline (INGREDIENTS\nWater...) or a dash/em-dash
+  // (OCR sometimes reads colons as dashes).
   const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
-  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bCONTAINS\s*[:/\-–—]|\bCONTIENT\s*[:/\-–—]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
+  const laHeaderRe = /\bINGREDIENTS?\s*[:/\-–—\n]|\bCONTAINS\s*[:/\-–—\n]|\bCONTIENT\s*[:/\-–—\n]|\bINCI\s*[:/\-–—\n]|Ingrédients?\s*[:/\-–—\n]|Inhaltsstoffe?\s*[:/\-–—\n]/i
 
   const zhMatch = zhHeaderRe.exec(text)
   const laMatch = laHeaderRe.exec(text)
@@ -507,7 +514,10 @@ function findIngredientSection(text, preferredLang) {
   // After identifying the start of an ingredient section, stop before product-metadata keywords
   // (batch number, net weight, manufacturer info, usage instructions, etc.) that typically
   // follow the ingredient list on both Chinese and Latin-script labels.
-  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]|\b(?:Lot\s*(?:No?\.?\s*)?[#:\-–]|Batch\s*(?:No?\.?\s*)?[#:\-–]|(?:Manufactured|Distributed|Imported|Packaged|Produced|Bottled|Packed)\s+(?:by|for)\b|Made\s+in\b|Produced\s+in\b|Product\s+of\b|Fabriqu[eé]s?\s+(?:en|au|par)\b|Import[eé]\s+par\b|Distribu[eé]\s+par\b|Produit\s+(?:de|par)\b|Questions?\s+or\s+Comments?\b|For\s+more\s+information\b|www\.[a-z]+)|©/i
+  // The order of alternates matters: more-specific company/address patterns fire before
+  // the broader "Made in" pattern, cutting off company name + address + registration code
+  // that sit between the last INCI ingredient and the country-of-origin statement.
+  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]|\b(?:Lot\s*(?:No?\.?\s*)?[#:\-–]|Batch\s*(?:No?\.?\s*)?[#:\-–]|(?:Manufactured|Distributed|Imported|Packaged|Produced|Bottled|Packed)\s+(?:by|for)\b|Made\s+in\b|Produced\s+in\b|Product\s+of\b|Fabriqu[eé]s?\s+(?:en|au|par)\b|Import[eé]\s+par\b|Distribu[eé]\s+par\b|Produit\s+(?:de|par)\b|Questions?\s+or\s+Comments?\b|For\s+more\s+information\b|www\.[a-z]+|Laboratoires?\b|GmbH\b|Ltd\.?\b|Inc\.?\b|Corp\.?\b|S\.A\.S\.?\b|SAS\b|SARL\b|B\.V\.?\b|\d+\s*,?\s*(?:avenue|rue|boulevard|all[eé]e|strasse|street|place)\s+[A-Z])|©/i
 
   function sliceSection(start, hardEnd) {
     const rawSlice = text.slice(start, hardEnd).trim()
@@ -2178,14 +2188,7 @@ async function analyzeIngredients(){
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
         .map(s => s.trim())
-        .filter(s => {
-          const l = s.length
-          if (l < 3 || l > MAX_INGREDIENT_TOKEN_LENGTH) return false
-          // Same OCR-noise filters as isLikelyIngredientToken
-          if (l <= 4 && !/[aeiouy]/i.test(s)) return false
-          if (l <= 4 && /\d/.test(s) && /[a-z]/i.test(s)) return false
-          return true
-        })
+        .filter(s => s.length >= 3 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH && isLikelyIngredientToken(s))
       if (rawFallback.length > 0) {
         ingredients = rawFallback
         for (const raw of ingredients) {
