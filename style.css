@@ -327,12 +327,11 @@ input[type="file"].visually-hidden {
 }
 
 .hero-title {
-  font-size: clamp(32px, 4.8vw, 54px);
+  font-size: clamp(28px, 4.8vw, 54px);
   font-weight: 900;
   line-height: 1.10;
   letter-spacing: -0.032em;
   margin-bottom: 22px;
-  white-space: nowrap;
   animation: titleReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
@@ -1342,6 +1341,12 @@ input[type="file"].visually-hidden {
 }
 
 /* === RESPONSIVE === */
+/* On wide screens, keep title on one line. At 920px, 4.8vw ≈ 44px and
+   "Know exactly what's in your products" fits comfortably within the container. */
+@media (min-width: 921px) {
+  .hero-title { white-space: nowrap; }
+}
+
 @media (max-width: 920px) {
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
@@ -1408,9 +1413,9 @@ input[type="file"].visually-hidden {
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
   .hero-badge  { margin-bottom: 20px; font-size: clamp(13px, 3.8vw, 18px); padding: 8px 16px; }
-  /* Keep title on one line on narrow phones; vw-based size scales with viewport.
-     At 375px: 4.5vw ≈ 17px — fits on a single line. */
-  .hero-title  { font-size: clamp(14px, 4.5vw, 28px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; white-space: nowrap; }
+  /* Keep title font scaled with viewport; vw-based size prevents overflow.
+     At 375px: 4.5vw ≈ 17px — fits on a single line at that size. */
+  .hero-title  { font-size: clamp(16px, 4.5vw, 28px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
   /* Full-width CTA — easier to tap on small screens */
   .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
