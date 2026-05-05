@@ -2083,7 +2083,10 @@ async function analyzeIngredients(){
     }
 
     let ingredients = extractIngredients(ingredientText)
-    analysisLanguage = detectInputLanguage(ingredientText, ingredients)
+    // Detect the input language for telemetry purposes only.
+    // Always use the user's chosen UI language for AI responses and all display,
+    // so results are consistently in the language the user selected.
+    const detectedInputLang = detectInputLanguage(ingredientText, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
     // Build a map from normalized ingredient key → original user-typed token.
@@ -2139,7 +2142,7 @@ async function analyzeIngredients(){
       : 0
     recordScanEvent({
       ingredientCount: ingredients.length,
-      inputLang:       analysisLanguage,
+      inputLang:       detectedInputLang,
       analysisSource:  analysisSource || "local",
       warningCount:    warnings.length,
       allergenCount,
