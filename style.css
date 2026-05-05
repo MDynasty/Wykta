@@ -1417,6 +1417,8 @@ input[type="file"].visually-hidden {
 
   /* === Buttons === */
   .btn         { font-size: 13px; padding: 10px 14px; }
+  /* Allow text to wrap inside btn-row buttons so long French/German labels stay inside the card */
+  .btn-row .btn, .btn-row label.btn { white-space: normal; }
 
   /* === Billing toggle === */
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
