@@ -365,7 +365,140 @@ const localIngredientDb = {
   "sorbic acid":                  { category: "food",     fn: "Preservative",                note: "E200; natural preservative; inhibits yeast and mould. Source: EU additive list." }
 }
 
-let cachedKnownIngredientMatchers = null
+// Per-language translations for localIngredientDb fn and note fields.
+// Keyed by language code → ingredient key → { fn, note }.
+// Falls back to the English values in localIngredientDb when a key is absent.
+const localIngredientDbI18n = {
+  zh: {
+    // ── Universal ──────────────────────────────────────────────────────────
+    "water":                        { fn: "溶剂",                 note: "食品与化妆品中的通用溶剂。来源：Open Food Facts 分类 / CosIng。" },
+    "aqua":                         { fn: "溶剂",                 note: "化妆品中水的 INCI 名称。来源：CosIng（欧盟）。" },
+    "glycerin":                     { fn: "保湿剂",               note: "为皮肤补充水分，改善食品质地。来源：CosIng（欧盟）/ FDA GRAS。" },
+    "ascorbic acid":                { fn: "抗氧化剂 / 维生素C",   note: "食品中保鲜（E300）；化妆品中提亮肤色。来源：欧盟添加剂列表 / CosIng。" },
+    "citric acid":                  { fn: "酸化剂 / 防腐剂",      note: "pH 调节剂和抗氧化剂（E330）；亦用于护肤品。来源：欧盟添加剂列表。" },
+    "tocopherol":                   { fn: "抗氧化剂 / 维生素E",   note: "防止食品氧化酸败（E306-309）；保护皮肤免受氧化损伤。来源：欧盟添加剂列表 / CosIng。" },
+    "xanthan gum":                  { fn: "增稠剂 / 稳定剂",      note: "天然多糖（E415）；用于食品和化妆品以改善质地。来源：欧盟添加剂列表。" },
+    "lactic acid":                  { fn: "酸化剂 / 去角质（AHA）", note: "发酵产生的酸；食品中用于调节 pH；护肤品中作为温和的 AHA 去角质成分。来源：CosIng / 欧盟添加剂列表。" },
+    "sodium benzoate":              { fn: "防腐剂",               note: "E211；抑制食品中的霉菌和酵母；也用于部分化妆品。来源：欧盟添加剂列表 / CosIng。" },
+    "propylene glycol":             { fn: "保湿剂 / 溶剂",        note: "食品中为 E1520；化妆品中用作溶剂和保湿剂；一般认为安全。来源：欧盟添加剂列表 / CosIng。" },
+    // ── Skincare ──────────────────────────────────────────────────────────
+    "niacinamide":                  { fn: "护肤调理",             note: "维生素 B3；改善肤色、毛孔外观及皮肤屏障功能。来源：CosIng（欧盟）。" },
+    "hyaluronic acid":              { fn: "保湿剂",               note: "可锁住自身重量 1000 倍的水分；深层保湿。来源：CosIng（欧盟）。" },
+    "sodium hyaluronate":           { fn: "保湿剂",               note: "透明质酸的盐形式；更易渗透皮肤。来源：CosIng（欧盟）。" },
+    "retinol":                      { fn: "护肤调理",             note: "维生素 A；促进细胞更新和胶原蛋白合成。来源：CosIng（欧盟）。" },
+    "retinyl palmitate":            { fn: "护肤调理",             note: "维生素 A 的酯形式；比视黄醇更温和。来源：CosIng（欧盟）。" },
+    "glycolic acid":                { fn: "去角质（AHA）",         note: "α-羟基酸；去除死皮细胞，改善肤质。来源：CosIng（欧盟）。" },
+    "salicylic acid":               { fn: "去角质（BHA）",         note: "β-羟基酸；疏通毛孔；适合油性或痘肌。来源：CosIng（欧盟）。" },
+    "mandelic acid":                { fn: "去角质（AHA）",         note: "大分子 AHA；对敏感肌足够温和。来源：CosIng（欧盟）。" },
+    "benzoyl peroxide":             { fn: "抗菌",                 note: "杀灭引起痘痘的细菌；可能漂白织物，使用时注意。来源：CosIng（欧盟）。" },
+    "vitamin c":                    { fn: "抗氧化剂",             note: "提亮肤色并促进胶原蛋白合成。来源：CosIng（欧盟）。" },
+    "ceramide":                     { fn: "皮肤屏障脂质",          note: "补充并强化皮肤屏障。来源：CosIng（欧盟）。" },
+    "panthenol":                    { fn: "保湿剂 / 润肤剂",       note: "泛酸原（维生素 B5）；舒缓、保湿并辅助伤口愈合。来源：CosIng（欧盟）。" },
+    "shea butter":                  { fn: "润肤剂",               note: "富含脂肪酸；深度滋养和柔润肌肤。来源：CosIng（欧盟）。" },
+    "cetearyl alcohol":             { fn: "乳化剂 / 润肤剂",       note: "脂肪醇；增稠配方并柔化皮肤。来源：CosIng（欧盟）。" },
+    "fragrance":                    { fn: "香料",                 note: "可能含未申报过敏原；敏感肌慎用。来源：CosIng（欧盟）。" },
+    "parfum":                       { fn: "香料",                 note: "欧盟对香精混合物的通称；潜在致敏物。来源：CosIng（欧盟）。" },
+    "phenoxyethanol":               { fn: "防腐剂",               note: "广谱防腐剂；在 ≤1% 浓度下耐受性良好。来源：CosIng（欧盟）。" },
+    "methylparaben":                { fn: "防腐剂",               note: "对羟基苯甲酸酯类防腐剂；高剂量下内分泌干扰问题存争议。来源：CosIng（欧盟）。" },
+    "ethylparaben":                 { fn: "防腐剂",               note: "对羟基苯甲酸酯类防腐剂；低浓度下被认为安全。来源：CosIng（欧盟）。" },
+    "butylparaben":                 { fn: "防腐剂",               note: "脂溶性较高的对羟基苯甲酸酯；部分地区有限用规定。来源：CosIng（欧盟）。" },
+    "zinc oxide":                   { fn: "防晒剂 / 矿物质",       note: "广谱物理防晒；对皮肤亦有舒缓作用。来源：CosIng（欧盟）。" },
+    "titanium dioxide":             { fn: "防晒剂 / 着色剂",       note: "物理防晒剂兼增白颜料。来源：CosIng（欧盟）。" },
+    "petrolatum":                   { fn: "封闭剂",               note: "形成屏障锁住水分；不堵塞毛孔。来源：CosIng（欧盟）。" },
+    "mineral oil":                  { fn: "润肤剂 / 封闭剂",       note: "锁住水分；高度精炼的化妆品级别被认为安全。来源：CosIng（欧盟）。" },
+    "dimethicone":                  { fn: "润肤剂 / 硅酮",         note: "平滑肤感并形成保护层。来源：CosIng（欧盟）。" },
+    "aloe vera":                    { fn: "舒缓 / 保湿剂",         note: "抗炎；舒缓刺激并补充水分。来源：CosIng（欧盟）。" },
+    "green tea extract":            { fn: "抗氧化剂",             note: "富含 EGCG 多酚；减少皮肤氧化应激。来源：CosIng（欧盟）。" },
+    "kojic acid":                   { fn: "美白",                 note: "抑制黑色素生成；用于改善色素沉着。来源：CosIng（欧盟）。" },
+    "azelaic acid":                 { fn: "角质溶解剂 / 抗菌",      note: "针对痘痘和玫瑰痤疮；均匀肤色。来源：CosIng（欧盟）。" },
+    "caffeine":                     { fn: "护肤调理",             note: "减少浮肿和黑眼圈；具有抗氧化特性。来源：CosIng（欧盟）。" },
+    "squalane":                     { fn: "润肤剂",               note: "轻盈不堵孔的油脂；肤感极佳。来源：CosIng（欧盟）。" },
+    "jojoba oil":                   { fn: "润肤剂",               note: "液态蜡；高度模拟皮肤天然皮脂。来源：CosIng（欧盟）。" },
+    "rosehip oil":                  { fn: "润肤剂",               note: "富含维生素 A 和 C；支持皮肤更新。来源：Open Beauty Facts 分类。" },
+    "argan oil":                    { fn: "润肤剂",               note: "富含维生素 E；滋养柔润。来源：CosIng（欧盟）。" },
+    "sodium lauryl sulfate":        { fn: "表面活性剂 / 清洁",     note: "起泡清洁剂；可能剥离天然油脂并引起刺激。来源：CosIng（欧盟）。" },
+    "sodium laureth sulfate":       { fn: "表面活性剂 / 清洁",     note: "比 SLS 更温和；洗发水和沐浴露中常见。来源：CosIng（欧盟）。" },
+    "cocamidopropyl betaine":       { fn: "表面活性剂",            note: "温和的两性表面活性剂，用于温和洁面产品。来源：CosIng（欧盟）。" },
+    "butylene glycol":              { fn: "保湿剂 / 溶剂",         note: "锁水并辅助其他成分渗透皮肤。来源：CosIng（欧盟）。" },
+    "carbomer":                     { fn: "粘度调节剂",            note: "增稠并稳定凝胶；被认为安全。来源：CosIng（欧盟）。" },
+    "allantoin":                    { fn: "舒缓",                 note: "促进细胞再生；镇静刺激。来源：CosIng（欧盟）。" },
+    "urea":                         { fn: "保湿剂 / 角质溶解剂",    note: "高浓度时去角质；低浓度时保湿。来源：CosIng（欧盟）。" },
+    "alpha-arbutin":                { fn: "美白",                 note: "抑制酪氨酸酶；安全淡化色斑。来源：CosIng（欧盟）。" },
+    "tranexamic acid":              { fn: "美白",                 note: "减少色素沉着；与维生素 C 联用效果更佳。来源：CosIng（欧盟）。" },
+    "resveratrol":                  { fn: "抗氧化剂",             note: "多酚类抗氧化剂；具有抗衰老特性。来源：CosIng（欧盟）。" },
+    "centella asiatica":            { fn: "舒缓 / 修复",          note: "支持胶原蛋白合成；舒缓敏感肌。来源：CosIng（欧盟）。" },
+    "bakuchiol":                    { fn: "护肤调理",             note: "植物源视黄醇替代品；对敏感肌更温和。来源：CosIng（欧盟）。" },
+    "adenosine":                    { fn: "抗皱",                 note: "欧盟认可的抗衰老成分；刺激胶原蛋白生成。来源：CosIng（欧盟）。" },
+    "polyglutamic acid":            { fn: "保湿剂",               note: "保湿能力是透明质酸的 4 倍。来源：Open Beauty Facts 分类。" },
+    "ferulic acid":                 { fn: "抗氧化剂",             note: "提升维生素 C 和 E 的稳定性与功效。来源：CosIng（欧盟）。" },
+    "licorice root extract":        { fn: "美白",                 note: "光甘草定抑制黑色素合成；具抗炎作用。来源：CosIng（欧盟）。" },
+    "bisabolol":                    { fn: "舒缓 / 抗炎",           note: "来源于洋甘菊；镇静红肿并促进修复。来源：CosIng（欧盟）。" },
+    "tea tree oil":                 { fn: "抗菌",                 note: "强效天然抗菌剂；对痘痘有效但可能引起刺激。来源：CosIng（欧盟）。" },
+    "witch hazel":                  { fn: "收敛剂 / 抗氧化剂",     note: "收缩毛孔；高酒精配方可能造成干燥。来源：Open Beauty Facts 分类。" },
+    "neem oil":                     { fn: "抗菌",                 note: "抗真菌和抗菌；用于痤疮和湿疹。来源：Open Beauty Facts 分类。" },
+    "collagen":                     { fn: "护肤调理",             note: "皮肤弹性结构蛋白；外用吸收有限。来源：CosIng（欧盟）。" },
+    "beta-glucan":                  { fn: "护肤调理",             note: "来源于燕麦；舒缓刺激并刺激胶原蛋白生成。来源：CosIng（欧盟）。" },
+    "peptides":                     { fn: "护肤调理",             note: "信号肽可刺激胶原蛋白和弹性蛋白生成。来源：CosIng（欧盟）。" },
+    // ── Food ──────────────────────────────────────────────────────────────
+    "sugar":                        { fn: "甜味剂",               note: "蔗糖；过量摄入与肥胖和龋齿相关。来源：FDA GRAS。" },
+    "salt":                         { fn: "调味剂 / 防腐剂",       note: "氯化钠；摄入过多会升高血压。来源：FDA GRAS。" },
+    "wheat":                        { fn: "谷物",                 note: "含麸质；腹腔疾病或麸质敏感者应避免。主要过敏原（欧盟/美国）。" },
+    "milk":                         { fn: "乳制品",               note: "常见过敏原（欧盟前14 / 美国前9）；钙质来源。" },
+    "egg":                          { fn: "黏合剂 / 乳化剂",       note: "常见过敏原（欧盟前14 / 美国前9）；烘焙时提供结构。" },
+    "soy":                          { fn: "蛋白质 / 乳化剂",       note: "常见过敏原；植物蛋白和异黄酮来源。" },
+    "peanut":                       { fn: "豆类",                 note: "主要过敏原；可引发过敏性休克，须严格避免。来源：FDA。" },
+    "tree nuts":                    { fn: "坚果",                 note: "过敏原类别（杏仁、腰果等）；存在交叉污染风险。来源：FDA。" },
+    "fish":                         { fn: "海鲜",                 note: "常见过敏原；富含 omega-3 脂肪酸。来源：欧盟过敏原列表。" },
+    "shellfish":                    { fn: "贝类",                 note: "过敏原类别（虾、蟹、龙虾）。来源：欧盟/FDA 过敏原列表。" },
+    "sesame":                       { fn: "种子",                 note: "美国（2023年起）和欧盟主要过敏原；同时也是健康脂肪来源。" },
+    "palm oil":                     { fn: "脂肪 / 油脂",           note: "饱和脂肪含量高；过度开采对环境影响显著。" },
+    "coconut oil":                  { fn: "脂肪 / 油脂",           note: "饱和脂肪含量高；耐高温烹饪。来源：OFF 分类。" },
+    "olive oil":                    { fn: "脂肪 / 油脂",           note: "富含单不饱和脂肪；有益心脏健康（地中海饮食）。来源：OFF 分类。" },
+    "sunflower oil":                { fn: "脂肪 / 油脂",           note: "富含维生素 E；适合高温烹饪。来源：OFF 分类。" },
+    "canola oil":                   { fn: "脂肪 / 油脂",           note: "饱和脂肪含量低；烟点高。来源：OFF 分类。" },
+    "potassium sorbate":            { fn: "防腐剂",               note: "E202；延长饮料和乳制品的保质期。来源：欧盟添加剂列表。" },
+    "monosodium glutamate":         { fn: "增味剂",               note: "味精（E621）；鲜味来源；对普通人群安全。来源：FDA GRAS。" },
+    "artificial flavor":            { fn: "香精",                 note: "合成香味化合物；确切成分通常不公开。来源：FDA。" },
+    "natural flavors":              { fn: "香精",                 note: "来源于天然物质；确切化合物通常不公开。来源：FDA。" },
+    "high fructose corn syrup":     { fn: "甜味剂",               note: "液体甜味剂；高摄入量与代谢问题相关。来源：FDA GRAS。" },
+    "maltodextrin":                 { fn: "增稠剂 / 填充剂",       note: "来源于淀粉；消化吸收快，可升高血糖。来源：FDA GRAS。" },
+    "guar gum":                     { fn: "增稠剂",               note: "E412；植物来源增稠剂；膳食纤维含量高。来源：欧盟添加剂列表。" },
+    "carrageenan":                  { fn: "增稠剂 / 乳化剂",       note: "E407；海藻提取物；高剂量下有肠道炎症的部分证据。来源：欧盟添加剂列表。" },
+    "lecithin":                     { fn: "乳化剂",               note: "E322；通常来自大豆或葵花籽；使油水均匀混合。来源：欧盟添加剂列表。" },
+    "mono- and diglycerides":       { fn: "乳化剂",               note: "E471；来源于脂肪；用于烘焙食品和人造黄油。来源：欧盟添加剂列表。" },
+    "baking powder":                { fn: "膨松剂",               note: "碳酸氢钠与酸的混合物；使烘焙食品膨胀。来源：FDA GRAS。" },
+    "sodium bicarbonate":           { fn: "膨松剂",               note: "小苏打（E500）；与酸反应产生 CO₂。来源：欧盟添加剂列表。" },
+    "cornstarch":                   { fn: "增稠剂",               note: "来源于玉米；用于增稠酱汁和汤品。来源：FDA GRAS。" },
+    "yeast extract":                { fn: "增味剂",               note: "含游离谷氨酸；天然鲜味来源。来源：OFF 分类。" },
+    "caramel color":                { fn: "色素",                 note: "E150；由加热糖制成；IV 类与 4-MEI 安全顾虑相关。来源：欧盟添加剂列表。" },
+    "annatto":                      { fn: "色素",                 note: "E160b；来源于胭脂树种子的天然黄橙色色素。来源：欧盟添加剂列表。" },
+    "beta-carotene":                { fn: "色素 / 营养素",         note: "E160a；维生素 A 原；天然橙色素。来源：欧盟添加剂列表。" },
+    "sodium nitrite":               { fn: "防腐剂 / 腌制剂",       note: "E250；用于腌肉；高剂量下潜在致癌。来源：欧盟添加剂列表。" },
+    "red 40":                       { fn: "人工色素",             note: "FD&C 红色 40 号；可能导致敏感儿童多动。来源：FDA。" },
+    "yellow 5":                     { fn: "人工色素",             note: "柠檬黄（E102）；罕见过敏风险；欧盟要求警示标签。来源：欧盟添加剂列表。" },
+    "yellow 6":                     { fn: "人工色素",             note: "日落黄（E110）；欧盟要求警示标签。来源：欧盟添加剂列表。" },
+    "stevia":                       { fn: "甜味剂",               note: "植物来源零卡路里甜味剂；被认为安全（E960）。来源：欧盟添加剂列表。" },
+    "erythritol":                   { fn: "甜味剂（糖醇）",        note: "低升糖指数；耐受性好；极少被吸收（E968）。来源：欧盟添加剂列表。" },
+    "sorbitol":                     { fn: "甜味剂（糖醇）",        note: "E420；每日摄入超 50 g 可产生泻效。来源：欧盟添加剂列表。" },
+    "aspartame":                    { fn: "人工甜味剂",            note: "E951；苯丙酮尿症患者（PKU）应避免（含苯丙氨酸）。来源：欧盟添加剂列表。" },
+    "sucralose":                    { fn: "人工甜味剂",            note: "E955；甜度是蔗糖的 600 倍；耐高温。来源：欧盟添加剂列表。" },
+    "acesulfame potassium":         { fn: "人工甜味剂",            note: "安赛蜜（E950）；常与三氯蔗糖或阿斯巴甜复配使用。来源：欧盟添加剂列表。" },
+    "rice":                         { fn: "谷物 / 淀粉",          note: "无麸质谷物；常见小麦替代品。来源：OFF 分类。" },
+    "oat":                          { fn: "谷物 / 膳食纤维",       note: "富含 β-葡聚糖纤维；可能与麸质交叉污染。来源：OFF 分类。" },
+    "corn":                         { fn: "谷物 / 淀粉",          note: "无麸质；加工食品中常用作淀粉或糖浆。来源：OFF 分类。" },
+    "almond":                       { fn: "坚果（树生）",          note: "主要树坚果过敏原；富含维生素 E 和健康脂肪。" },
+    "almonds":                      { fn: "坚果（树生）",          note: "主要树坚果过敏原；富含维生素 E 和健康脂肪。" },
+    "cashew":                       { fn: "坚果（树生）",          note: "常见树坚果过敏原；富含镁。" },
+    "hazelnut":                     { fn: "坚果（树生）",          note: "树坚果过敏原；同时含维生素 E。" },
+    "shrimp":                       { fn: "贝类",                 note: "常见贝类过敏原；高蛋白质和碘含量。" },
+    "vinegar":                      { fn: "酸化剂 / 防腐剂",       note: "乙酸溶液；用于调味和天然防腐。来源：OFF 分类。" },
+    "msg":                          { fn: "增味剂",               note: "谷氨酸钠（E621）；鲜味来源；对普通人群安全。来源：FDA GRAS。" },
+    "artificial color":             { fn: "色素",                 note: "合成染料类别；各具体染料的安全性有所不同。来源：FDA。" },
+    "sodium phosphate":             { fn: "乳化剂 / pH调节剂",     note: "E339；用于加工奶酪和肉类。来源：欧盟添加剂列表。" },
+    "calcium propionate":           { fn: "防腐剂",               note: "E282；防止面包发霉；普遍被认为安全。来源：欧盟添加剂列表。" },
+    "sorbic acid":                  { fn: "防腐剂",               note: "E200；天然防腐剂；抑制酵母和霉菌。来源：欧盟添加剂列表。" }
+  }
+}
 // Common ingredient conjunctions seen across supported UI languages.
 const multilingualIngredientJoiners = ["and", "und", "et", "和", "及", "与", "以及"]
 const multilingualIngredientJoinerPattern = new RegExp(`\\s(?:${multilingualIngredientJoiners.join("|")})\\s`, "iu")
@@ -1726,9 +1859,12 @@ function lookupLocalIngredientDb(ingredient, lang = currentLanguage()) {
     food:     t("foodCategory", lang),
     general:  t("generalCategory", lang)
   }
+  const i18n = localIngredientDbI18n[lang] && localIngredientDbI18n[lang][key]
+  const fn   = (i18n && i18n.fn)   || entry.fn
+  const note = (i18n && i18n.note) || entry.note
   return {
     category: catMap[entry.category] || t("generalCategory", lang),
-    detail:   `${entry.fn}: ${entry.note}`
+    detail:   `${fn}: ${note}`
   }
 }
 
@@ -1867,17 +2003,19 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), d
     const ingredientLang = normalizeSupportedLanguage(detectInputLanguage(displayName))
 
     // 1. Check embedded local database first (instant, no network required)
-    const localResult = lookupLocalIngredientDb(ingredient, ingredientLang)
+    const localResult = lookupLocalIngredientDb(ingredient, lang)
     if (localResult) {
       return `${displayName}: [${localResult.category}] ${localResult.detail}`
     }
 
     // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
+    // Always use the UI language (lang) for output labels; ingredientLang only tells us
+    // what script the input token was written in (used upstream for alias resolution).
     const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
-      lookupOFFIngredientTaxonomy(ingredient, ingredientLang),
-      lookupOpenFoodFacts(ingredient, ingredientLang),
-      lookupOpenBeautyFacts(ingredient, ingredientLang),
-      lookupWikidataIngredient(ingredient, ingredientLang)
+      lookupOFFIngredientTaxonomy(ingredient, lang),
+      lookupOpenFoodFacts(ingredient, lang),
+      lookupOpenBeautyFacts(ingredient, lang),
+      lookupWikidataIngredient(ingredient, lang)
     ])
 
     const firstHit = [
@@ -1890,8 +2028,8 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), d
     const detail = firstHit
       ? firstHit
         : {
-          category: t("generalCategory", ingredientLang),
-          detail: `${t("noPublicData", ingredientLang)} ${t("publicDbSourceNote", ingredientLang)}`
+          category: t("generalCategory", lang),
+          detail: `${t("noPublicData", lang)} ${t("publicDbSourceNote", lang)}`
         }
 
     return `${displayName}: [${detail.category}] ${detail.detail}`
