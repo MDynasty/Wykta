@@ -1394,9 +1394,11 @@ input[type="file"].visually-hidden {
   .hero-sub { margin-left: 0; max-width: 100%; }
   .analysis-summary { flex-wrap: wrap; }
   .results-export { flex-wrap: wrap; }
-  /* Feature chips: keep 2×2 grid */
-  .hero .chips { flex-wrap: wrap; justify-content: center; max-width: 100%; width: 100%; box-sizing: border-box; }
-  /* chip styles cascade from base (flex: 1 1 calc(50% - 5px)) */
+  /* Feature chips: single horizontal row, swipeable by touch, no visible scrollbar */
+  .hero .chips { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; -webkit-overflow-scrolling: touch;
+                 scrollbar-width: none; -ms-overflow-style: none; width: 100%; box-sizing: border-box; }
+  .hero .chips::-webkit-scrollbar { display: none; }
+  .chip  { white-space: nowrap; flex-shrink: 0; }
 }
 
 @media (max-width: 600px) {
@@ -1407,18 +1409,18 @@ input[type="file"].visually-hidden {
      This eliminates the need for per-child align-self overrides and gives
      clean, predictable left-aligned layout on phone. === */
   .hero        { display: block; padding: 28px 18px 0; text-align: left; }
-  .hero-badge  { margin-bottom: 12px; font-size: clamp(13px, 3.8vw, 18px); }
-  /* Keep title font scaled with viewport; vw-based size prevents overflow.
-     At 375px: 4.5vw ≈ 17px — fits on a single line at that size. */
-  .hero-title  { font-size: clamp(20px, 5.5vw, 34px); line-height: 1.15; letter-spacing: -0.04em; margin-bottom: 16px; }
+  .hero-badge  { margin-bottom: 18px; }
+  /* Shrink hero title so it fits on one line; clamp scales with vw for a readable size */
+  .hero-title  { font-size: clamp(13px, 4.5vw, 28px); line-height: 1.15; letter-spacing: -0.03em; margin-bottom: 16px; }
   .hero-sub    { font-size: 15px; max-width: 100%; margin-left: 0; }
   /* Full-width CTA — easier to tap on small screens */
   .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
-  /* Chips: 2×2 grid on phone — all 4 visible, no scroll */
-  .hero .chips { display: flex; flex-wrap: wrap; overflow-x: visible; justify-content: center;
-                 margin-top: 16px; width: 100%; box-sizing: border-box; gap: 8px; max-width: 100%; }
-  .chip        { flex: 1 1 calc(50% - 4px); max-width: calc(50% - 4px); /* 4px = half of 8px gap */ white-space: normal; text-align: center;
-                 font-size: 11px; padding: 5px 8px; }
+  /* Chips: single horizontal row, swipeable, no visible scrollbar */
+  .hero .chips { display: flex; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start;
+                 -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none;
+                 margin-top: 20px; width: 100%; box-sizing: border-box; gap: 8px; }
+  .hero .chips::-webkit-scrollbar { display: none; }
+  .chip        { white-space: nowrap; flex-shrink: 0; }
 
   /* === Cards === */
   .card,
@@ -1426,13 +1428,15 @@ input[type="file"].visually-hidden {
 
   /* === Buttons === */
   .btn         { font-size: 13px; padding: 10px 14px; }
+  /* Allow text to wrap inside btn-row buttons so long French/German labels stay inside the card */
+  .btn-row .btn, .btn-row label.btn { white-space: normal; }
 
   /* === Billing toggle === */
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
 
-  /* === Pricing: horizontal scroll (3 columns), no vertical stacking === */
-  .pricing-grid           { grid-template-columns: repeat(3, minmax(200px, 1fr)); padding-bottom: 12px; }
-  .pricing-scroll-wrap    { overflow-x: auto; scroll-snap-type: x mandatory; }
+  /* === Pricing: keep 3-column horizontal layout (scrollable) on phone === */
+  .pricing-grid           { grid-template-columns: repeat(3, minmax(160px, 1fr)); padding-bottom: 12px; }
+  .pricing-scroll-wrap    { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .pricing-scroll-wrap::after { display: block; }
   .plan-card              { scroll-snap-align: start; }
 }
