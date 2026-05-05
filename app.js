@@ -2647,19 +2647,28 @@ on normal page-load performance.
 ----------------------- */
 
 // Lazy-load Tesseract.js from CDN.
+// Cached promise for the Tesseract.js script load.
+// Shared across all callers so the <script> tag is injected only once even if
+// loadTesseract() is called concurrently (e.g. from runOCR and runLocalOCR).
+let _tesseractLoadPromise = null
+
 // Returns true when the library is available, false if the CDN load failed.
 async function loadTesseract() {
   if (typeof window.Tesseract !== "undefined") return true
-  return new Promise((resolve) => {
-    const script = document.createElement("script")
-    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
-    script.onload = () => resolve(true)
-    script.onerror = () => {
-      console.warn("Tesseract.js CDN load failed")
-      resolve(false)
-    }
-    document.head.appendChild(script)
-  })
+  if (!_tesseractLoadPromise) {
+    _tesseractLoadPromise = new Promise((resolve) => {
+      const script = document.createElement("script")
+      script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+      script.onload = () => resolve(true)
+      script.onerror = () => {
+        console.warn("Tesseract.js CDN load failed")
+        _tesseractLoadPromise = null  // allow retry on next call
+        resolve(false)
+      }
+      document.head.appendChild(script)
+    })
+  }
+  return _tesseractLoadPromise
 }
 
 // Minimum output quality thresholds for the Tesseract fallback.
@@ -2679,14 +2688,15 @@ const LOCAL_OCR_TIMEOUT_MS = 90000
 // Minimum width (px) for the preprocessed canvas fed to Tesseract.
 // Upscaling small photos dramatically improves recognition — Tesseract needs
 // at least ~30 px of cap-height to reliably identify characters.
-// 2400 px is wide enough that even very small label text is legible.
-const LOCAL_OCR_MIN_WIDTH = 2400
+// 1500 px is wide enough for typical label text while keeping the total pixel
+// count low so on-device processing completes in a reasonable time.
+const LOCAL_OCR_MIN_WIDTH = 1500
 
 // Maximum total pixels in the preprocessed canvas.
-// Prevents excessive memory usage on memory-constrained devices (e.g. older iOS)
-// when a tall portrait photo is scaled up to meet LOCAL_OCR_MIN_WIDTH.
-// 10 MP (≈ 3162×3162) covers any typical label photo at full legibility.
-const LOCAL_OCR_MAX_PIXELS = 10_000_000
+// Prevents excessive memory usage and slow processing on mobile devices.
+// 4 MP (≈ 2000×2000) gives adequate resolution for ingredient text while
+// being ~2.5× faster to process than the previous 10 MP limit.
+const LOCAL_OCR_MAX_PIXELS = 4_000_000
 
 // OCR Engine Mode: 1 = LSTM (neural net engine, best accuracy in Tesseract 4/5).
 const LOCAL_OCR_OEM_LSTM = 1
@@ -2936,8 +2946,12 @@ async function callGeminiVisionDirect(canvas, lang) {
 
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
-  // Track whether a backend was tried and failed so we can decide which message to show.
-  let backendAttempted = false
+
+  // Start loading the Tesseract.js script immediately in the background so it is
+  // ready (or already loading) by the time the on-device OCR fallback is reached.
+  // This call is idempotent and fire-and-forget — it overlaps the CDN download
+  // with any backend call that is in flight, reducing total wait time.
+  loadTesseract()
 
   // Try the Supabase AI backend first (highest accuracy, multi-language).
   if (supabaseClient) {
@@ -2945,7 +2959,7 @@ async function runOCR(canvas) {
       ocrEl.innerText = t("ocrProcessing")
       ocrEl.classList.add("visible")
     }
-    const { text: visionText, unavailable: visionUnavailable } = await callAIVisionOCR(canvas)
+    const { text: visionText } = await callAIVisionOCR(canvas)
     if (visionText) {
       if (ocrEl) {
         ocrEl.innerText = ""
@@ -2955,13 +2969,7 @@ async function runOCR(canvas) {
       await analyzeIngredients()
       return
     }
-    // unavailable: true means the backend is accessible but OCR is not configured
-    // (no API keys set).  Treat this the same as "no backend" so we don't show a
-    // misleading "backend unavailable" status to the user.
-    // unavailable: false means the backend was tried and failed (network/timeout/
-    // empty response) — flag it so the local-OCR fallback banner stays visible.
-    if (!visionUnavailable) backendAttempted = true
-    // Fall through to next tier.
+    // Backend unavailable or returned no text — fall through.
   }
 
   // Direct client-side Gemini Vision fallback (uses geminiApiKey from config.js).
@@ -2978,10 +2986,9 @@ async function runOCR(canvas) {
   }
 
   // On-device Tesseract.js OCR fallback — works without any API keys.
-  // Only show the status banner if a backend was actually attempted (and failed),
-  // so users who have no OCR backend configured do not see a confusing "unavailable"
-  // message on every upload.
-  if (ocrEl && backendAttempted) {
+  // Always show the status banner before starting so the user gets immediate
+  // feedback; the Tesseract logger will update it with percentage progress.
+  if (ocrEl) {
     ocrEl.innerText = t("ocrLocalProcessing")
     ocrEl.classList.add("visible")
   }
