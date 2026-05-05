@@ -297,18 +297,12 @@ input[type="file"].visually-hidden {
 .hero-badge {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  font-size: 11.5px;
+  gap: 8px;
+  font-size: clamp(16px, 2.2vw, 24px);
   font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  background: linear-gradient(135deg, rgba(129, 140, 248, 0.16), rgba(34, 211, 238, 0.10));
-  border: 1px solid rgba(167, 139, 250, 0.40);
+  letter-spacing: 0.01em;
   color: var(--brand);
-  margin-bottom: 26px;
-  box-shadow: 0 2px 12px rgba(129, 140, 248, 0.18), inset 0 1px 0 rgba(255,255,255,0.07);
+  margin-bottom: 14px;
   animation: badgePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
@@ -328,7 +322,7 @@ input[type="file"].visually-hidden {
 }
 
 .hero-title {
-  font-size: clamp(32px, 5.8vw, 64px);
+  font-size: clamp(36px, 5.2vw, 66px);
   font-weight: 900;
   line-height: 1.10;
   letter-spacing: -0.032em;
@@ -392,9 +386,15 @@ input[type="file"].visually-hidden {
   justify-content: center;
   gap: 10px;
   margin-top: 28px;
+  max-width: 520px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.hero .chips::-webkit-scrollbar { display: none; }
 
 .chip {
+  flex: 1 1 calc(50% - 5px);
+  max-width: calc(50% - 5px);
   padding: 8px 16px;
   border-radius: 999px;
   font-size: 13px;
@@ -402,6 +402,9 @@ input[type="file"].visually-hidden {
   background: rgba(129, 140, 248, 0.10);
   border: 1px solid rgba(129, 140, 248, 0.28);
   color: var(--brand);
+  text-align: center;
+  white-space: normal;
+  box-sizing: border-box;
 }
 
 /* === CARD BASE === */
@@ -1333,6 +1336,12 @@ input[type="file"].visually-hidden {
 }
 
 /* === RESPONSIVE === */
+/* On wide screens, keep title on one line. At 920px, 5.2vw ≈ 48px and
+   "Know exactly what's in your products" fits comfortably within the container. */
+@media (min-width: 921px) {
+  .hero-title { white-space: nowrap; }
+}
+
 @media (max-width: 920px) {
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
@@ -1341,7 +1350,9 @@ input[type="file"].visually-hidden {
   }
   .plan-card      { scroll-snap-align: start; }
   .sub-grid       { grid-template-columns: 1fr; }
-  .hero-title     { font-size: 34px; }
+  /* Feature chips: keep 2×2 grid at all widths */
+  .hero .chips    { max-width: 100%; }
+  .chip           { font-size: 12px; padding: 7px 10px; }
 }
 
 @media (max-width: 768px) {

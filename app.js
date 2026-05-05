@@ -136,6 +136,70 @@ const ingredientAliases = {
   "向日葵籽油": "sunflower oil",
   "小苏打": "sodium bicarbonate",
   "食用香精": "artificial flavor",
+  // Additional Chinese INCI / skincare / food aliases for better local-DB coverage
+  "麦芽糊精": "maltodextrin",
+  "角鲨烷": "squalane",
+  // 角鲨烯 (squalene) is a different unsaturated compound; remove incorrect mapping
+  "咖啡因": "caffeine",
+  "尿素": "urea",
+  "卡波姆": "carbomer",
+  "卡波": "carbomer",
+  "生育酚": "tocopherol",
+  "维生素e": "tocopherol",
+  "乙酰化透明质酸钠": "sodium hyaluronate",
+  "积雪草": "centella asiatica",
+  "积雪草苷": "centella asiatica",
+  "白藜芦醇": "resveratrol",
+  "腺苷": "adenosine",
+  "阿魏酸": "ferulic acid",
+  "甘草提取物": "licorice root extract",
+  "光果甘草提取物": "licorice root extract",
+  "母菊花提取物": "bisabolol",
+  "α-甜没药醇": "bisabolol",
+  "茶树油": "tea tree oil",
+  "金缕梅提取物": "witch hazel",
+  // 红景天提取物 (Rhodiola extract) is a separate plant; remove incorrect resveratrol mapping
+  "传明酸": "tranexamic acid",
+  "氨甲环酸": "tranexamic acid",
+  "α-熊果苷": "alpha-arbutin",
+  "熊果苷": "alpha-arbutin",
+  "曲酸": "kojic acid",
+  "壬二酸": "azelaic acid",
+  "聚谷氨酸钠": "polyglutamic acid",
+  "β-葡聚糖": "beta-glucan",
+  "燕麦β-葡聚糖": "beta-glucan",
+  "胶原蛋白": "collagen",
+  "胶原": "collagen",
+  "胶原多肽": "collagen",
+  "喜马拉雅植物油": "jojoba oil",
+  "荷荷巴油": "jojoba oil",
+  "乳木果油": "shea butter",
+  "玫瑰果油": "rosehip oil",
+  "摩洛哥坚果油": "argan oil",
+  "依地树油": "argan oil",
+  "硫酸月桂醇聚醚钠": "sodium laureth sulfate",
+  "十二烷基硫酸钠": "sodium lauryl sulfate",
+  "椰油酰丙基甜菜碱": "cocamidopropyl betaine",
+  "黄原胶": "xanthan gum",
+  "玻璃酸钠": "sodium hyaluronate",
+  // 羟乙基哌嗪乙磺酸 is HEPES buffer (not lactic acid); remove incorrect mapping
+  "乳酸": "lactic acid",
+  // 苯甲醇 (benzyl alcohol) is a distinct compound; should not map to phenoxyethanol
+  // 对羟基苯乙酮 (p-hydroxyacetophenone) is also distinct; remove incorrect mappings
+  "二甲基硅氧烷": "dimethicone",
+  "聚二甲基硅氧烷": "dimethicone",
+  "矿物油": "mineral oil",
+  "石蜡油": "mineral oil",
+  "凡士林": "petrolatum",
+  "白凡士林": "petrolatum",
+  "氧化锌": "zinc oxide",
+  "二氧化钛": "titanium dioxide",
+  "玉米淀粉": "cornstarch",
+  "淀粉糖浆": "high fructose corn syrup",
+  "果葡糖浆": "high fructose corn syrup",
+  "大豆卵磷脂": "lecithin",
+  "葵花籽卵磷脂": "lecithin",
+  "葵花籽油": "sunflower oil",
   "eau": "water",
   "eau purifiée": "water",
   "agua": "water",
@@ -365,6 +429,140 @@ const localIngredientDb = {
   "sorbic acid":                  { category: "food",     fn: "Preservative",                note: "E200; natural preservative; inhibits yeast and mould. Source: EU additive list." }
 }
 
+// Per-language translations for localIngredientDb fn and note fields.
+// Keyed by language code → ingredient key → { fn, note }.
+// Falls back to the English values in localIngredientDb when a key is absent.
+const localIngredientDbI18n = {
+  zh: {
+    // ── Universal ──────────────────────────────────────────────────────────
+    "water":                        { fn: "溶剂",                 note: "食品与化妆品中的通用溶剂。来源：Open Food Facts 分类 / CosIng。" },
+    "aqua":                         { fn: "溶剂",                 note: "化妆品中水的 INCI 名称。来源：CosIng（欧盟）。" },
+    "glycerin":                     { fn: "保湿剂",               note: "为皮肤补充水分，改善食品质地。来源：CosIng（欧盟）/ FDA GRAS。" },
+    "ascorbic acid":                { fn: "抗氧化剂 / 维生素C",   note: "食品中保鲜（E300）；化妆品中提亮肤色。来源：欧盟添加剂列表 / CosIng。" },
+    "citric acid":                  { fn: "酸化剂 / 防腐剂",      note: "pH 调节剂和抗氧化剂（E330）；亦用于护肤品。来源：欧盟添加剂列表。" },
+    "tocopherol":                   { fn: "抗氧化剂 / 维生素E",   note: "防止食品氧化酸败（E306-309）；保护皮肤免受氧化损伤。来源：欧盟添加剂列表 / CosIng。" },
+    "xanthan gum":                  { fn: "增稠剂 / 稳定剂",      note: "天然多糖（E415）；用于食品和化妆品以改善质地。来源：欧盟添加剂列表。" },
+    "lactic acid":                  { fn: "酸化剂 / 去角质（AHA）", note: "发酵产生的酸；食品中用于调节 pH；护肤品中作为温和的 AHA 去角质成分。来源：CosIng / 欧盟添加剂列表。" },
+    "sodium benzoate":              { fn: "防腐剂",               note: "E211；抑制食品中的霉菌和酵母；也用于部分化妆品。来源：欧盟添加剂列表 / CosIng。" },
+    "propylene glycol":             { fn: "保湿剂 / 溶剂",        note: "食品中为 E1520；化妆品中用作溶剂和保湿剂；一般认为安全。来源：欧盟添加剂列表 / CosIng。" },
+    // ── Skincare ──────────────────────────────────────────────────────────
+    "niacinamide":                  { fn: "护肤调理",             note: "维生素 B3；改善肤色、毛孔外观及皮肤屏障功能。来源：CosIng（欧盟）。" },
+    "hyaluronic acid":              { fn: "保湿剂",               note: "可锁住自身重量 1000 倍的水分；深层保湿。来源：CosIng（欧盟）。" },
+    "sodium hyaluronate":           { fn: "保湿剂",               note: "透明质酸的盐形式；更易渗透皮肤。来源：CosIng（欧盟）。" },
+    "retinol":                      { fn: "护肤调理",             note: "维生素 A；促进细胞更新和胶原蛋白合成。来源：CosIng（欧盟）。" },
+    "retinyl palmitate":            { fn: "护肤调理",             note: "维生素 A 的酯形式；比视黄醇更温和。来源：CosIng（欧盟）。" },
+    "glycolic acid":                { fn: "去角质（AHA）",         note: "α-羟基酸；去除死皮细胞，改善肤质。来源：CosIng（欧盟）。" },
+    "salicylic acid":               { fn: "去角质（BHA）",         note: "β-羟基酸；疏通毛孔；适合油性或痘肌。来源：CosIng（欧盟）。" },
+    "mandelic acid":                { fn: "去角质（AHA）",         note: "大分子 AHA；对敏感肌足够温和。来源：CosIng（欧盟）。" },
+    "benzoyl peroxide":             { fn: "抗菌",                 note: "杀灭引起痘痘的细菌；可能漂白织物，使用时注意。来源：CosIng（欧盟）。" },
+    "vitamin c":                    { fn: "抗氧化剂",             note: "提亮肤色并促进胶原蛋白合成。来源：CosIng（欧盟）。" },
+    "ceramide":                     { fn: "皮肤屏障脂质",          note: "补充并强化皮肤屏障。来源：CosIng（欧盟）。" },
+    "panthenol":                    { fn: "保湿剂 / 润肤剂",       note: "泛酸原（维生素 B5）；舒缓、保湿并辅助伤口愈合。来源：CosIng（欧盟）。" },
+    "shea butter":                  { fn: "润肤剂",               note: "富含脂肪酸；深度滋养和柔润肌肤。来源：CosIng（欧盟）。" },
+    "cetearyl alcohol":             { fn: "乳化剂 / 润肤剂",       note: "脂肪醇；增稠配方并柔化皮肤。来源：CosIng（欧盟）。" },
+    "fragrance":                    { fn: "香料",                 note: "可能含未申报过敏原；敏感肌慎用。来源：CosIng（欧盟）。" },
+    "parfum":                       { fn: "香料",                 note: "欧盟对香精混合物的通称；潜在致敏物。来源：CosIng（欧盟）。" },
+    "phenoxyethanol":               { fn: "防腐剂",               note: "广谱防腐剂；在 ≤1% 浓度下耐受性良好。来源：CosIng（欧盟）。" },
+    "methylparaben":                { fn: "防腐剂",               note: "对羟基苯甲酸酯类防腐剂；高剂量下内分泌干扰问题存争议。来源：CosIng（欧盟）。" },
+    "ethylparaben":                 { fn: "防腐剂",               note: "对羟基苯甲酸酯类防腐剂；低浓度下被认为安全。来源：CosIng（欧盟）。" },
+    "butylparaben":                 { fn: "防腐剂",               note: "脂溶性较高的对羟基苯甲酸酯；部分地区有限用规定。来源：CosIng（欧盟）。" },
+    "zinc oxide":                   { fn: "防晒剂 / 矿物质",       note: "广谱物理防晒；对皮肤亦有舒缓作用。来源：CosIng（欧盟）。" },
+    "titanium dioxide":             { fn: "防晒剂 / 着色剂",       note: "物理防晒剂兼增白颜料。来源：CosIng（欧盟）。" },
+    "petrolatum":                   { fn: "封闭剂",               note: "形成屏障锁住水分；不堵塞毛孔。来源：CosIng（欧盟）。" },
+    "mineral oil":                  { fn: "润肤剂 / 封闭剂",       note: "锁住水分；高度精炼的化妆品级别被认为安全。来源：CosIng（欧盟）。" },
+    "dimethicone":                  { fn: "润肤剂 / 硅酮",         note: "平滑肤感并形成保护层。来源：CosIng（欧盟）。" },
+    "aloe vera":                    { fn: "舒缓 / 保湿剂",         note: "抗炎；舒缓刺激并补充水分。来源：CosIng（欧盟）。" },
+    "green tea extract":            { fn: "抗氧化剂",             note: "富含 EGCG 多酚；减少皮肤氧化应激。来源：CosIng（欧盟）。" },
+    "kojic acid":                   { fn: "美白",                 note: "抑制黑色素生成；用于改善色素沉着。来源：CosIng（欧盟）。" },
+    "azelaic acid":                 { fn: "角质溶解剂 / 抗菌",      note: "针对痘痘和玫瑰痤疮；均匀肤色。来源：CosIng（欧盟）。" },
+    "caffeine":                     { fn: "护肤调理",             note: "减少浮肿和黑眼圈；具有抗氧化特性。来源：CosIng（欧盟）。" },
+    "squalane":                     { fn: "润肤剂",               note: "轻盈不堵孔的油脂；肤感极佳。来源：CosIng（欧盟）。" },
+    "jojoba oil":                   { fn: "润肤剂",               note: "液态蜡；高度模拟皮肤天然皮脂。来源：CosIng（欧盟）。" },
+    "rosehip oil":                  { fn: "润肤剂",               note: "富含维生素 A 和 C；支持皮肤更新。来源：Open Beauty Facts 分类。" },
+    "argan oil":                    { fn: "润肤剂",               note: "富含维生素 E；滋养柔润。来源：CosIng（欧盟）。" },
+    "sodium lauryl sulfate":        { fn: "表面活性剂 / 清洁",     note: "起泡清洁剂；可能剥离天然油脂并引起刺激。来源：CosIng（欧盟）。" },
+    "sodium laureth sulfate":       { fn: "表面活性剂 / 清洁",     note: "比 SLS 更温和；洗发水和沐浴露中常见。来源：CosIng（欧盟）。" },
+    "cocamidopropyl betaine":       { fn: "表面活性剂",            note: "温和的两性表面活性剂，用于温和洁面产品。来源：CosIng（欧盟）。" },
+    "butylene glycol":              { fn: "保湿剂 / 溶剂",         note: "锁水并辅助其他成分渗透皮肤。来源：CosIng（欧盟）。" },
+    "carbomer":                     { fn: "粘度调节剂",            note: "增稠并稳定凝胶；被认为安全。来源：CosIng（欧盟）。" },
+    "allantoin":                    { fn: "舒缓",                 note: "促进细胞再生；镇静刺激。来源：CosIng（欧盟）。" },
+    "urea":                         { fn: "保湿剂 / 角质溶解剂",    note: "高浓度时去角质；低浓度时保湿。来源：CosIng（欧盟）。" },
+    "alpha-arbutin":                { fn: "美白",                 note: "抑制酪氨酸酶；安全淡化色斑。来源：CosIng（欧盟）。" },
+    "tranexamic acid":              { fn: "美白",                 note: "减少色素沉着；与维生素 C 联用效果更佳。来源：CosIng（欧盟）。" },
+    "resveratrol":                  { fn: "抗氧化剂",             note: "多酚类抗氧化剂；具有抗衰老特性。来源：CosIng（欧盟）。" },
+    "centella asiatica":            { fn: "舒缓 / 修复",          note: "支持胶原蛋白合成；舒缓敏感肌。来源：CosIng（欧盟）。" },
+    "bakuchiol":                    { fn: "护肤调理",             note: "植物源视黄醇替代品；对敏感肌更温和。来源：CosIng（欧盟）。" },
+    "adenosine":                    { fn: "抗皱",                 note: "欧盟认可的抗衰老成分；刺激胶原蛋白生成。来源：CosIng（欧盟）。" },
+    "polyglutamic acid":            { fn: "保湿剂",               note: "保湿能力是透明质酸的 4 倍。来源：Open Beauty Facts 分类。" },
+    "ferulic acid":                 { fn: "抗氧化剂",             note: "提升维生素 C 和 E 的稳定性与功效。来源：CosIng（欧盟）。" },
+    "licorice root extract":        { fn: "美白",                 note: "光甘草定抑制黑色素合成；具抗炎作用。来源：CosIng（欧盟）。" },
+    "bisabolol":                    { fn: "舒缓 / 抗炎",           note: "来源于洋甘菊；镇静红肿并促进修复。来源：CosIng（欧盟）。" },
+    "tea tree oil":                 { fn: "抗菌",                 note: "强效天然抗菌剂；对痘痘有效但可能引起刺激。来源：CosIng（欧盟）。" },
+    "witch hazel":                  { fn: "收敛剂 / 抗氧化剂",     note: "收缩毛孔；高酒精配方可能造成干燥。来源：Open Beauty Facts 分类。" },
+    "neem oil":                     { fn: "抗菌",                 note: "抗真菌和抗菌；用于痤疮和湿疹。来源：Open Beauty Facts 分类。" },
+    "collagen":                     { fn: "护肤调理",             note: "皮肤弹性结构蛋白；外用吸收有限。来源：CosIng（欧盟）。" },
+    "beta-glucan":                  { fn: "护肤调理",             note: "来源于燕麦；舒缓刺激并刺激胶原蛋白生成。来源：CosIng（欧盟）。" },
+    "peptides":                     { fn: "护肤调理",             note: "信号肽可刺激胶原蛋白和弹性蛋白生成。来源：CosIng（欧盟）。" },
+    // ── Food ──────────────────────────────────────────────────────────────
+    "sugar":                        { fn: "甜味剂",               note: "蔗糖；过量摄入与肥胖和龋齿相关。来源：FDA GRAS。" },
+    "salt":                         { fn: "调味剂 / 防腐剂",       note: "氯化钠；摄入过多会升高血压。来源：FDA GRAS。" },
+    "wheat":                        { fn: "谷物",                 note: "含麸质；腹腔疾病或麸质敏感者应避免。主要过敏原（欧盟/美国）。" },
+    "milk":                         { fn: "乳制品",               note: "常见过敏原（欧盟前14 / 美国前9）；钙质来源。" },
+    "egg":                          { fn: "黏合剂 / 乳化剂",       note: "常见过敏原（欧盟前14 / 美国前9）；烘焙时提供结构。" },
+    "soy":                          { fn: "蛋白质 / 乳化剂",       note: "常见过敏原；植物蛋白和异黄酮来源。" },
+    "peanut":                       { fn: "豆类",                 note: "主要过敏原；可引发过敏性休克，须严格避免。来源：FDA。" },
+    "tree nuts":                    { fn: "坚果",                 note: "过敏原类别（杏仁、腰果等）；存在交叉污染风险。来源：FDA。" },
+    "fish":                         { fn: "海鲜",                 note: "常见过敏原；富含 omega-3 脂肪酸。来源：欧盟过敏原列表。" },
+    "shellfish":                    { fn: "贝类",                 note: "过敏原类别（虾、蟹、龙虾）。来源：欧盟/FDA 过敏原列表。" },
+    "sesame":                       { fn: "种子",                 note: "美国（2023年起）和欧盟主要过敏原；同时也是健康脂肪来源。" },
+    "palm oil":                     { fn: "脂肪 / 油脂",           note: "饱和脂肪含量高；过度开采对环境影响显著。" },
+    "coconut oil":                  { fn: "脂肪 / 油脂",           note: "饱和脂肪含量高；耐高温烹饪。来源：OFF 分类。" },
+    "olive oil":                    { fn: "脂肪 / 油脂",           note: "富含单不饱和脂肪；有益心脏健康（地中海饮食）。来源：OFF 分类。" },
+    "sunflower oil":                { fn: "脂肪 / 油脂",           note: "富含维生素 E；适合高温烹饪。来源：OFF 分类。" },
+    "canola oil":                   { fn: "脂肪 / 油脂",           note: "饱和脂肪含量低；烟点高。来源：OFF 分类。" },
+    "potassium sorbate":            { fn: "防腐剂",               note: "E202；延长饮料和乳制品的保质期。来源：欧盟添加剂列表。" },
+    "monosodium glutamate":         { fn: "增味剂",               note: "味精（E621）；鲜味来源；对普通人群安全。来源：FDA GRAS。" },
+    "artificial flavor":            { fn: "香精",                 note: "合成香味化合物；确切成分通常不公开。来源：FDA。" },
+    "natural flavors":              { fn: "香精",                 note: "来源于天然物质；确切化合物通常不公开。来源：FDA。" },
+    "high fructose corn syrup":     { fn: "甜味剂",               note: "液体甜味剂；高摄入量与代谢问题相关。来源：FDA GRAS。" },
+    "maltodextrin":                 { fn: "增稠剂 / 填充剂",       note: "来源于淀粉；消化吸收快，可升高血糖。来源：FDA GRAS。" },
+    "guar gum":                     { fn: "增稠剂",               note: "E412；植物来源增稠剂；膳食纤维含量高。来源：欧盟添加剂列表。" },
+    "carrageenan":                  { fn: "增稠剂 / 乳化剂",       note: "E407；海藻提取物；高剂量下有肠道炎症的部分证据。来源：欧盟添加剂列表。" },
+    "lecithin":                     { fn: "乳化剂",               note: "E322；通常来自大豆或葵花籽；使油水均匀混合。来源：欧盟添加剂列表。" },
+    "mono- and diglycerides":       { fn: "乳化剂",               note: "E471；来源于脂肪；用于烘焙食品和人造黄油。来源：欧盟添加剂列表。" },
+    "baking powder":                { fn: "膨松剂",               note: "碳酸氢钠与酸的混合物；使烘焙食品膨胀。来源：FDA GRAS。" },
+    "sodium bicarbonate":           { fn: "膨松剂",               note: "小苏打（E500）；与酸反应产生 CO₂。来源：欧盟添加剂列表。" },
+    "cornstarch":                   { fn: "增稠剂",               note: "来源于玉米；用于增稠酱汁和汤品。来源：FDA GRAS。" },
+    "yeast extract":                { fn: "增味剂",               note: "含游离谷氨酸；天然鲜味来源。来源：OFF 分类。" },
+    "caramel color":                { fn: "色素",                 note: "E150；由加热糖制成；IV 类与 4-MEI 安全顾虑相关。来源：欧盟添加剂列表。" },
+    "annatto":                      { fn: "色素",                 note: "E160b；来源于胭脂树种子的天然黄橙色色素。来源：欧盟添加剂列表。" },
+    "beta-carotene":                { fn: "色素 / 营养素",         note: "E160a；维生素 A 原；天然橙色素。来源：欧盟添加剂列表。" },
+    "sodium nitrite":               { fn: "防腐剂 / 腌制剂",       note: "E250；用于腌肉；高剂量下潜在致癌。来源：欧盟添加剂列表。" },
+    "red 40":                       { fn: "人工色素",             note: "FD&C 红色 40 号；可能导致敏感儿童多动。来源：FDA。" },
+    "yellow 5":                     { fn: "人工色素",             note: "柠檬黄（E102）；罕见过敏风险；欧盟要求警示标签。来源：欧盟添加剂列表。" },
+    "yellow 6":                     { fn: "人工色素",             note: "日落黄（E110）；欧盟要求警示标签。来源：欧盟添加剂列表。" },
+    "stevia":                       { fn: "甜味剂",               note: "植物来源零卡路里甜味剂；被认为安全（E960）。来源：欧盟添加剂列表。" },
+    "erythritol":                   { fn: "甜味剂（糖醇）",        note: "低升糖指数；耐受性好；极少被吸收（E968）。来源：欧盟添加剂列表。" },
+    "sorbitol":                     { fn: "甜味剂（糖醇）",        note: "E420；每日摄入超 50 g 可产生泻效。来源：欧盟添加剂列表。" },
+    "aspartame":                    { fn: "人工甜味剂",            note: "E951；苯丙酮尿症患者（PKU）应避免（含苯丙氨酸）。来源：欧盟添加剂列表。" },
+    "sucralose":                    { fn: "人工甜味剂",            note: "E955；甜度是蔗糖的 600 倍；耐高温。来源：欧盟添加剂列表。" },
+    "acesulfame potassium":         { fn: "人工甜味剂",            note: "安赛蜜（E950）；常与三氯蔗糖或阿斯巴甜复配使用。来源：欧盟添加剂列表。" },
+    "rice":                         { fn: "谷物 / 淀粉",          note: "无麸质谷物；常见小麦替代品。来源：OFF 分类。" },
+    "oat":                          { fn: "谷物 / 膳食纤维",       note: "富含 β-葡聚糖纤维；可能与麸质交叉污染。来源：OFF 分类。" },
+    "corn":                         { fn: "谷物 / 淀粉",          note: "无麸质；加工食品中常用作淀粉或糖浆。来源：OFF 分类。" },
+    "almond":                       { fn: "坚果（树生）",          note: "主要树坚果过敏原；富含维生素 E 和健康脂肪。" },
+    "almonds":                      { fn: "坚果（树生）",          note: "主要树坚果过敏原；富含维生素 E 和健康脂肪。" },
+    "cashew":                       { fn: "坚果（树生）",          note: "常见树坚果过敏原；富含镁。" },
+    "hazelnut":                     { fn: "坚果（树生）",          note: "树坚果过敏原；同时含维生素 E。" },
+    "shrimp":                       { fn: "贝类",                 note: "常见贝类过敏原；高蛋白质和碘含量。" },
+    "vinegar":                      { fn: "酸化剂 / 防腐剂",       note: "乙酸溶液；用于调味和天然防腐。来源：OFF 分类。" },
+    "msg":                          { fn: "增味剂",               note: "谷氨酸钠（E621）；鲜味来源；对普通人群安全。来源：FDA GRAS。" },
+    "artificial color":             { fn: "色素",                 note: "合成染料类别；各具体染料的安全性有所不同。来源：FDA。" },
+    "sodium phosphate":             { fn: "乳化剂 / pH调节剂",     note: "E339；用于加工奶酪和肉类。来源：欧盟添加剂列表。" },
+    "calcium propionate":           { fn: "防腐剂",               note: "E282；防止面包发霉；普遍被认为安全。来源：欧盟添加剂列表。" },
+    "sorbic acid":                  { fn: "防腐剂",               note: "E200；天然防腐剂；抑制酵母和霉菌。来源：欧盟添加剂列表。" }
+  }
+}
 let cachedKnownIngredientMatchers = null
 // Common ingredient conjunctions seen across supported UI languages.
 const multilingualIngredientJoiners = ["and", "und", "et", "和", "及", "与", "以及"]
@@ -402,7 +600,7 @@ function getKnownIngredientMatchers(){
 function normalizeIngredientName(value = ""){
   if(!value) return ""
 
-  const withoutHeader = String(value).replace(/^(ingredients?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
+  const withoutHeader = String(value).replace(/^(ingredients?|contains?|contient?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
   const normalized = sanitizeIngredientTerm(withoutHeader)
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
@@ -436,81 +634,49 @@ function isLikelyIngredientToken(token = ""){
   // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
   // scan-code or batch-number fragments — reject them.
   if(normalized.length <= 4 && /\d/.test(normalized) && /[a-z]/i.test(normalized)) return false
+  // OCR garbage: single-word tokens (no spaces) that start with an impossible consonant
+  // cluster (3+ consonants before the first vowel) are not valid INCI/food ingredient names.
+  // e.g. "RNTEARIR" (starts with RNT). Multi-word tokens are excluded from this check
+  // because multi-word INCI names can begin with abbreviations like "DMDM HYDANTOIN".
+  // CJK tokens are also excluded — Chinese ingredient names don't follow Latin phonotactics.
+  const hasSingleWord = !normalized.includes(" ")
+  const asciiOnly = normalized.replace(/[^a-z]/gi, "")
+  // \u4e00-\u9fa5 = CJK Unified Ideographs (Chinese characters)
+  if (hasSingleWord && asciiOnly.length >= 5 && !/[\u4e00-\u9fa5]/.test(normalized)) {
+    const leadConsonantMatch = asciiOnly.match(/^([^aeiouy]+)/i)
+    if (leadConsonantMatch) {
+      const lead = leadConsonantMatch[1].toLowerCase()
+      // Allowlist of recognised English/Latin initial consonant clusters (digraphs and
+      // trigraphs) that appear in real INCI names: bl/br/cl/cr/dr/fl/fr/gl/gr/ph/pl/pr/
+      // sc/sh/sk/sl/sm/sn/sp/st/sw/th/tr/wh/wr/ch/gh/kn/gn/mn and chr/str/spr/spl/
+      // scr/thr/shr/phr/sch. Any other 3+ consonant lead is rejected as OCR noise.
+      const validClusters = /^(bl|br|cl|cr|dr|fl|fr|gl|gr|ph|pl|pr|sc|sh|sk|sl|sm|sn|sp|st|sw|th|tr|wh|wr|ch|gh|kn|gn|mn|chr|str|spr|spl|scr|thr|shr|phr|sch)/
+      if (lead.length >= 3 && !validClusters.test(lead)) return false
+    }
+  }
+  // Multi-word OCR garbage: tokens of 2-4 words where EVERY word either has no vowels
+  // or is only 1-2 letters are almost certainly address/code fragments
+  // (e.g. "LSE SBF", "BIR Raa E"). Real INCI multi-word names always have at least
+  // one word with a vowel and >= 3 letters (e.g. "sodium lauryl sulfate", "aloe vera").
+  if (!hasSingleWord && !/[\u4e00-\u9fa5]/.test(normalized)) {
+    const words = normalized.trim().split(/\s+/)
+    if (words.length >= 2 && words.length <= 4) {
+      const allWordsAreFiller = words.every(w => w.length <= 2 || !/[aeiouy]/i.test(w))
+      if (allWordsAreFiller) return false
+    }
+  }
+  // Single-word tokens containing a run of 5 or more consecutive digits are almost certainly
+  // registration/lot/authorization codes (e.g. "EAH-NXA06372", "CPNP12345678") rather than
+  // INCI names — the highest E-number is E1521 (4 digits), and PEG numbers top out at 4 digits.
+  // CI colorant numbers ("CI 77891") are multi-word after sanitization so hasSingleWord=false.
+  if (hasSingleWord && /\d{5,}/.test(normalized)) return false
   return true
 }
 
 
 // Extracts just the ingredient section from full product label text (e.g. OCR of an entire label).
-// Strips product metadata (name, manufacturer, batch number, etc.) that precedes the ingredient list,
-// and — when both a Chinese (成分:) and a Latin INCI (INGREDIENTS:) section are present —
-// selects only the section that matches the user's preferred language to avoid double-counting.
-// Returns the original text unchanged when no known ingredient-section heading is found.
-function findIngredientSection(text, preferredLang) {
-  if (!text || !text.trim()) return text
-  const lang = preferredLang || currentLanguage()
-
-  // Heading patterns that signal the start of an ingredient section
-  const zhHeaderRe = /(?:其他微量|其他|微量)?成分[:：]|配料[:：]|原料[:：]|成份[:：]/i
-  const laHeaderRe = /\bINGREDIENTS?\s*[:/]|\bINCI\s*[:/]|Ingrédients?\s*[:/]|Inhaltsstoffe?\s*[:/]/i
-
-  const zhMatch = zhHeaderRe.exec(text)
-  const laMatch = laHeaderRe.exec(text)
-
-  // No known ingredient heading found.
-  // Check whether the text looks like a nutrition facts / nutritional information panel.
-  // Key signals: "Nutrition Facts" / "Valeur nutritive" / "Nährwerte" heading OR
-  // a combination of ≥2 distinct macronutrient/micronutrient names plus a percentage
-  // value (characteristic of a nutrition table row). When detected without an ingredient
-  // header, return "" so the caller can show a targeted "aim at INGREDIENTS section" message.
-  // Otherwise (no nutrition-facts signals) the text is probably a user-pasted ingredient
-  // list without a header — return it as-is so it can be parsed normally.
-  if (!zhMatch && !laMatch) {
-    const hasNutrifactsHeader = /\bNutrition\s+Facts\b|\bValeur\s+nutritive\b|\bNährwert(?:angaben|information|e)?\b|\b营养成分(?:表)?\b/i.test(text)
-    const macroMatches = text.match(/\b(?:Calories?|Protein|Protéines?|Fat|Fett|Graisses?|Carbohydrate|Glucides?|Sodium|Natrium|Cholesterol|Cholestérol|Sugars?|Sucres?|Fibre|Fiber|Potassium|Eiweiß|Kohlenhydrate|Calcium|Iron|Fer|Vitamine?\s*[A-Za-z0-9]+)\b/gi)
-    const distinctMacros = new Set((macroMatches || []).map(m => m.toLowerCase().replace(/\s+/g, " "))).size
-    const hasPercentageValue = /\b\d+\s*%/.test(text)
-    if (hasNutrifactsHeader || (distinctMacros >= 2 && hasPercentageValue)) return ""
-    return text
-  }
-
-  // After identifying the start of an ingredient section, stop before product-metadata keywords
-  // (batch number, net weight, usage instructions, etc.) that typically follow ingredients.
-  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]/i
-
-  function sliceSection(start, hardEnd) {
-    const rawSlice = text.slice(start, hardEnd).trim()
-    if (!rawSlice) return ""
-    const stopMatch = metadataStopRe.exec(rawSlice)
-    if (stopMatch) {
-      // Return everything before the metadata marker.
-      // If the marker fires right at the start (no ingredient content), fall back
-      // to the raw slice to avoid an empty result — this is still better than
-      // returning the full label text with pre-header metadata.
-      return rawSlice.slice(0, stopMatch.index).trim() || rawSlice
-    }
-    return rawSlice
-  }
-
-  if (lang === "zh") {
-    if (zhMatch) {
-      const start = zhMatch.index + zhMatch[0].length
-      // Stop before the Latin INCI section (same ingredients in different notation)
-      const laStop = (laMatch && laMatch.index > start) ? laMatch.index : text.length
-      return sliceSection(start, laStop) || ""
-    }
-    // No Chinese header but Latin exists — use Latin section as fallback
-    return sliceSection(laMatch.index + laMatch[0].length, text.length) || ""
-  } else {
-    if (laMatch) {
-      const start = laMatch.index + laMatch[0].length
-      // Stop before the Chinese section (if it appears after the Latin header)
-      const zhStop = (zhMatch && zhMatch.index > start) ? zhMatch.index : text.length
-      return sliceSection(start, zhStop) || ""
-    }
-    // No Latin header but Chinese exists — use Chinese section as fallback
-    return sliceSection(zhMatch.index + zhMatch[0].length, text.length) || ""
-  }
-}
+// findIngredientSection is defined in ingredient-section.js (loaded before app.js).
+// See that file for full implementation and documentation.
 
 function extractIngredients(text){
   const normalizedText = (text || "").toLowerCase().trim()
@@ -723,7 +889,6 @@ const uiMessages = {
     heroBadge: "AI-Powered Ingredient Intelligence",
     heroTitlePrefix: "Know exactly what's",
     heroTitleHighlight: "in your products",
-    heroCta: "Check your ingredients free →",
     chipCoverage: "Food + Skincare Coverage",
     chipLanguage: "4-Language Support",
     chipSpeed: "OCR-to-Analysis in Seconds",
@@ -769,7 +934,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Falling back to open databases — paste your ingredients again or try a different product label.`,
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
-    ocrLocalProcessing: "Backend unavailable — running on-device OCR (may be slower)…",
+    ocrLocalProcessing: "Running on-device OCR (may be slower)…",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -840,7 +1005,6 @@ const uiMessages = {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
     heroTitlePrefix: "Sachez exactement ce qu'il y a",
     heroTitleHighlight: "dans vos produits",
-    heroCta: "Vérifiez vos ingrédients gratuitement →",
     chipCoverage: "Couverture alimentaire + skincare",
     chipLanguage: "Support 4 langues",
     chipSpeed: "OCR vers analyse en quelques secondes",
@@ -886,7 +1050,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Utilisation des bases ouvertes — recollez vos ingrédients ou essayez une autre étiquette.`,
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
-    ocrLocalProcessing: "Service indisponible — OCR local en cours (peut être plus lent)…",
+    ocrLocalProcessing: "OCR sur l'appareil en cours (peut être plus lent)…",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -957,7 +1121,6 @@ const uiMessages = {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
     heroTitlePrefix: "Wissen Sie genau, was",
     heroTitleHighlight: "in Ihren Produkten steckt",
-    heroCta: "Jetzt kostenlos prüfen →",
     chipCoverage: "Lebensmittel + Hautpflege",
     chipLanguage: "Unterstützung für 4 Sprachen",
     chipSpeed: "OCR-zu-Analyse in Sekunden",
@@ -1003,7 +1166,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Nutze offene Datenbanken — Zutaten erneut einfügen oder anderes Etikett ausprobieren.`,
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
-    ocrLocalProcessing: "Backend nicht verfügbar — lokale Texterkennung läuft (kann langsamer sein)…",
+    ocrLocalProcessing: "Lokale Texterkennung läuft (kann langsamer sein)…",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1074,7 +1237,6 @@ const uiMessages = {
     heroBadge: "AI 驱动的成分智能",
     heroTitlePrefix: "精确了解",
     heroTitleHighlight: "您产品的成分",
-    heroCta: "免费检查成分 →",
     chipCoverage: "食品 + 护肤双场景覆盖",
     chipLanguage: "支持 4 种语言",
     chipSpeed: "OCR 到分析仅需数秒",
@@ -1120,7 +1282,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果，正在切换至开放数据库——请重新粘贴成分，或尝试其他产品标签。`,
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
-    ocrLocalProcessing: "后端不可用，正在使用本地 OCR（速度可能较慢）……",
+    ocrLocalProcessing: "正在使用本地 OCR（速度可能较慢）……",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -1762,9 +1924,12 @@ function lookupLocalIngredientDb(ingredient, lang = currentLanguage()) {
     food:     t("foodCategory", lang),
     general:  t("generalCategory", lang)
   }
+  const i18n = localIngredientDbI18n[lang] && localIngredientDbI18n[lang][key]
+  const fn   = (i18n && i18n.fn)   || entry.fn
+  const note = (i18n && i18n.note) || entry.note
   return {
     category: catMap[entry.category] || t("generalCategory", lang),
-    detail:   `${entry.fn}: ${entry.note}`
+    detail:   `${fn}: ${note}`
   }
 }
 
@@ -1897,23 +2062,25 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), d
   const lines = [`${t("fallbackHeader", lang)}:`]
 
   const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
-    // Use the original user-typed token for display name and per-ingredient language detection.
-    // e.g. normalized "aloe vera" from "芦荟" → displayName="芦荟", ingredientLang="zh"
+    // Use the original user-typed token for display name.
+    // e.g. normalized "aloe vera" from "芦荟" → displayName="芦荟"
     const displayName = displayNameMap[ingredient] || ingredient
-    const ingredientLang = normalizeSupportedLanguage(detectInputLanguage(displayName))
 
     // 1. Check embedded local database first (instant, no network required)
-    const localResult = lookupLocalIngredientDb(ingredient, ingredientLang)
+    const localResult = lookupLocalIngredientDb(ingredient, lang)
     if (localResult) {
       return `${displayName}: [${localResult.category}] ${localResult.detail}`
     }
 
     // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
+    // Always use the UI language (lang) for output labels; ingredientLang only tells us
+    // what script the input token was written in (used upstream for alias resolution).
+    // Use `lang` for all user-facing output; use `ingredientLang` only for input processing and alias matching.
     const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
-      lookupOFFIngredientTaxonomy(ingredient, ingredientLang),
-      lookupOpenFoodFacts(ingredient, ingredientLang),
-      lookupOpenBeautyFacts(ingredient, ingredientLang),
-      lookupWikidataIngredient(ingredient, ingredientLang)
+      lookupOFFIngredientTaxonomy(ingredient, lang),
+      lookupOpenFoodFacts(ingredient, lang),
+      lookupOpenBeautyFacts(ingredient, lang),
+      lookupWikidataIngredient(ingredient, lang)
     ])
 
     const firstHit = [
@@ -1926,8 +2093,8 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), d
     const detail = firstHit
       ? firstHit
         : {
-          category: t("generalCategory", ingredientLang),
-          detail: `${t("noPublicData", ingredientLang)} ${t("publicDbSourceNote", ingredientLang)}`
+          category: t("generalCategory", lang),
+          detail: `${t("noPublicData", lang)} ${t("publicDbSourceNote", lang)}`
         }
 
     return `${displayName}: [${detail.category}] ${detail.detail}`
@@ -2119,7 +2286,10 @@ async function analyzeIngredients(){
     }
 
     let ingredients = extractIngredients(ingredientText)
-    analysisLanguage = detectInputLanguage(ingredientText, ingredients)
+    // Detect the input language for telemetry purposes only.
+    // Always use the user's chosen UI language for AI responses and all display,
+    // so results are consistently in the language the user selected.
+    const detectedInputLang = detectInputLanguage(ingredientText, ingredients)
     const warnings = checkInteractions(ingredients, analysisLanguage)
 
     // Build a map from normalized ingredient key → original user-typed token.
@@ -2150,14 +2320,7 @@ async function analyzeIngredients(){
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
         .map(s => s.trim())
-        .filter(s => {
-          const l = s.length
-          if (l < 3 || l > MAX_INGREDIENT_TOKEN_LENGTH) return false
-          // Same OCR-noise filters as isLikelyIngredientToken
-          if (l <= 4 && !/[aeiouy]/i.test(s)) return false
-          if (l <= 4 && /\d/.test(s) && /[a-z]/i.test(s)) return false
-          return true
-        })
+        .filter(s => s.length >= 3 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH && isLikelyIngredientToken(s))
       if (rawFallback.length > 0) {
         ingredients = rawFallback
         for (const raw of ingredients) {
@@ -2182,7 +2345,7 @@ async function analyzeIngredients(){
       : 0
     recordScanEvent({
       ingredientCount: ingredients.length,
-      inputLang:       analysisLanguage,
+      inputLang:       detectedInputLang,
       analysisSource:  analysisSource || "local",
       warningCount:    warnings.length,
       allergenCount,
@@ -2690,19 +2853,28 @@ on normal page-load performance.
 ----------------------- */
 
 // Lazy-load Tesseract.js from CDN.
+// Cached promise for the Tesseract.js script load.
+// Shared across all callers so the <script> tag is injected only once even if
+// loadTesseract() is called concurrently (e.g. from runOCR and runLocalOCR).
+let _tesseractLoadPromise = null
+
 // Returns true when the library is available, false if the CDN load failed.
 async function loadTesseract() {
   if (typeof window.Tesseract !== "undefined") return true
-  return new Promise((resolve) => {
-    const script = document.createElement("script")
-    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
-    script.onload = () => resolve(true)
-    script.onerror = () => {
-      console.warn("Tesseract.js CDN load failed")
-      resolve(false)
-    }
-    document.head.appendChild(script)
-  })
+  if (!_tesseractLoadPromise) {
+    _tesseractLoadPromise = new Promise((resolve) => {
+      const script = document.createElement("script")
+      script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+      script.onload = () => resolve(true)
+      script.onerror = () => {
+        console.warn("Tesseract.js CDN load failed")
+        _tesseractLoadPromise = null  // allow retry on next call
+        resolve(false)
+      }
+      document.head.appendChild(script)
+    })
+  }
+  return _tesseractLoadPromise
 }
 
 // Minimum output quality thresholds for the Tesseract fallback.
@@ -2722,14 +2894,15 @@ const LOCAL_OCR_TIMEOUT_MS = 90000
 // Minimum width (px) for the preprocessed canvas fed to Tesseract.
 // Upscaling small photos dramatically improves recognition — Tesseract needs
 // at least ~30 px of cap-height to reliably identify characters.
-// 2400 px is wide enough that even very small label text is legible.
-const LOCAL_OCR_MIN_WIDTH = 2400
+// 1500 px is wide enough for typical label text while keeping the total pixel
+// count low so on-device processing completes in a reasonable time.
+const LOCAL_OCR_MIN_WIDTH = 1500
 
 // Maximum total pixels in the preprocessed canvas.
-// Prevents excessive memory usage on memory-constrained devices (e.g. older iOS)
-// when a tall portrait photo is scaled up to meet LOCAL_OCR_MIN_WIDTH.
-// 10 MP (≈ 3162×3162) covers any typical label photo at full legibility.
-const LOCAL_OCR_MAX_PIXELS = 10_000_000
+// Prevents excessive memory usage and slow processing on mobile devices.
+// 4 MP (≈ 2000×2000) gives adequate resolution for ingredient text while
+// being ~2.5× faster to process than the previous 10 MP limit.
+const LOCAL_OCR_MAX_PIXELS = 4_000_000
 
 // OCR Engine Mode: 1 = LSTM (neural net engine, best accuracy in Tesseract 4/5).
 const LOCAL_OCR_OEM_LSTM = 1
@@ -2779,14 +2952,15 @@ function preprocessCanvasForOCR(src) {
 // Checks whether Tesseract output looks like real label text vs. OCR noise.
 // A garbage scan (curled label, blurry photo, logo area) typically yields many
 // 1-3 character fragments and very few proper words.
-// Returns false (unusable) if fewer than 3 words of 4+ characters are found —
-// real ingredient lists always contain at least a few full words (e.g. "AQUA",
-// "WATER", "GLYCERIN") even when the scan is imperfect.
+// Returns false (unusable) if fewer than 2 words of 4+ characters are found —
+// real ingredient lists always contain at least one or two full words (e.g. "AQUA",
+// "WATER", "GLYCERIN") even when the scan is imperfect. Two is the minimum
+// because some very short lists (e.g. "Water, Glycerin") are genuinely valid.
 function isOCRTextUsable(text) {
   if (!text) return false
   const words = text.trim().split(/\s+/).filter(w => w.length > 0)
   const longWordCount = words.filter(w => w.replace(/[^a-z\u4e00-\u9fa5]/gi, "").length >= 4).length
-  return longWordCount >= 3
+  return longWordCount >= 2
 }
 
 // Run on-device OCR via Tesseract.js.
@@ -2802,10 +2976,26 @@ async function runLocalOCR(canvas) {
   if (!loaded || typeof window.Tesseract === "undefined") return null
   let worker = null
   let timeoutId = null
+  // Live progress element — updated by the Tesseract logger below.
+  const ocrEl = document.getElementById("ocrResult")
   try {
     const prepared = preprocessCanvasForOCR(canvas)
     // Use the Worker API so we can set Tesseract parameters before recognition.
-    worker = await window.Tesseract.createWorker("eng", LOCAL_OCR_OEM_LSTM, { logger: () => {} })
+    // The logger receives status/progress events from the worker; we use them to
+    // show a live percentage so users know the OCR is still running (not frozen).
+    worker = await window.Tesseract.createWorker("eng", LOCAL_OCR_OEM_LSTM, {
+      logger: (m) => {
+        if (!ocrEl) return
+        if (m.status === "recognizing text" && typeof m.progress === "number") {
+          const pct = Math.round(m.progress * 100)
+          ocrEl.innerText = `${t("ocrLocalProcessing")} ${pct}%`
+        } else if (m.status === "loading tesseract core" || m.status === "initializing tesseract") {
+          ocrEl.innerText = `${t("ocrLocalProcessing")} (loading…)`
+        } else if (m.status === "loading language traineddata" || m.status === "initializing api") {
+          ocrEl.innerText = `${t("ocrLocalProcessing")} (initializing…)`
+        }
+      },
+    })
     await worker.setParameters({
       // PSM 11 — Sparse text: find as much text as possible in no particular order.
       // This is the correct mode for product labels where text is scattered across
@@ -2898,10 +3088,78 @@ async function callAIVisionOCR(canvas) {
   }
 }
 
+// Builds the OCR system prompt for the direct client-side Gemini Vision call.
+// The prompt asks the AI to transcribe ALL visible label text without filtering.
+// Section selection (Chinese vs Latin INCI vs other languages) is handled
+// deterministically by findIngredientSection() on the client, which is more
+// reliable than asking the AI to pick the right section.
+// Mirrors the server-side buildOCRSystemPrompt() in the edge function.
+// The lang parameter is accepted for API compatibility but no longer alters the prompt.
+function buildOCRDirectPrompt(_lang) {
+  return (
+    "You are a product label OCR assistant. " +
+    "Your task is to accurately read and transcribe ALL visible text from the product label image. " +
+    "Output the complete label text exactly as it is printed, preserving: " +
+    "all ingredient sections in every language present on the label (e.g. sections headed by " +
+    "'INGREDIENTS', 'Ingrédients', '成分', '配料', '原料', 'Inhaltsstoffe', or any equivalent term), " +
+    "all section headings and markers, all separators (commas, slashes, semicolons, asterisks, etc.), " +
+    "and the original text structure. " +
+    "Do NOT skip, filter, or omit any section of the label. " +
+    "If any text is unclear or partially legible, output your best reading. " +
+    "Never output an empty response — always return whatever text is visible on the label."
+  )
+}
+
+// Calls the Gemini Vision API directly from the browser using the optional
+// geminiApiKey declared in config.js.  This provides AI-quality OCR without
+// requiring a configured Supabase backend.
+// Returns { text: string } on success or { text: null } when the key is absent
+// or the request fails.
+async function callGeminiVisionDirect(canvas, lang) {
+  if (typeof geminiApiKey === "undefined" || !geminiApiKey || !geminiApiKey.trim()) {
+    return { text: null }
+  }
+  try {
+    const resized = resizeCanvasForBackend(canvas)
+    const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
+    const model = "gemini-1.5-flash"
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey.trim()}`
+    const fetchPromise = fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: buildOCRDirectPrompt(lang || currentLanguage()) }] },
+        contents: [{ parts: [{ inline_data: { mime_type: "image/jpeg", data: imageBase64 } }] }],
+        generationConfig: { maxOutputTokens: 4096, temperature: 0.1 },
+      }),
+    })
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Direct Gemini Vision timed out")), AI_OCR_TIMEOUT_MS)
+    )
+    const response = await Promise.race([fetchPromise, timeoutPromise])
+    if (!response.ok) {
+      console.warn("Direct Gemini Vision API error:", response.status)
+      return { text: null }
+    }
+    const json = await response.json()
+    const text = json?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null
+    return { text }
+  } catch (err) {
+    console.warn("Direct Gemini Vision failed:", err)
+    return { text: null }
+  }
+}
+
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
 
-  // Try the AI backend first (highest accuracy, multi-language).
+  // Start loading the Tesseract.js script immediately in the background so it is
+  // ready (or already loading) by the time the on-device OCR fallback is reached.
+  // This call is idempotent and fire-and-forget — it overlaps the CDN download
+  // with any backend call that is in flight, reducing total wait time.
+  loadTesseract()
+
+  // Try the Supabase AI backend first (highest accuracy, multi-language).
   if (supabaseClient) {
     if (ocrEl) {
       ocrEl.innerText = t("ocrProcessing")
@@ -2917,10 +3175,25 @@ async function runOCR(canvas) {
       await analyzeIngredients()
       return
     }
-    // Backend unavailable or returned no text — fall through to on-device OCR.
+    // Backend unavailable or returned no text — fall through.
+  }
+
+  // Direct client-side Gemini Vision fallback (uses geminiApiKey from config.js).
+  // Works without a Supabase backend; requires a free key from aistudio.google.com.
+  const { text: directText } = await callGeminiVisionDirect(canvas, currentLanguage())
+  if (directText) {
+    if (ocrEl) {
+      ocrEl.innerText = ""
+      ocrEl.classList.remove("visible")
+    }
+    document.getElementById("ingredients").value = directText
+    await analyzeIngredients()
+    return
   }
 
   // On-device Tesseract.js OCR fallback — works without any API keys.
+  // Always show the status banner before starting so the user gets immediate
+  // feedback; the Tesseract logger will update it with percentage progress.
   if (ocrEl) {
     ocrEl.innerText = t("ocrLocalProcessing")
     ocrEl.classList.add("visible")
@@ -2962,6 +3235,12 @@ async function handleImageUpload(input) {
     ocrEl.innerText = t("ocrProcessing")
     ocrEl.classList.add("visible")
   }
+  // Clear any stale preview from a previous upload so the old image is not
+  // still visible while the new image is loading.
+  const stalePreview = document.getElementById("imagePreview")
+  if (stalePreview) { stalePreview.style.display = "none"; stalePreview.src = "" }
+  canvas.style.display = "none"
+
   // Show camera panel immediately so the processing message is visible.
   // Also hide the video right away so no blank/black frame flashes before the
   // uploaded image preview appears in img.onload below.
