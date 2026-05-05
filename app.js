@@ -736,7 +736,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Falling back to open databases — paste your ingredients again or try a different product label.`,
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
-    ocrLocalProcessing: "Backend unavailable — running on-device OCR (may be slower)…",
+    ocrLocalProcessing: "Running on-device OCR (may be slower)…",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -852,7 +852,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Utilisation des bases ouvertes — recollez vos ingrédients ou essayez une autre étiquette.`,
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
-    ocrLocalProcessing: "Service indisponible — OCR local en cours (peut être plus lent)…",
+    ocrLocalProcessing: "OCR sur l'appareil en cours (peut être plus lent)…",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -968,7 +968,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Nutze offene Datenbanken — Zutaten erneut einfügen oder anderes Etikett ausprobieren.`,
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
-    ocrLocalProcessing: "Backend nicht verfügbar — lokale Texterkennung läuft (kann langsamer sein)…",
+    ocrLocalProcessing: "Lokale Texterkennung läuft (kann langsamer sein)…",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1084,7 +1084,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果，正在切换至开放数据库——请重新粘贴成分，或尝试其他产品标签。`,
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
-    ocrLocalProcessing: "后端不可用，正在使用本地 OCR（速度可能较慢）……",
+    ocrLocalProcessing: "正在使用本地 OCR（速度可能较慢）……",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -2936,6 +2936,8 @@ async function callGeminiVisionDirect(canvas, lang) {
 
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
+  // Track whether a backend was tried and failed so we can decide which message to show.
+  let backendAttempted = false
 
   // Try the Supabase AI backend first (highest accuracy, multi-language).
   if (supabaseClient) {
@@ -2943,7 +2945,7 @@ async function runOCR(canvas) {
       ocrEl.innerText = t("ocrProcessing")
       ocrEl.classList.add("visible")
     }
-    const { text: visionText } = await callAIVisionOCR(canvas)
+    const { text: visionText, unavailable: visionUnavailable } = await callAIVisionOCR(canvas)
     if (visionText) {
       if (ocrEl) {
         ocrEl.innerText = ""
@@ -2953,7 +2955,13 @@ async function runOCR(canvas) {
       await analyzeIngredients()
       return
     }
-    // Backend unavailable or returned no text — fall through.
+    // unavailable: true means the backend is accessible but OCR is not configured
+    // (no API keys set).  Treat this the same as "no backend" so we don't show a
+    // misleading "backend unavailable" status to the user.
+    // unavailable: false means the backend was tried and failed (network/timeout/
+    // empty response) — flag it so the local-OCR fallback banner stays visible.
+    if (!visionUnavailable) backendAttempted = true
+    // Fall through to next tier.
   }
 
   // Direct client-side Gemini Vision fallback (uses geminiApiKey from config.js).
@@ -2970,7 +2978,10 @@ async function runOCR(canvas) {
   }
 
   // On-device Tesseract.js OCR fallback — works without any API keys.
-  if (ocrEl) {
+  // Only show the status banner if a backend was actually attempted (and failed),
+  // so users who have no OCR backend configured do not see a confusing "unavailable"
+  // message on every upload.
+  if (ocrEl && backendAttempted) {
     ocrEl.innerText = t("ocrLocalProcessing")
     ocrEl.classList.add("visible")
   }
