@@ -736,7 +736,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI returned no analysis for ${langName}. Falling back to open databases — paste your ingredients again or try a different product label.`,
     failed: "Analysis could not be completed. Check your internet connection. You can also paste ingredients manually into the text field above.",
     ocrFailed: "OCR could not read the label. Try better lighting, hold the camera closer, or paste the ingredients manually below.",
-    ocrLocalProcessing: "Backend unavailable — running on-device OCR (may be slower)…",
+    ocrLocalProcessing: "Running on-device OCR (may be slower)…",
     fallbackHeader: "Open-data ingredient analysis",
     foodCategory: "Food",
     skincareCategory: "Skincare",
@@ -852,7 +852,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `L'IA n'a renvoyé aucune analyse pour ${langName}. Utilisation des bases ouvertes — recollez vos ingrédients ou essayez une autre étiquette.`,
     failed: "L'analyse n'a pas pu être effectuée. Vérifiez votre connexion internet. Vous pouvez aussi coller les ingrédients manuellement dans le champ ci-dessus.",
     ocrFailed: "L'OCR n'a pas pu lire l'étiquette. Essayez avec un meilleur éclairage, rapprochez la caméra, ou collez les ingrédients manuellement ci-dessous.",
-    ocrLocalProcessing: "Service indisponible — OCR local en cours (peut être plus lent)…",
+    ocrLocalProcessing: "OCR sur l'appareil en cours (peut être plus lent)…",
     fallbackHeader: "Analyse d'ingrédients via données ouvertes",
     foodCategory: "Alimentaire",
     skincareCategory: "Soin de la peau",
@@ -968,7 +968,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `Die KI hat keine Analyse für ${langName} geliefert. Nutze offene Datenbanken — Zutaten erneut einfügen oder anderes Etikett ausprobieren.`,
     failed: "Analyse konnte nicht abgeschlossen werden. Bitte Internetverbindung prüfen. Sie können Zutaten auch manuell in das obige Textfeld einfügen.",
     ocrFailed: "OCR konnte das Etikett nicht lesen. Versuchen Sie bessere Beleuchtung, halten Sie die Kamera näher, oder fügen Sie die Zutaten manuell unten ein.",
-    ocrLocalProcessing: "Backend nicht verfügbar — lokale Texterkennung läuft (kann langsamer sein)…",
+    ocrLocalProcessing: "Lokale Texterkennung läuft (kann langsamer sein)…",
     fallbackHeader: "Inhaltsstoffanalyse mit Open-Data",
     foodCategory: "Lebensmittel",
     skincareCategory: "Hautpflege",
@@ -1084,7 +1084,7 @@ const uiMessages = {
     noAnalysisFor: (langName) => `AI 未返回 ${langName} 的分析结果，正在切换至开放数据库——请重新粘贴成分，或尝试其他产品标签。`,
     failed: "分析未能完成，请检查网络连接。您也可以直接将成分粘贴至上方文本框中进行分析。",
     ocrFailed: "OCR 无法识别标签内容。请改善光线、靠近拍摄，或在下方手动粘贴成分。",
-    ocrLocalProcessing: "后端不可用，正在使用本地 OCR（速度可能较慢）……",
+    ocrLocalProcessing: "正在使用本地 OCR（速度可能较慢）……",
     fallbackHeader: "开放数据成分分析",
     foodCategory: "食品",
     skincareCategory: "护肤",
@@ -2647,19 +2647,28 @@ on normal page-load performance.
 ----------------------- */
 
 // Lazy-load Tesseract.js from CDN.
+// Cached promise for the Tesseract.js script load.
+// Shared across all callers so the <script> tag is injected only once even if
+// loadTesseract() is called concurrently (e.g. from runOCR and runLocalOCR).
+let _tesseractLoadPromise = null
+
 // Returns true when the library is available, false if the CDN load failed.
 async function loadTesseract() {
   if (typeof window.Tesseract !== "undefined") return true
-  return new Promise((resolve) => {
-    const script = document.createElement("script")
-    script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
-    script.onload = () => resolve(true)
-    script.onerror = () => {
-      console.warn("Tesseract.js CDN load failed")
-      resolve(false)
-    }
-    document.head.appendChild(script)
-  })
+  if (!_tesseractLoadPromise) {
+    _tesseractLoadPromise = new Promise((resolve) => {
+      const script = document.createElement("script")
+      script.src = "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"
+      script.onload = () => resolve(true)
+      script.onerror = () => {
+        console.warn("Tesseract.js CDN load failed")
+        _tesseractLoadPromise = null  // allow retry on next call
+        resolve(false)
+      }
+      document.head.appendChild(script)
+    })
+  }
+  return _tesseractLoadPromise
 }
 
 // Minimum output quality thresholds for the Tesseract fallback.
@@ -2679,14 +2688,15 @@ const LOCAL_OCR_TIMEOUT_MS = 90000
 // Minimum width (px) for the preprocessed canvas fed to Tesseract.
 // Upscaling small photos dramatically improves recognition — Tesseract needs
 // at least ~30 px of cap-height to reliably identify characters.
-// 2400 px is wide enough that even very small label text is legible.
-const LOCAL_OCR_MIN_WIDTH = 2400
+// 1500 px is wide enough for typical label text while keeping the total pixel
+// count low so on-device processing completes in a reasonable time.
+const LOCAL_OCR_MIN_WIDTH = 1500
 
 // Maximum total pixels in the preprocessed canvas.
-// Prevents excessive memory usage on memory-constrained devices (e.g. older iOS)
-// when a tall portrait photo is scaled up to meet LOCAL_OCR_MIN_WIDTH.
-// 10 MP (≈ 3162×3162) covers any typical label photo at full legibility.
-const LOCAL_OCR_MAX_PIXELS = 10_000_000
+// Prevents excessive memory usage and slow processing on mobile devices.
+// 4 MP (≈ 2000×2000) gives adequate resolution for ingredient text while
+// being ~2.5× faster to process than the previous 10 MP limit.
+const LOCAL_OCR_MAX_PIXELS = 4_000_000
 
 // OCR Engine Mode: 1 = LSTM (neural net engine, best accuracy in Tesseract 4/5).
 const LOCAL_OCR_OEM_LSTM = 1
@@ -2937,6 +2947,12 @@ async function callGeminiVisionDirect(canvas, lang) {
 async function runOCR(canvas) {
   const ocrEl = document.getElementById("ocrResult")
 
+  // Start loading the Tesseract.js script immediately in the background so it is
+  // ready (or already loading) by the time the on-device OCR fallback is reached.
+  // This call is idempotent and fire-and-forget — it overlaps the CDN download
+  // with any backend call that is in flight, reducing total wait time.
+  loadTesseract()
+
   // Try the Supabase AI backend first (highest accuracy, multi-language).
   if (supabaseClient) {
     if (ocrEl) {
@@ -2970,6 +2986,8 @@ async function runOCR(canvas) {
   }
 
   // On-device Tesseract.js OCR fallback — works without any API keys.
+  // Always show the status banner before starting so the user gets immediate
+  // feedback; the Tesseract logger will update it with percentage progress.
   if (ocrEl) {
     ocrEl.innerText = t("ocrLocalProcessing")
     ocrEl.classList.add("visible")
