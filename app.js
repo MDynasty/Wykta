@@ -136,6 +136,70 @@ const ingredientAliases = {
   "向日葵籽油": "sunflower oil",
   "小苏打": "sodium bicarbonate",
   "食用香精": "artificial flavor",
+  // Additional Chinese INCI / skincare / food aliases for better local-DB coverage
+  "麦芽糊精": "maltodextrin",
+  "角鲨烷": "squalane",
+  "角鲨烯": "squalane",
+  "咖啡因": "caffeine",
+  "尿素": "urea",
+  "卡波姆": "carbomer",
+  "卡波": "carbomer",
+  "生育酚": "tocopherol",
+  "维生素e": "tocopherol",
+  "乙酰化透明质酸钠": "sodium hyaluronate",
+  "积雪草": "centella asiatica",
+  "积雪草苷": "centella asiatica",
+  "白藜芦醇": "resveratrol",
+  "腺苷": "adenosine",
+  "阿魏酸": "ferulic acid",
+  "甘草提取物": "licorice root extract",
+  "光果甘草提取物": "licorice root extract",
+  "母菊花提取物": "bisabolol",
+  "α-甜没药醇": "bisabolol",
+  "茶树油": "tea tree oil",
+  "金缕梅提取物": "witch hazel",
+  "红景天提取物": "resveratrol",
+  "传明酸": "tranexamic acid",
+  "氨甲环酸": "tranexamic acid",
+  "α-熊果苷": "alpha-arbutin",
+  "熊果苷": "alpha-arbutin",
+  "曲酸": "kojic acid",
+  "壬二酸": "azelaic acid",
+  "聚谷氨酸钠": "polyglutamic acid",
+  "β-葡聚糖": "beta-glucan",
+  "燕麦β-葡聚糖": "beta-glucan",
+  "胶原蛋白": "collagen",
+  "胶原": "collagen",
+  "胶原多肽": "collagen",
+  "喜马拉雅植物油": "jojoba oil",
+  "荷荷巴油": "jojoba oil",
+  "乳木果油": "shea butter",
+  "玫瑰果油": "rosehip oil",
+  "摩洛哥坚果油": "argan oil",
+  "依地树油": "argan oil",
+  "硫酸月桂醇聚醚钠": "sodium laureth sulfate",
+  "十二烷基硫酸钠": "sodium lauryl sulfate",
+  "椰油酰丙基甜菜碱": "cocamidopropyl betaine",
+  "黄原胶": "xanthan gum",
+  "玻璃酸钠": "sodium hyaluronate",
+  "羟乙基哌嗪乙磺酸": "lactic acid",
+  "乳酸": "lactic acid",
+  "苯甲醇": "phenoxyethanol",
+  "对羟基苯乙酮": "phenoxyethanol",
+  "二甲基硅氧烷": "dimethicone",
+  "聚二甲基硅氧烷": "dimethicone",
+  "矿物油": "mineral oil",
+  "石蜡油": "mineral oil",
+  "凡士林": "petrolatum",
+  "白凡士林": "petrolatum",
+  "氧化锌": "zinc oxide",
+  "二氧化钛": "titanium dioxide",
+  "玉米淀粉": "cornstarch",
+  "淀粉糖浆": "high fructose corn syrup",
+  "果葡糖浆": "high fructose corn syrup",
+  "大豆卵磷脂": "lecithin",
+  "葵花籽卵磷脂": "lecithin",
+  "葵花籽油": "sunflower oil",
   "eau": "water",
   "eau purifiée": "water",
   "agua": "water",
@@ -499,6 +563,7 @@ const localIngredientDbI18n = {
     "sorbic acid":                  { fn: "防腐剂",               note: "E200；天然防腐剂；抑制酵母和霉菌。来源：欧盟添加剂列表。" }
   }
 }
+let cachedKnownIngredientMatchers = null
 // Common ingredient conjunctions seen across supported UI languages.
 const multilingualIngredientJoiners = ["and", "und", "et", "和", "及", "与", "以及"]
 const multilingualIngredientJoinerPattern = new RegExp(`\\s(?:${multilingualIngredientJoiners.join("|")})\\s`, "iu")
@@ -1997,10 +2062,9 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), d
   const lines = [`${t("fallbackHeader", lang)}:`]
 
   const analysisLines = await Promise.all(ingredients.map(async (ingredient) => {
-    // Use the original user-typed token for display name and per-ingredient language detection.
-    // e.g. normalized "aloe vera" from "芦荟" → displayName="芦荟", ingredientLang="zh"
+    // Use the original user-typed token for display name.
+    // e.g. normalized "aloe vera" from "芦荟" → displayName="芦荟"
     const displayName = displayNameMap[ingredient] || ingredient
-    const ingredientLang = normalizeSupportedLanguage(detectInputLanguage(displayName))
 
     // 1. Check embedded local database first (instant, no network required)
     const localResult = lookupLocalIngredientDb(ingredient, lang)
