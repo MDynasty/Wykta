@@ -2011,6 +2011,7 @@ async function analyzeWithFreeDatabases(ingredients, lang = currentLanguage(), d
     // 2. Try OFF ingredient taxonomy, OFF/OBF product search, and Wikidata in parallel.
     // Always use the UI language (lang) for output labels; ingredientLang only tells us
     // what script the input token was written in (used upstream for alias resolution).
+    // Use `lang` for all user-facing output; use `ingredientLang` only for input processing and alias matching.
     const [offTaxResult, foodResult, beautyResult, wikidataResult] = await Promise.allSettled([
       lookupOFFIngredientTaxonomy(ingredient, lang),
       lookupOpenFoodFacts(ingredient, lang),
