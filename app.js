@@ -139,7 +139,7 @@ const ingredientAliases = {
   // Additional Chinese INCI / skincare / food aliases for better local-DB coverage
   "麦芽糊精": "maltodextrin",
   "角鲨烷": "squalane",
-  "角鲨烯": "squalane",
+  // 角鲨烯 (squalene) is a different unsaturated compound; remove incorrect mapping
   "咖啡因": "caffeine",
   "尿素": "urea",
   "卡波姆": "carbomer",
@@ -158,7 +158,7 @@ const ingredientAliases = {
   "α-甜没药醇": "bisabolol",
   "茶树油": "tea tree oil",
   "金缕梅提取物": "witch hazel",
-  "红景天提取物": "resveratrol",
+  // 红景天提取物 (Rhodiola extract) is a separate plant; remove incorrect resveratrol mapping
   "传明酸": "tranexamic acid",
   "氨甲环酸": "tranexamic acid",
   "α-熊果苷": "alpha-arbutin",
@@ -182,10 +182,10 @@ const ingredientAliases = {
   "椰油酰丙基甜菜碱": "cocamidopropyl betaine",
   "黄原胶": "xanthan gum",
   "玻璃酸钠": "sodium hyaluronate",
-  "羟乙基哌嗪乙磺酸": "lactic acid",
+  // 羟乙基哌嗪乙磺酸 is HEPES buffer (not lactic acid); remove incorrect mapping
   "乳酸": "lactic acid",
-  "苯甲醇": "phenoxyethanol",
-  "对羟基苯乙酮": "phenoxyethanol",
+  // 苯甲醇 (benzyl alcohol) is a distinct compound; should not map to phenoxyethanol
+  // 对羟基苯乙酮 (p-hydroxyacetophenone) is also distinct; remove incorrect mappings
   "二甲基硅氧烷": "dimethicone",
   "聚二甲基硅氧烷": "dimethicone",
   "矿物油": "mineral oil",
