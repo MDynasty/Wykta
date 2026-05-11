@@ -1003,7 +1003,7 @@ const uiMessages = {
   },
   fr: {
     heroBadge: "Intelligence ingrédients pilotée par l'IA",
-    heroTitlePrefix: "Sachez exactement ce qu'il y a",
+    heroTitlePrefix: "Ce qu'il y a",
     heroTitleHighlight: "dans vos produits",
     chipCoverage: "Couverture alimentaire + skincare",
     chipLanguage: "Support 4 langues",
@@ -1119,8 +1119,8 @@ const uiMessages = {
   },
   de: {
     heroBadge: "KI-gestützte Inhaltsstoff-Intelligenz",
-    heroTitlePrefix: "Wissen Sie genau, was",
-    heroTitleHighlight: "in Ihren Produkten steckt",
+    heroTitlePrefix: "Was steckt",
+    heroTitleHighlight: "in Ihren Produkten",
     chipCoverage: "Lebensmittel + Hautpflege",
     chipLanguage: "Unterstützung für 4 Sprachen",
     chipSpeed: "OCR-zu-Analyse in Sekunden",
