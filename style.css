@@ -1336,10 +1336,11 @@ input[type="file"].visually-hidden {
 }
 
 /* === RESPONSIVE === */
-/* On wide screens, keep only the English hero title on one line.
-   Other locales can wrap naturally to avoid overly long single-line headlines. */
+/* On wide screens, keep EN/FR/DE hero titles on one line. */
 @media (min-width: 921px) {
-  html[lang="en"] .hero-title { white-space: nowrap; }
+  html[lang="en"] .hero-title,
+  html[lang="fr"] .hero-title,
+  html[lang="de"] .hero-title { white-space: nowrap; }
 }
 
 @media (max-width: 920px) {
