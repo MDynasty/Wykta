@@ -1341,6 +1341,8 @@ input[type="file"].visually-hidden {
   html[lang="en"] .hero-title,
   html[lang="fr"] .hero-title,
   html[lang="de"] .hero-title { white-space: nowrap; }
+  html[lang="fr"] .hero-title,
+  html[lang="de"] .hero-title { font-size: clamp(30px, 4vw, 54px); }
 }
 
 @media (max-width: 920px) {
