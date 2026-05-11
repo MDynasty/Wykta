@@ -1336,10 +1336,10 @@ input[type="file"].visually-hidden {
 }
 
 /* === RESPONSIVE === */
-/* On wide screens, keep title on one line. At 920px, 5.2vw ≈ 48px and
-   "Know exactly what's in your products" fits comfortably within the container. */
+/* On wide screens, keep only the English hero title on one line.
+   Other locales can wrap naturally to avoid overly long single-line headlines. */
 @media (min-width: 921px) {
-  .hero-title { white-space: nowrap; }
+  html[lang="en"] .hero-title { white-space: nowrap; }
 }
 
 @media (max-width: 920px) {
