@@ -1459,7 +1459,7 @@ input[type="file"].visually-hidden {
   .pricing-scroll-wrap    { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .pricing-scroll-wrap::after { display: block; }
   .plan-card              { scroll-snap-align: start; }
-  .plan-price             { font-size: 26px; line-height: 1.06; overflow-wrap: anywhere; }
+  .plan-price             { font-size: 26px; line-height: 1.06; overflow-wrap: break-word; }
   .plan-price small       { display: block; font-size: 14px; font-weight: 600; margin-top: 2px; }
 }
 
