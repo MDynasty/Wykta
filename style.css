@@ -877,7 +877,12 @@ input[type="file"].visually-hidden {
   letter-spacing: -0.035em;
   line-height: 1.1;
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
   animation: pricePulse 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.plan-price-suffix {
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .plan-period { font-size: 12.5px; color: var(--text-3); margin-bottom: 22px; }
@@ -1451,10 +1456,12 @@ input[type="file"].visually-hidden {
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
 
   /* === Pricing: keep 3-column horizontal layout (scrollable) on phone === */
-  .pricing-grid           { grid-template-columns: repeat(3, minmax(160px, 1fr)); padding-bottom: 12px; }
+  .pricing-grid           { grid-template-columns: repeat(3, minmax(200px, 1fr)); padding-bottom: 12px; }
   .pricing-scroll-wrap    { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .pricing-scroll-wrap::after { display: block; }
   .plan-card              { scroll-snap-align: start; }
+  .plan-price             { font-size: clamp(30px, 8.5vw, 38px); }
+  .plan-price-suffix      { display: block; margin-top: 2px; font-size: 14px; line-height: 1.2; }
 }
 
 /* ===================================================

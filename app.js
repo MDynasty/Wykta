@@ -3405,7 +3405,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (monthlyBtn) monthlyBtn.classList.toggle("active", !isAnnual)
     if (annualBtn) annualBtn.classList.toggle("active", isAnnual)
     if (proPriceEl) {
-      proPriceEl.innerHTML = `${escapeHtml(formatLocalizedPrice(amount, lang))}<small style="font-size:16px;font-weight:500">${escapeHtml(suffix)}</small>`
+      proPriceEl.innerHTML = `${escapeHtml(formatLocalizedPrice(amount, lang))}<small class="plan-price-suffix">${escapeHtml(suffix)}</small>`
     }
     if (proPeriodEl) {
       proPeriodEl.textContent = isAnnual
