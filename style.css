@@ -1364,7 +1364,7 @@ input[type="file"].visually-hidden {
   .chip {
     max-width: 100%;
     min-width: 0;
-    font-size: clamp(10px, 1.9vw, 12px);
+    font-size: 11px;
     padding: 7px 9px;
     white-space: nowrap;
     overflow: hidden;
@@ -1431,7 +1431,7 @@ input[type="file"].visually-hidden {
   .hero-cta    { display: flex; width: 100%; justify-content: center; box-sizing: border-box; }
   /* Keep feature chips as fixed 2×2 boxes on phone (no horizontal dragging) */
   .hero .chips { margin-top: 20px; width: 100%; box-sizing: border-box; gap: 8px; }
-  .chip        { font-size: clamp(9px, 2.9vw, 11px); padding: 7px 8px; }
+  .chip        { font-size: 10px; padding: 7px 8px; }
 
   /* === Cards === */
   .card,
