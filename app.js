@@ -1069,7 +1069,7 @@ const uiMessages = {
     proFeatureUnlimited: "Scans illimités",
     proFeaturePdf: "Export PDF des rapports",
     enterpriseTitle: "Entreprise",
-    enterprisePrice: "Sur mesure",
+    enterprisePrice: "Sur mesure",
     enterprisePeriod: "périmètre et devis sur mesure",
     enterpriseFeaturePro: "Tout le contenu de Pro",
     enterpriseFeatureApi: "Accès API REST et support d'intégration",
