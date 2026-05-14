@@ -170,6 +170,16 @@ test("Chinese label with only licence/company metadata after ingredients: ingred
   assert.ok(!result.includes("SC99887766"), `must not contain licence number, got: ${result}`)
 })
 
+test("Chinese label: 保质期/保鲜期 line without colon is treated as metadata stop", () => {
+  const text =
+    "配料：水，白砂糖，食用盐，柠檬酸，维生素C\n" +
+    "产品的保质期或保鲜期，用于标识产品的安全性和质量\n" +
+    "食品生产许可证编号 一般\n" +
+    "河南省周口市"
+  const result = findIngredientSection(text, "zh")
+  assert.equal(result, "水，白砂糖，食用盐，柠檬酸，维生素C")
+})
+
 // ─── No ingredient header found ──────────────────────────────────────────────
 
 test("bare ingredient list (no header): returned as-is", () => {
