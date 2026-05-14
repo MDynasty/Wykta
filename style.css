@@ -1338,7 +1338,7 @@ input[type="file"].visually-hidden {
   right: 0;
   bottom: 12px; /* matches the padding-bottom on .pricing-grid at this breakpoint */
   width: 48px;
-  background: linear-gradient(to right, transparent, rgba(3, 7, 23, 0.82));
+  background: linear-gradient(to right, transparent, rgba(3, 7, 23, 0.45));
   pointer-events: none;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
   display: none;
@@ -1349,6 +1349,17 @@ input[type="file"].visually-hidden {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
+    /* vertical padding so featured-card box-shadow isn't clipped by overflow */
+    padding-top: 10px;
+    margin-top: -10px;
+    padding-bottom: 4px;
+  }
+  /* Soften the large desktop shadow — 60px blur looks heavy inside a clipped scroll container */
+  .plan-card.featured {
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.36), 0 8px 24px rgba(129, 140, 248, 0.12);
+  }
+  .plan-card.featured:hover {
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.48), 0 12px 30px rgba(129, 140, 248, 0.16);
   }
 }
 
@@ -1365,7 +1376,7 @@ input[type="file"].visually-hidden {
 @media (max-width: 920px) {
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
-    grid-template-columns: repeat(3, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 270px);
     padding-bottom: 12px;
   }
   .plan-card      { scroll-snap-align: start; }
@@ -1468,7 +1479,7 @@ input[type="file"].visually-hidden {
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
 
   /* === Pricing: keep 3-column horizontal layout (scrollable) on phone === */
-  .pricing-grid           { grid-template-columns: repeat(3, minmax(200px, 1fr)); padding-bottom: 12px; }
+  .pricing-grid           { grid-template-columns: repeat(3, 270px); padding-bottom: 12px; }
   .pricing-scroll-wrap    { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .pricing-scroll-wrap::after { display: block; }
   .plan-card              { scroll-snap-align: start; }
