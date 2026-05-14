@@ -1376,7 +1376,7 @@ input[type="file"].visually-hidden {
 @media (max-width: 920px) {
   .results-grid   { grid-template-columns: 1fr; }
   .pricing-grid   {
-    grid-template-columns: repeat(3, minmax(min(82vw, 270px), 1fr));
+    grid-template-columns: repeat(3, 270px);
     padding-bottom: 12px;
   }
   .plan-card      { scroll-snap-align: start; }
@@ -1479,7 +1479,7 @@ input[type="file"].visually-hidden {
   .billing-toggle { flex-wrap: wrap; justify-content: center; }
 
   /* === Pricing: keep 3-column horizontal layout (scrollable) on phone === */
-  .pricing-grid           { grid-template-columns: repeat(3, minmax(min(82vw, 270px), 1fr)); padding-bottom: 12px; }
+  .pricing-grid           { grid-template-columns: repeat(3, 270px); padding-bottom: 12px; }
   .pricing-scroll-wrap    { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
   .pricing-scroll-wrap::after { display: block; }
   .plan-card              { scroll-snap-align: start; }
