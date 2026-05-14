@@ -840,7 +840,7 @@ input[type="file"].visually-hidden {
 .plan-card.featured {
   border-color: rgba(129, 140, 248, 0.55);
   background: linear-gradient(145deg, rgba(129, 140, 248, 0.10), rgba(34, 211, 238, 0.07));
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.36), 0 20px 60px rgba(129, 140, 248, 0.18);
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.30);
   padding-top: 42px;
 }
 .plan-card.featured .plan-name {
@@ -849,7 +849,7 @@ input[type="file"].visually-hidden {
 
 .plan-card.featured:hover {
   transform: translateY(-5px);
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.48), 0 24px 70px rgba(129, 140, 248, 0.24);
+  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.42), 0 8px 20px rgba(129, 140, 248, 0.10);
 }
 
 .plan-badge {
@@ -1354,12 +1354,12 @@ input[type="file"].visually-hidden {
     margin-top: -10px;
     padding-bottom: 4px;
   }
-  /* Soften the large desktop shadow — 60px blur looks heavy inside a clipped scroll container */
+  /* Minimal shadow on mobile — keep only the border glow */
   .plan-card.featured {
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.36), 0 8px 24px rgba(129, 140, 248, 0.12);
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.30);
   }
   .plan-card.featured:hover {
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.48), 0 12px 30px rgba(129, 140, 248, 0.16);
+    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.42);
   }
 }
 
