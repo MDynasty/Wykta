@@ -715,6 +715,8 @@ function isLikelyIngredientToken(token = ""){
   // "see packaging" notes — are not ingredients.  These are a second line of defence after
   // findIngredientSection's metadataStopRe; they catch any such phrases that slip through
   // when, for example, an OCR output lacks the expected heading colons.
+  // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
+  // (ingredient-section.js).  Keep both in sync when adding new stop terms.
   if (/[\u4e00-\u9fa5]/.test(normalized) &&
       /有限公司|股份有限公司|股份公司|合伙企业|许可证编号|开封后请|开封后需|开封后立即|开封后应|见包装|请置于阴凉|请存放于|请放置于|本品在|本产品在/.test(normalized)) {
     return false
