@@ -1626,13 +1626,15 @@ function displayAIAnalysis(message, rawLines, options = {}) {
     if(match){
       const [, name, category, detail] = match
       const normalizedName = normalizeIngredientName(name)
-      const resolvedName = (displayNameMap && normalizedName && displayNameMap[normalizedName]) || name
+      const mappedDisplayName = (displayNameMap && normalizedName) ? displayNameMap[normalizedName] : ""
+      const resolvedName = mappedDisplayName || name
       const catLower  = category.toLowerCase()
       const detLower  = detail.toLowerCase()
-      const nameLower = `${name} ${resolvedName}`.toLowerCase()
+      const nameLower = name.toLowerCase()
+      const resolvedNameLower = resolvedName.toLowerCase()
 
       let riskClass = "safe"
-      if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k))){
+      if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k) || resolvedNameLower.includes(k))){
         riskClass = "danger"
       } else if(cautionWords.some(k => detLower.includes(k))){
         riskClass = "caution"
