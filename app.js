@@ -611,6 +611,46 @@ function normalizeIngredientName(value = ""){
   return ingredientAliases[normalized] || normalized
 }
 
+function inferOriginalDisplayNameFromText(canonicalIngredient = "", sourceText = "") {
+  const canonical = normalizeIngredientName(canonicalIngredient)
+  if (!canonical || !sourceText) return ""
+
+  const cjkPattern = /[\u4e00-\u9fa5]/
+  const rawText = String(sourceText)
+  const lowerText = rawText.toLowerCase()
+  let bestAlias = ""
+
+  for (const [alias, target] of Object.entries(ingredientAliases)) {
+    if (target !== canonical) continue
+    const aliasText = String(alias || "").trim()
+    if (!aliasText) continue
+
+    const hasLatinChars = /[a-z\u00C0-\u024F]/i.test(aliasText)
+    const matched = hasLatinChars
+      ? lowerText.includes(aliasText.toLowerCase())
+      : rawText.includes(aliasText)
+    if (!matched) continue
+
+    if (!bestAlias) {
+      bestAlias = aliasText
+      continue
+    }
+
+    const aliasIsCjk = cjkPattern.test(aliasText)
+    const bestIsCjk = cjkPattern.test(bestAlias)
+    if (aliasIsCjk && !bestIsCjk) {
+      bestAlias = aliasText
+      continue
+    }
+
+    if (aliasText.length > bestAlias.length) {
+      bestAlias = aliasText
+    }
+  }
+
+  return bestAlias
+}
+
 function extractVocabularyMatches(text = ""){
   const normalizedText = sanitizeIngredientTerm(text)
   if(!normalizedText) return []
@@ -1573,6 +1613,9 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   if(!el) return
   const lang = normalizeSupportedLanguage(options.lang || currentLanguage())
   const isLoadingState = Boolean(options.isLoading)
+  const displayNameMap = options.displayNameMap && typeof options.displayNameMap === "object"
+    ? options.displayNameMap
+    : null
 
   el.innerHTML = ""
 
@@ -1622,12 +1665,19 @@ function displayAIAnalysis(message, rawLines, options = {}) {
     const match = line.match(/^(.+?):\s*\[([^\]]+)\]\s*(.*)$/)
     if(match){
       const [, name, category, detail] = match
+      const normalizedName = normalizeIngredientName(name)
+      const mappedDisplayName = (displayNameMap && normalizedName) ? displayNameMap[normalizedName] : ""
+      const resolvedName = mappedDisplayName || name
       const catLower  = category.toLowerCase()
       const detLower  = detail.toLowerCase()
       const nameLower = name.toLowerCase()
+      const resolvedNameLower = resolvedName.toLowerCase()
+      const hasDangerInOriginalName = dangerWords.some(k => nameLower.includes(k))
+      const hasDangerInResolvedName = resolvedNameLower !== nameLower && dangerWords.some(k => resolvedNameLower.includes(k))
+      const hasDangerInDetail = dangerWords.some(k => detLower.includes(k))
 
       let riskClass = "safe"
-      if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k))){
+      if(hasDangerInDetail || hasDangerInOriginalName || hasDangerInResolvedName){
         riskClass = "danger"
       } else if(cautionWords.some(k => detLower.includes(k))){
         riskClass = "caution"
@@ -1635,7 +1685,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
       // Cross-reference the local ingredient DB to catch known-concern ingredients
       // that the AI described in neutral language (e.g. parabens, fragrances, SLS).
-      const localRisk = riskFromLocalDb(name)
+      const localRisk = riskFromLocalDb(normalizedName || name)
       if (localRisk === "danger" && riskClass !== "danger") riskClass = "danger"
       else if (localRisk === "caution" && riskClass === "safe") riskClass = "caution"
 
@@ -1645,7 +1695,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
       el.insertAdjacentHTML("beforeend", `
         <div class="ingredient-card ${riskClass}">
-          <span class="ingredient-name">${escapeHtml(name)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
+          <span class="ingredient-name">${escapeHtml(resolvedName)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
           <span class="ingredient-detail">${escapeHtml(detail)}</span>
         </div>
       `)
@@ -2191,7 +2241,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
         // Continue to open-database fallback below (do not return "ai").
       } else if(data && data.analysis){
         const lines = data.analysis.split("\n")
-        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
+        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang, displayNameMap })
         return "ai"
       } else {
         console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
@@ -2204,7 +2254,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
 
   try{
     const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang, displayNameMap)
-    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang })
+    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang, displayNameMap })
   } catch(err){
     console.error("Public database lookup error:", err)
     displayAIAnalysis(t("failed", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
@@ -2354,6 +2404,17 @@ async function analyzeIngredients(){
             displayNameMap[normalized] = raw
           }
         }
+      }
+    }
+
+    // Backfill display names for canonical tokens discovered by vocabulary matching.
+    // This handles compact Chinese allergen strings (e.g. "含小麦大豆花生芝麻")
+    // where split-token mapping may miss per-ingredient raw names.
+    for (const ingredient of ingredients) {
+      if (displayNameMap[ingredient]) continue
+      const inferredDisplayName = inferOriginalDisplayNameFromText(ingredient, ingredientText)
+      if (inferredDisplayName) {
+        displayNameMap[ingredient] = inferredDisplayName
       }
     }
 
