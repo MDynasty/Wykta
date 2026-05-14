@@ -840,7 +840,6 @@ input[type="file"].visually-hidden {
 .plan-card.featured {
   border-color: rgba(129, 140, 248, 0.55);
   background: rgba(15, 12, 40, 0.92);
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.30);
   padding-top: 42px;
 }
 .plan-card.featured .plan-name {
@@ -849,7 +848,6 @@ input[type="file"].visually-hidden {
 
 .plan-card.featured:hover {
   transform: translateY(-5px);
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.42), 0 8px 20px rgba(129, 140, 248, 0.10);
 }
 
 .plan-badge {
@@ -1348,17 +1346,6 @@ input[type="file"].visually-hidden {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
-    /* vertical padding so featured-card box-shadow isn't clipped by overflow */
-    padding-top: 10px;
-    margin-top: -10px;
-    padding-bottom: 4px;
-  }
-  /* Minimal shadow on mobile — keep only the border glow */
-  .plan-card.featured {
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.30);
-  }
-  .plan-card.featured:hover {
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.42);
   }
 }
 
