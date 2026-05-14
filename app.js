@@ -1557,13 +1557,14 @@ function escapeHtml(text) {
 // Returns "danger", "caution", or "safe" based on the curated local ingredient DB note.
 // This catches known-concern ingredients even when the AI returns a neutral description.
 function riskFromLocalDb(ingredientName) {
+  if (!ingredientName) return "safe"
   const key = sanitizeIngredientTerm(ingredientName)
   const entry = localIngredientDb[key]
   if (!entry) return "safe"
   const note = entry.note.toLowerCase()
   if (["allergen", "anaphylax", "carcinogen"].some(k => note.includes(k))) return "danger"
-  if (["caution", "avoid", "irritat", "sensitiv", "restrict", "concern", "debated",
-       "endocrine", "hyperactiv", "strip", "linked to metabol"].some(k => note.includes(k))) return "caution"
+  if (["caution", "avoid", "irritat", "sensitiv", "sensitiser", "sensitize", "restrict",
+       "concern", "debated", "endocrine", "hyperactiv", "strip", "linked to metabolic"].some(k => note.includes(k))) return "caution"
   return "safe"
 }
 
@@ -1610,7 +1611,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   // EN: irritat/sensitiv/sensitis/caution/monitor/endocrine/restrict/hyperactiv/debat |
   // FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用/内分泌/限制/争议 |
   // DE: vorsicht/reizung/kann/einschränk
-  const cautionWords = ["irritat", "sensitiv", "sensitis", "caution", "monitor", "deactivat",
+  const cautionWords = ["irritat", "sensitiv", "sensitise", "sensitize", "caution", "monitor", "deactivat",
                         "increase skin", "may affect", "endocrine", "restrict", "hyperactiv",
                         "debat", "peut augmenter", "kann",
                         "刺激", "敏感", "注意", "谨慎", "失活", "慎用", "内分泌", "限制", "争议",
