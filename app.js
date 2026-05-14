@@ -1554,6 +1554,20 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;")
 }
 
+// Returns "danger", "caution", or "safe" based on the curated local ingredient DB note.
+// This catches known-concern ingredients even when the AI returns a neutral description.
+function riskFromLocalDb(ingredientName) {
+  if (!ingredientName) return "safe"
+  const key = sanitizeIngredientTerm(ingredientName)
+  const entry = localIngredientDb[key]
+  if (!entry) return "safe"
+  const note = entry.note.toLowerCase()
+  if (["allergen", "anaphylax", "carcinogen"].some(k => note.includes(k))) return "danger"
+  if (["caution", "avoid", "irritat", "sensitiv", "sensitiser", "sensitize", "restrict",
+       "concern", "debated", "endocrine", "hyperactiv", "strip", "linked to metabolic"].some(k => note.includes(k))) return "caution"
+  return "safe"
+}
+
 function displayAIAnalysis(message, rawLines, options = {}) {
   const el = document.getElementById("ingredientResult")
   if(!el) return
@@ -1589,14 +1603,19 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   }
 
   // Risk keywords across all supported languages.
-  // EN: allergen/allergy/avoid/anaphylaxis | FR: allergène | ZH: 过敏原/过敏/避免/禁用 | DE: vermeiden/nicht verwenden
+  // EN: allergen/allergy/avoid/anaphylaxis/carcinogen/toxic | FR: allergène | ZH: 过敏原/过敏/避免/禁用/致癌/有毒 | DE: vermeiden/nicht verwenden/karzinogen
   const dangerWords  = ["allergen", "allergène", "allergy", "avoid", "anaphylax",
-                        "过敏原", "过敏", "避免", "禁用", "vermeiden", "nicht verwenden"]
-  // EN: irritat/sensitiv/caution/monitor | FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用 | DE: vorsicht/reizung/kann
-  const cautionWords = ["irritat", "sensitiv", "caution", "monitor", "deactivat", "increase skin",
-                        "may affect", "peut augmenter", "kann",
-                        "刺激", "敏感", "注意", "谨慎", "失活", "慎用",
-                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen"]
+                        "carcinogen", "karzinogen", "toxic",
+                        "过敏原", "过敏", "避免", "禁用", "致癌", "有毒",
+                        "vermeiden", "nicht verwenden"]
+  // EN: irritat/sensitiv/sensitis/caution/monitor/endocrine/restrict/hyperactiv/debat |
+  // FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用/内分泌/限制/争议 |
+  // DE: vorsicht/reizung/kann/einschränk
+  const cautionWords = ["irritat", "sensitiv", "sensitise", "sensitize", "caution", "monitor", "deactivat",
+                        "increase skin", "may affect", "endocrine", "restrict", "hyperactiv",
+                        "debat", "peut augmenter", "kann",
+                        "刺激", "敏感", "注意", "谨慎", "失活", "慎用", "内分泌", "限制", "争议",
+                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen", "einschränk"]
 
   filteredLines.slice(startIdx).forEach(line => {
     // Expected format: "name: [Category] detail text"
@@ -1613,6 +1632,12 @@ function displayAIAnalysis(message, rawLines, options = {}) {
       } else if(cautionWords.some(k => detLower.includes(k))){
         riskClass = "caution"
       }
+
+      // Cross-reference the local ingredient DB to catch known-concern ingredients
+      // that the AI described in neutral language (e.g. parabens, fragrances, SLS).
+      const localRisk = riskFromLocalDb(name)
+      if (localRisk === "danger" && riskClass !== "danger") riskClass = "danger"
+      else if (localRisk === "caution" && riskClass === "safe") riskClass = "caution"
 
       let catClass = "general"
       if(/food|aliment|lebensmittel|食品/i.test(catLower)) catClass = "food"
