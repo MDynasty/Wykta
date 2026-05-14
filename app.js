@@ -1573,6 +1573,9 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   if(!el) return
   const lang = normalizeSupportedLanguage(options.lang || currentLanguage())
   const isLoadingState = Boolean(options.isLoading)
+  const displayNameMap = options.displayNameMap && typeof options.displayNameMap === "object"
+    ? options.displayNameMap
+    : null
 
   el.innerHTML = ""
 
@@ -1622,9 +1625,11 @@ function displayAIAnalysis(message, rawLines, options = {}) {
     const match = line.match(/^(.+?):\s*\[([^\]]+)\]\s*(.*)$/)
     if(match){
       const [, name, category, detail] = match
+      const normalizedName = normalizeIngredientName(name)
+      const resolvedName = (displayNameMap && normalizedName && displayNameMap[normalizedName]) || name
       const catLower  = category.toLowerCase()
       const detLower  = detail.toLowerCase()
-      const nameLower = name.toLowerCase()
+      const nameLower = `${name} ${resolvedName}`.toLowerCase()
 
       let riskClass = "safe"
       if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k))){
@@ -1635,7 +1640,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
       // Cross-reference the local ingredient DB to catch known-concern ingredients
       // that the AI described in neutral language (e.g. parabens, fragrances, SLS).
-      const localRisk = riskFromLocalDb(name)
+      const localRisk = riskFromLocalDb(normalizedName || name)
       if (localRisk === "danger" && riskClass !== "danger") riskClass = "danger"
       else if (localRisk === "caution" && riskClass === "safe") riskClass = "caution"
 
@@ -1645,7 +1650,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
       el.insertAdjacentHTML("beforeend", `
         <div class="ingredient-card ${riskClass}">
-          <span class="ingredient-name">${escapeHtml(name)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
+          <span class="ingredient-name">${escapeHtml(resolvedName)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
           <span class="ingredient-detail">${escapeHtml(detail)}</span>
         </div>
       `)
@@ -2191,7 +2196,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
         // Continue to open-database fallback below (do not return "ai").
       } else if(data && data.analysis){
         const lines = data.analysis.split("\n")
-        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
+        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang, displayNameMap })
         return "ai"
       } else {
         console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
@@ -2204,7 +2209,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
 
   try{
     const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang, displayNameMap)
-    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang })
+    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang, displayNameMap })
   } catch(err){
     console.error("Public database lookup error:", err)
     displayAIAnalysis(t("failed", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
