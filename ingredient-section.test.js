@@ -120,6 +120,56 @@ test("Latin label: manufacturer info (Ltd., GmbH) is stripped", () => {
   assert.ok(!result.includes("SomeCo"), `must not contain SomeCo, got: ${result}`)
 })
 
+// ─── Chinese product-metadata tokens are stripped (bug regression) ────────────
+//
+// Real-world labels often have the following metadata immediately after the
+// ingredient list.  None of these should appear in the extracted ingredient text.
+
+// Realistic OCR output for a Chinese food label with company/licence/usage metadata.
+const ZH_FOOD_LABEL_WITH_METADATA =
+  "配料：水，白砂糖，食用盐，柠檬酸，维生素C\n" +
+  "食品生产许可证编号：SC12345678901234\n" +
+  "储存方法：请置于阴凉干燥，不受阳光直射处保存\n" +
+  "开封后请尽快食用\n" +
+  "见包装喷码处\n" +
+  "河南金禾生物科技有限公司\n" +
+  "河南省周口市港区物流大道南路\n" +
+  "致敏原提示：含小麦"
+
+test("Chinese food label: 食品生产许可证编号 is not included in ingredient section", () => {
+  const result = findIngredientSection(ZH_FOOD_LABEL_WITH_METADATA, "zh")
+  assert.ok(result.includes("柠檬酸"), `expected 柠檬酸, got: ${result}`)
+  assert.ok(!result.includes("食品生产许可证编号"), `must not contain 食品生产许可证编号, got: ${result}`)
+})
+
+test("Chinese food label: company name (有限公司) is not included in ingredient section", () => {
+  const result = findIngredientSection(ZH_FOOD_LABEL_WITH_METADATA, "zh")
+  assert.ok(!result.includes("有限公司"), `must not contain 有限公司, got: ${result}`)
+  assert.ok(!result.includes("河南金禾"), `must not contain company name, got: ${result}`)
+})
+
+test("Chinese food label: after-opening instruction (开封后请) is not included", () => {
+  const result = findIngredientSection(ZH_FOOD_LABEL_WITH_METADATA, "zh")
+  assert.ok(!result.includes("开封后请尽快食用"), `must not contain 开封后 instruction, got: ${result}`)
+})
+
+test("Chinese food label: storage instruction (请置于阴凉) is not included", () => {
+  const result = findIngredientSection(ZH_FOOD_LABEL_WITH_METADATA, "zh")
+  assert.ok(!result.includes("请置于阴凉"), `must not contain storage instruction, got: ${result}`)
+})
+
+test("Chinese food label: 见包装 packaging note is not included", () => {
+  const result = findIngredientSection(ZH_FOOD_LABEL_WITH_METADATA, "zh")
+  assert.ok(!result.includes("见包装"), `must not contain 见包装, got: ${result}`)
+})
+
+test("Chinese label with only licence/company metadata after ingredients: ingredients still returned", () => {
+  const text = "成分：水，甘油，透明质酸钠\n食品生产许可证编号：SC99887766\n河南某某有限公司"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("透明质酸钠"), `expected ingredient, got: ${result}`)
+  assert.ok(!result.includes("SC99887766"), `must not contain licence number, got: ${result}`)
+})
+
 // ─── No ingredient header found ──────────────────────────────────────────────
 
 test("bare ingredient list (no header): returned as-is", () => {
