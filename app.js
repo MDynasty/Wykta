@@ -615,6 +615,7 @@ function inferOriginalDisplayNameFromText(canonicalIngredient = "", sourceText =
   const canonical = normalizeIngredientName(canonicalIngredient)
   if (!canonical || !sourceText) return ""
 
+  const cjkPattern = /[\u4e00-\u9fa5]/
   const rawText = String(sourceText)
   const lowerText = rawText.toLowerCase()
   let bestAlias = ""
@@ -635,8 +636,8 @@ function inferOriginalDisplayNameFromText(canonicalIngredient = "", sourceText =
       continue
     }
 
-    const aliasIsCjk = /[\u4e00-\u9fa5]/.test(aliasText)
-    const bestIsCjk = /[\u4e00-\u9fa5]/.test(bestAlias)
+    const aliasIsCjk = cjkPattern.test(aliasText)
+    const bestIsCjk = cjkPattern.test(bestAlias)
     if (aliasIsCjk && !bestIsCjk) {
       bestAlias = aliasText
       continue
