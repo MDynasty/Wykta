@@ -1500,7 +1500,7 @@ input[type="file"].visually-hidden {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  background: rgba(10, 8, 28, 0.58);
+  background: transparent;
   border-radius: var(--radius);
   z-index: 10;
   animation: fadeSlideUp 0.3s ease;
@@ -1512,6 +1512,7 @@ input[type="file"].visually-hidden {
   border: 2.5px solid var(--brand-2);
   border-radius: 10px;
   position: relative;
+  background: rgba(10, 8, 28, 0.10);
 }
 
 .barcode-viewfinder::before,
@@ -1541,7 +1542,6 @@ input[type="file"].visually-hidden {
   background: linear-gradient(90deg, transparent, var(--brand-2), var(--brand-vivid), var(--brand-2), transparent);
   border-radius: 2px;
   animation: scanLine 2s ease-in-out infinite;
-  box-shadow: 0 0 6px rgba(129, 140, 248, 0.75);
 }
 
 .barcode-scanning-label {
@@ -1549,7 +1549,9 @@ input[type="file"].visually-hidden {
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.05em;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  background: rgba(10, 8, 28, 0.50);
+  border-radius: 999px;
+  padding: 5px 10px;
 }
 
 /* ===================================================
