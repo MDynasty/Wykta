@@ -611,6 +611,45 @@ function normalizeIngredientName(value = ""){
   return ingredientAliases[normalized] || normalized
 }
 
+function inferOriginalDisplayNameFromText(canonicalIngredient = "", sourceText = "") {
+  const canonical = normalizeIngredientName(canonicalIngredient)
+  if (!canonical || !sourceText) return ""
+
+  const rawText = String(sourceText)
+  const lowerText = rawText.toLowerCase()
+  let bestAlias = ""
+
+  for (const [alias, target] of Object.entries(ingredientAliases)) {
+    if (target !== canonical) continue
+    const aliasText = String(alias || "").trim()
+    if (!aliasText) continue
+
+    const hasLatinChars = /[a-z\u00C0-\u024F]/i.test(aliasText)
+    const matched = hasLatinChars
+      ? lowerText.includes(aliasText.toLowerCase())
+      : rawText.includes(aliasText)
+    if (!matched) continue
+
+    if (!bestAlias) {
+      bestAlias = aliasText
+      continue
+    }
+
+    const aliasIsCjk = /[\u4e00-\u9fa5]/.test(aliasText)
+    const bestIsCjk = /[\u4e00-\u9fa5]/.test(bestAlias)
+    if (aliasIsCjk && !bestIsCjk) {
+      bestAlias = aliasText
+      continue
+    }
+
+    if (aliasText.length > bestAlias.length) {
+      bestAlias = aliasText
+    }
+  }
+
+  return bestAlias
+}
+
 function extractVocabularyMatches(text = ""){
   const normalizedText = sanitizeIngredientTerm(text)
   if(!normalizedText) return []
@@ -2364,6 +2403,17 @@ async function analyzeIngredients(){
             displayNameMap[normalized] = raw
           }
         }
+      }
+    }
+
+    // Backfill display names for canonical tokens discovered by vocabulary matching.
+    // This handles compact Chinese allergen strings (e.g. "含小麦大豆花生芝麻")
+    // where split-token mapping may miss per-ingredient raw names.
+    for (const ingredient of ingredients) {
+      if (displayNameMap[ingredient]) continue
+      const inferredDisplayName = inferOriginalDisplayNameFromText(ingredient, ingredientText)
+      if (inferredDisplayName) {
+        displayNameMap[ingredient] = inferredDisplayName
       }
     }
 
