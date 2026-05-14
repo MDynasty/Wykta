@@ -8,7 +8,7 @@ const corsHeaders = {
 }
 
 const FALLBACK_OPENAI_MODEL = "gpt-4o"
-const FALLBACK_GEMINI_MODEL = "gemini-1.5-flash"
+const FALLBACK_GEMINI_MODEL = "gemini-2.0-flash"
 const FALLBACK_GROQ_MODEL = "llama-3.3-70b-versatile"
 const FALLBACK_OPENROUTER_MODEL = "mistralai/mistral-7b-instruct:free"
 const FALLBACK_GROQ_VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"

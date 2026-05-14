@@ -3122,7 +3122,7 @@ async function callGeminiVisionDirect(canvas, lang) {
   try {
     const resized = resizeCanvasForBackend(canvas)
     const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
-    const model = "gemini-1.5-flash"
+    const model = "gemini-2.0-flash"
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey.trim()}`
     const fetchPromise = fetch(url, {
       method: "POST",
