@@ -1632,9 +1632,12 @@ function displayAIAnalysis(message, rawLines, options = {}) {
       const detLower  = detail.toLowerCase()
       const nameLower = name.toLowerCase()
       const resolvedNameLower = resolvedName.toLowerCase()
+      const hasDangerInOriginalName = dangerWords.some(k => nameLower.includes(k))
+      const hasDangerInResolvedName = resolvedNameLower !== nameLower && dangerWords.some(k => resolvedNameLower.includes(k))
+      const hasDangerInDetail = dangerWords.some(k => detLower.includes(k))
 
       let riskClass = "safe"
-      if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k) || resolvedNameLower.includes(k))){
+      if(hasDangerInDetail || hasDangerInOriginalName || hasDangerInResolvedName){
         riskClass = "danger"
       } else if(cautionWords.some(k => detLower.includes(k))){
         riskClass = "caution"
