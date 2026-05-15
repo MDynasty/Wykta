@@ -710,6 +710,22 @@ function isLikelyIngredientToken(token = ""){
   // INCI names — the highest E-number is E1521 (4 digits), and PEG numbers top out at 4 digits.
   // CI colorant numbers ("CI 77891") are multi-word after sanitization so hasSingleWord=false.
   if (hasSingleWord && /\d{5,}/.test(normalized)) return false
+  // CJK tokens that contain unambiguous product-metadata phrases — company-name suffixes,
+  // licence-number labels, after-opening instructions, storage instruction openers, and
+  // "see packaging" notes — are not ingredients.  These are a second line of defence after
+  // findIngredientSection's metadataStopRe; they catch any such phrases that slip through
+  // when, for example, an OCR output lacks the expected heading colons.
+  // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
+  // (ingredient-section.js).  Keep both in sync when adding new stop terms.
+  if (/[\u4e00-\u9fa5]/.test(normalized)) {
+    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|产品的保质期|保质期或保鲜期|保鲜期|储存方法\s|保存方法|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在/.test(normalized)) {
+      return false
+    }
+    const locationUnitMatches = normalized.match(/[省市区县镇乡村路街巷大道号弄]/g)
+    if (locationUnitMatches && locationUnitMatches.length >= 2 && normalized.length >= 4) {
+      return false
+    }
+  }
   return true
 }
 

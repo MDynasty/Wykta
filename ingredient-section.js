@@ -68,7 +68,15 @@ function findIngredientSection(text, preferredLang) {
   // The order of alternates matters: more-specific company/address patterns fire before
   // the broader "Made in" pattern, cutting off company name + address + registration code
   // that sit between the last INCI ingredient and the country-of-origin statement.
-  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]|\b(?:Lot\s*(?:No?\.?\s*)?[#:\-–]|Batch\s*(?:No?\.?\s*)?[#:\-–]|(?:Manufactured|Distributed|Imported|Packaged|Produced|Bottled|Packed)\s+(?:by|for)\b|Made\s+in\b|Produced\s+in\b|Product\s+of\b|Fabriqu[eé]s?\s+(?:en|au|par)\b|Import[eé]\s+par\b|Distribu[eé]\s+par\b|Produit\s+(?:de|par)\b|Questions?\s+or\s+Comments?\b|For\s+more\s+information\b|www\.[a-z]+|Laboratoires?\b|GmbH\b|Ltd\.?\b|Inc\.?\b|Corp\.?\b|S\.A\.S\.?\b|SAS\b|SARL\b|B\.V\.?\b|\d+\s*,?\s*(?:avenue|rue|boulevard|all[eé]e|strasse|street|place)\s+[A-Z])|©/i
+  //
+  // Chinese metadata stop patterns fall into two groups:
+  //   1. Heading-style keywords that are always followed by a colon on Chinese labels
+  //      (e.g. "储存方法：", "生产日期：").  We require the colon so a rare ingredient name
+  //      that happens to share a substring cannot accidentally truncate the list.
+  //   2. Unambiguous non-ingredient phrases that never appear as ingredient names and
+  //      therefore do not need a colon guard — e.g. licence-number codes, company-name
+  //      suffixes, after-opening / storage instruction openers, and "see packaging" notes.
+  const metadataStopRe = /(?:生产批号|净含量|使用方法|生产日期|限期使用日期|保质期|适用人群|使用注意|储存方法|执行标准|产品批号|注意事项|生产企业|备案人|境内负责人|委托单位)[：:]|(?:食品生产许可证编号|卫生许可证编号|生产许可证编号|产品的保质期|保质期或保鲜期|保鲜期|储存方法\s|保存方法|有限公司|股份有限公司|股份公司|合伙企业|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在)|\b(?:Lot\s*(?:No?\.?\s*)?[#:\-–]|Batch\s*(?:No?\.?\s*)?[#:\-–]|(?:Manufactured|Distributed|Imported|Packaged|Produced|Bottled|Packed)\s+(?:by|for)\b|Made\s+in\b|Produced\s+in\b|Product\s+of\b|Fabriqu[eé]s?\s+(?:en|au|par)\b|Import[eé]\s+par\b|Distribu[eé]\s+par\b|Produit\s+(?:de|par)\b|Questions?\s+or\s+Comments?\b|For\s+more\s+information\b|www\.[a-z]+|Laboratoires?\b|GmbH\b|Ltd\.?\b|Inc\.?\b|Corp\.?\b|S\.A\.S\.?\b|SAS\b|SARL\b|B\.V\.?\b|\d+\s*,?\s*(?:avenue|rue|boulevard|all[eé]e|strasse|street|place)\s+[A-Z])|©/i
 
   function sliceSection(start, hardEnd) {
     const rawSlice = text.slice(start, hardEnd).trim()
