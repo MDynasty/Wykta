@@ -718,13 +718,16 @@ function isLikelyIngredientToken(token = ""){
   // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
   // (ingredient-section.js).  Keep both in sync when adding new stop terms.
   if (/[\u4e00-\u9fa5]/.test(normalized)) {
-    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|产品的保质期|保质期或保鲜期|保鲜期|储存方法\s|保存方法|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在/.test(normalized)) {
+    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|产品的保质期|保质期或保鲜期|保鲜期|储存方法\s|保存方法|净\s*含\s*量|净\s*重|规\s*格|执\s*行\s*标\s*准(?:\s*号)?|产\s*品\s*标\s*准\s*(?:代\s*号|号)|标\s*准\s*代\s*号|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在/.test(normalized)) {
       return false
     }
     const locationUnitMatches = normalized.match(/[省市区县镇乡村路街巷大道号弄]/g)
     if (locationUnitMatches && locationUnitMatches.length >= 2 && normalized.length >= 4) {
       return false
     }
+  }
+  if (/\b(?:net\s*(?:wt|weight|content)|poids\s+net|contenu\s+net|netto(?:gewicht|inhalt)|best\s+before|use\s+by|expiry(?:\s+date)?|expiration(?:\s+date)?|mhd|sku|ean|barcode|product\s+standard\s+code|standard\s+code)\b/i.test(normalized)) {
+    return false
   }
   return true
 }
@@ -1618,9 +1621,10 @@ function riskFromLocalDb(ingredientName) {
   const entry = localIngredientDb[key]
   if (!entry) return "safe"
   const note = entry.note.toLowerCase()
-  if (["allergen", "anaphylax", "carcinogen"].some(k => note.includes(k))) return "danger"
+  if (["allergen", "anaphylax", "carcinogen", "过敏原", "过敏", "过敏性休克", "致癌", "有毒"].some(k => note.includes(k))) return "danger"
   if (["caution", "avoid", "irritat", "sensitiv", "sensitiser", "sensitize", "restrict",
-       "concern", "debated", "endocrine", "hyperactiv", "strip", "linked to metabolic"].some(k => note.includes(k))) return "caution"
+       "concern", "debated", "endocrine", "hyperactiv", "strip", "linked to metabolic",
+       "慎用", "谨慎", "注意", "限制", "争议"].some(k => note.includes(k))) return "caution"
   return "safe"
 }
 
