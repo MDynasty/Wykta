@@ -263,6 +263,17 @@ test("German label: Nettoinhalt metadata is stripped", () => {
   assert.ok(!result.includes("Nettoinhalt"), `must not contain Nettoinhalt, got: ${result}`)
 })
 
+test("English label: ALLERGENS and IMPORTANT INFORMATION blocks are excluded", () => {
+  const text =
+    "INGREDIENTS: Whey Protein Concentrate (Milk) (89%), Juice Powders (White Grape and Peach), Flavourings, Acid (Citric Acid), Sweetener (Sucralose)\n" +
+    "ALLERGENS: For allergens, see ingredients in bold.\n" +
+    "IMPORTANT INFORMATION: Store in a cool, dry place away from direct sunlight."
+  const result = findIngredientSection(text, "en")
+  assert.ok(result.includes("Whey Protein Concentrate"), `expected ingredient content, got: ${result}`)
+  assert.ok(!result.includes("ALLERGENS"), `must not contain ALLERGENS block, got: ${result}`)
+  assert.ok(!result.includes("IMPORTANT INFORMATION"), `must not contain IMPORTANT INFORMATION block, got: ${result}`)
+})
+
 test("Chinese label: spaced metadata marker 产 品 标 准 代 号 is stripped", () => {
   const text =
     "配料：黑芝麻，核桃仁，小麦，大豆，花生，芝麻\n" +

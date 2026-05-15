@@ -600,7 +600,7 @@ function getKnownIngredientMatchers(){
 function normalizeIngredientName(value = ""){
   if(!value) return ""
 
-  const withoutHeader = String(value).replace(/^(ingredients?|contains?|contient?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
+  const withoutHeader = String(value).replace(/^(ingredients?|contains?|contient?|allergens?|important\s+information|nutrition(?:al)?\s+information|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
   const normalized = sanitizeIngredientTerm(withoutHeader)
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
@@ -665,9 +665,18 @@ function extractVocabularyMatches(text = ""){
 
 function isLikelyIngredientToken(token = ""){
   const normalized = sanitizeIngredientTerm(token)
+  const lower = normalized.toLowerCase()
   if(!normalized || normalized.length < 3) return false
   if(/^\d+([.,]\d+)?$/.test(normalized)) return false
   if(normalized.split(" ").length > 8) return false
+  // Non-ingredient context phrases are common in OCR output near ingredient lists
+  // (e.g. "ALLERGENS: ...", "IMPORTANT INFORMATION: ..."). Filter them early.
+  if (/^(?:contains?|may contain|for allergens?|allergens?|important information|nutrition(?:al)? information)\b/i.test(lower)) return false
+  if (/\b(?:see ingredients in bold|store in a cool dry place|away from direct sunlight|suitable for vegetarians?)\b/i.test(lower)) return false
+  // Generic additive class words without a specific substance name are too imprecise
+  // for per-ingredient safety analysis and often inflate OCR false positives.
+  if (/^(?:emulsifiers?|flavou?rings?|colou?r(?:ings?)?|acid|acids|sweeteners?|acidity regulators?|stabilizers?|thickeners?|preservatives?|antioxidants?)$/i.test(lower)) return false
+  if (/^juice powders?\b/i.test(lower)) return false
   // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
   // (e.g. "LS", "OP", "OI", "XRF") — reject them.
   if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
@@ -2457,6 +2466,7 @@ async function analyzeIngredients(){
         .replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, "$1, $2")
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
+        .flatMap(seg => seg.split(multilingualIngredientJoinerPattern))
         .map(s => s.trim())
         .filter(s => s.length >= 3 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH && isLikelyIngredientToken(s))
       if (rawFallback.length > 0) {
