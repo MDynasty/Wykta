@@ -180,6 +180,49 @@ test("Chinese label: 保质期/保鲜期 line without colon is treated as metada
   assert.equal(result, "水，白砂糖，食用盐，柠檬酸，维生素C")
 })
 
+test("Chinese label: bracketed 产品标准代号/净含量 metadata is excluded", () => {
+  const text =
+    "配料：黑芝麻核桃黑豆桑葚粉，山药，核桃仁，黑豆，小麦，大豆，花生，芝麻\n" +
+    "【产品标准代号】GB 19640\n" +
+    "【净含量】500克\n" +
+    "【保质期】12个月"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("小麦"), `expected 小麦, got: ${result}`)
+  assert.ok(!result.includes("产品标准代号"), `must not contain 产品标准代号, got: ${result}`)
+  assert.ok(!result.includes("净含量"), `must not contain 净含量, got: ${result}`)
+})
+
+test("Latin label: Net Weight / Best before metadata is stripped", () => {
+  const text =
+    "INGREDIENTS: OATS, PEANUTS, SESAME\n" +
+    "Net Weight 500g\n" +
+    "Best before: 2027-12-30"
+  const result = findIngredientSection(text, "en")
+  assert.ok(result.includes("PEANUTS"), `expected PEANUTS, got: ${result}`)
+  assert.ok(!result.includes("Net Weight"), `must not contain Net Weight, got: ${result}`)
+  assert.ok(!result.includes("Best before"), `must not contain Best before, got: ${result}`)
+})
+
+test("French label: Poids net metadata is stripped", () => {
+  const text =
+    "Ingrédients: Eau, Glycérine, Acide citrique\n" +
+    "Poids net 200 ml\n" +
+    "Fabriqué en France"
+  const result = findIngredientSection(text, "fr")
+  assert.ok(result.includes("Glycérine"), `expected Glycérine, got: ${result}`)
+  assert.ok(!result.includes("Poids net"), `must not contain Poids net, got: ${result}`)
+})
+
+test("German label: Nettoinhalt metadata is stripped", () => {
+  const text =
+    "Inhaltsstoffe: Wasser, Glycerin, Zitronensäure\n" +
+    "Nettoinhalt 200 ml\n" +
+    "MHD 12.2027"
+  const result = findIngredientSection(text, "de")
+  assert.ok(result.includes("Zitronensäure"), `expected Zitronensäure, got: ${result}`)
+  assert.ok(!result.includes("Nettoinhalt"), `must not contain Nettoinhalt, got: ${result}`)
+})
+
 // ─── No ingredient header found ──────────────────────────────────────────────
 
 test("bare ingredient list (no header): returned as-is", () => {
