@@ -223,6 +223,17 @@ test("German label: Nettoinhalt metadata is stripped", () => {
   assert.ok(!result.includes("Nettoinhalt"), `must not contain Nettoinhalt, got: ${result}`)
 })
 
+test("Chinese label: spaced metadata marker 产 品 标 准 代 号 is stripped", () => {
+  const text =
+    "配料：黑芝麻，核桃仁，小麦，大豆，花生，芝麻\n" +
+    "【产 品 标 准 代 号】GB 19640\n" +
+    "【净 含 量】500克"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("小麦"), `expected 小麦, got: ${result}`)
+  assert.ok(!result.includes("产 品 标 准 代 号"), `must not contain spaced 产品标准代号, got: ${result}`)
+  assert.ok(!result.includes("净 含 量"), `must not contain spaced 净含量, got: ${result}`)
+})
+
 // ─── No ingredient header found ──────────────────────────────────────────────
 
 test("bare ingredient list (no header): returned as-is", () => {
