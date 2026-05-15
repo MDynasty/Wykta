@@ -718,7 +718,7 @@ function isLikelyIngredientToken(token = ""){
   // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
   // (ingredient-section.js).  Keep both in sync when adding new stop terms.
   if (/[\u4e00-\u9fa5]/.test(normalized)) {
-    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|产品的保质期|保质期或保鲜期|保鲜期|储存方法\s|保存方法|净\s*含\s*量|净\s*重|规\s*格|执\s*行\s*标\s*准(?:\s*号)?|产\s*品\s*标\s*准\s*(?:代\s*号|号)|标\s*准\s*代\s*号|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在/.test(normalized)) {
+    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|保\s*质\s*期|储存方法\s|保存方法|净\s*含\s*量|净\s*重|规\s*格|执\s*行\s*标\s*准(?:\s*号)?|产\s*品\s*标\s*准\s*(?:代\s*号|号)|标\s*准\s*代\s*号|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在|本\s*生\s*产\s*线|致\s*敏\s*原/.test(normalized)) {
       return false
     }
     const locationUnitMatches = normalized.match(/[省市区县镇乡村路街巷大道号弄]/g)
@@ -1760,10 +1760,13 @@ function showResultsSummary(lang = currentLanguage()) {
   const flaggedCount = cautionCount + dangerCount
 
   // Compute 0-100 safety score.
-  // Danger ingredients (allergens/avoid) are weighted 2.5× higher than caution
+  // Danger ingredients (allergens/avoid) are weighted 2× higher than caution
   // ingredients because they pose immediate health risks (e.g. anaphylaxis)
   // versus caution items which are merely inadvisable for some users.
-  const safetyScore = Math.max(0, Math.min(100, 100 - dangerCount * 25 - cautionCount * 10))
+  // Each danger item deducts 20 points (not 25) so that 4 common food allergens
+  // (e.g. wheat, soy, peanut, sesame) yield a score of 20 rather than 0,
+  // keeping the score meaningful even for products with multiple allergens.
+  const safetyScore = Math.max(0, Math.min(100, 100 - dangerCount * 20 - cautionCount * 10))
   const scoreClass = safetyScore >= 75 ? "score-high" : safetyScore >= 45 ? "score-medium" : "score-low"
 
   const parts = [

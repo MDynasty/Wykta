@@ -180,6 +180,46 @@ test("Chinese label: 保质期/保鲜期 line without colon is treated as metada
   assert.equal(result, "水，白砂糖，食用盐，柠檬酸，维生素C")
 })
 
+test("Chinese label: standalone 保质期 without colon is treated as metadata stop", () => {
+  const text =
+    "配料：小麦，大豆，花生，芝麻\n" +
+    "保质期 12个月\n" +
+    "净含量 500克"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("小麦"), `expected 小麦, got: ${result}`)
+  assert.ok(!result.includes("保质期"), `must not contain 保质期, got: ${result}`)
+})
+
+test("Chinese label: OCR-spaced 保 质 期 is treated as metadata stop", () => {
+  const text =
+    "配料：小麦，大豆，花生，芝麻\n" +
+    "保 质 期 12个月\n" +
+    "净 含 量 500克"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("小麦"), `expected 小麦, got: ${result}`)
+  assert.ok(!result.includes("保 质 期"), `must not contain spaced 保质期, got: ${result}`)
+})
+
+test("Chinese label: 致敏原提示 section is excluded as metadata", () => {
+  const text =
+    "配料：小麦，大豆，花生，芝麻，黑芝麻核桃黑豆桑葚粉\n" +
+    "致敏原提示：本产品含有小麦、大豆、花生、芝麻等过敏原成分\n" +
+    "本生产线也生产含麦麸的谷类及其制品"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("小麦"), `expected 小麦, got: ${result}`)
+  assert.ok(!result.includes("致敏原提示"), `must not contain 致敏原提示, got: ${result}`)
+  assert.ok(!result.includes("本生产线"), `must not contain 本生产线, got: ${result}`)
+})
+
+test("Chinese label: 本生产线 cross-contamination warning is excluded as metadata", () => {
+  const text =
+    "配料：小麦，大豆，花生\n" +
+    "本生产线也生产含麦麸的谷类及其制品"
+  const result = findIngredientSection(text, "zh")
+  assert.ok(result.includes("小麦"), `expected 小麦, got: ${result}`)
+  assert.ok(!result.includes("本生产线"), `must not contain 本生产线, got: ${result}`)
+})
+
 test("Chinese label: bracketed 产品标准代号/净含量 metadata is excluded", () => {
   const text =
     "配料：黑芝麻核桃黑豆桑葚粉，山药，核桃仁，黑豆，小麦，大豆，花生，芝麻\n" +
