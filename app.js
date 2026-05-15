@@ -600,7 +600,7 @@ function getKnownIngredientMatchers(){
 function normalizeIngredientName(value = ""){
   if(!value) return ""
 
-  const withoutHeader = String(value).replace(/^(ingredients?|contains?|contient?|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
+  const withoutHeader = String(value).replace(/^(ingredients?|contains?|contient?|allergens?|important\s+information|nutrition(?:al)?\s+information|ingrédients?|inhaltsstoffe?|其他微量成分|其他成分|微量成分|成分|配料|原料|成份)[:：\s-]*/i, "")
   const normalized = sanitizeIngredientTerm(withoutHeader)
     .replace(/\b\d+(?:\.\d+)?\s*%?\b/g, " ")
     .replace(/\s+/g, " ")
@@ -665,9 +665,18 @@ function extractVocabularyMatches(text = ""){
 
 function isLikelyIngredientToken(token = ""){
   const normalized = sanitizeIngredientTerm(token)
+  const lower = normalized.toLowerCase()
   if(!normalized || normalized.length < 3) return false
   if(/^\d+([.,]\d+)?$/.test(normalized)) return false
   if(normalized.split(" ").length > 8) return false
+  // Non-ingredient context phrases are common in OCR output near ingredient lists
+  // (e.g. "ALLERGENS: ...", "IMPORTANT INFORMATION: ..."). Filter them early.
+  if (/^(?:contains?|may contain|for allergens?|allergens?|important information|nutrition(?:al)? information)\b/i.test(lower)) return false
+  if (/\b(?:see ingredients in bold|store in a cool dry place|away from direct sunlight|suitable for vegetarians?)\b/i.test(lower)) return false
+  // Generic additive class words without a specific substance name are too imprecise
+  // for per-ingredient safety analysis and often inflate OCR false positives.
+  if (/^(?:emulsifiers?|flavou?rings?|colou?r(?:ings?)?|acid|acids|sweeteners?|acidity regulators?|stabilizers?|thickeners?|preservatives?|antioxidants?)$/i.test(lower)) return false
+  if (/^juice powders?\b/i.test(lower)) return false
   // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
   // (e.g. "LS", "OP", "OI", "XRF") — reject them.
   if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
@@ -733,12 +742,42 @@ function isLikelyIngredientToken(token = ""){
 }
 
 
+// Cleans up common OCR/formatting artifacts from physical-label ingredient text before
+// tokenization.  Applied on the ingredient section output of findIngredientSection.
+//
+//  1. De-wrap OCR line-break artifacts: when a newline occurs between two word characters
+//     it is almost certainly a physical line-wrap on the label (e.g. "Sunflower\nLecithin")
+//     rather than a deliberate ingredient separator.  Replacing it with a space keeps the
+//     multi-word name intact and prevents orphan tokens like standalone "Sunflower".
+//
+//  2. Remove percentage-only parentheticals (e.g. "(89%)", "(5 %)").  These are quantity
+//     declarations printed next to ingredient names; splitting on "(" without removing them
+//     first creates spurious tokens like "89%" or "5%" which pass through as OCR noise.
+//
+//  3. Unwrap nested "(contains X (A, B))" sub-specification groups to just "(A, B)".
+//     UK/EU food labels annotate emulsifiers and similar additives with this pattern
+//     (e.g. "(contains Emulsifiers (Soya Lecithin, Sunflower Lecithin))").
+//     Keeping only the inner content removes the spurious "contains X" intermediate token
+//     while preserving the actual sub-ingredient names for extraction.
+function preprocessIngredientText(text) {
+  if (!text) return text
+  // Step 1 – de-wrap word-boundary line breaks.
+  let result = text.replace(/([a-zA-Z\u00C0-\u024F0-9])\n([a-zA-Z\u00C0-\u024F0-9])/g, "$1 $2")
+  // Step 2 – strip percentage-only parentheticals.
+  result = result.replace(/\(\s*\d+(?:[.,]\d+)?\s*%\s*\)/g, "")
+  // Step 3 – flatten "(contains WORD (A, B))" → "(A, B)".
+  result = result.replace(/\(\s*contains\s+[^(]*\(([^)]*)\)\s*\)/gi, "($1)")
+  return result
+}
+
 // Extracts just the ingredient section from full product label text (e.g. OCR of an entire label).
 // findIngredientSection is defined in ingredient-section.js (loaded before app.js).
 // See that file for full implementation and documentation.
 
 function extractIngredients(text){
-  const normalizedText = (text || "").toLowerCase().trim()
+  // Fix OCR line-wrap artifacts, percentage parens, and nested sub-spec groups before any splitting.
+  const preprocessed = preprocessIngredientText(text || "")
+  const normalizedText = preprocessed.toLowerCase().trim()
   if(!normalizedText) return []
 
   // Insert delimiters between CJK and Latin/number runs so mixed-script OCR like "水retinol" can split correctly.
@@ -2423,18 +2462,23 @@ async function analyzeIngredients(){
       return
     }
 
-    let ingredients = extractIngredients(ingredientText)
+    // Apply OCR preprocessing (de-wrap line breaks, strip percentage parens, flatten
+    // "(contains X (A, B))" sub-specs) before any further tokenisation or display-name
+    // mapping, so all downstream code sees clean ingredient text.
+    const processedIngredientText = preprocessIngredientText(ingredientText)
+
+    let ingredients = extractIngredients(processedIngredientText)
     // Detect the input language for telemetry purposes only.
     // Always use the user's chosen UI language for AI responses and all display,
     // so results are consistently in the language the user selected.
-    const detectedInputLang = detectInputLanguage(ingredientText, ingredients)
+    const detectedInputLang = detectInputLanguage(processedIngredientText, ingredients)
 
     // Build a map from normalized ingredient key → original user-typed token.
     // This preserves the input language and display name (e.g. "芦荟" instead of "aloe vera")
     // for per-ingredient language detection and display in the results.
     // Built before checkInteractions so allergen warnings can use original label names.
     const displayNameMap = {}
-    const scriptBoundaryNormalized = (ingredientText || "")
+    const scriptBoundaryNormalized = (processedIngredientText || "")
       .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
       .replace(/([a-z\u00C0-\u024F0-9])([\u4e00-\u9fa5])/giu, "$1, $2")
     const rawTokens = scriptBoundaryNormalized
@@ -2452,11 +2496,12 @@ async function analyzeIngredients(){
     // If vocabulary extraction found nothing but there is raw text (e.g. OCR output that
     // doesn't match our ingredient dictionary), split by common delimiters and use those
     // raw tokens so the AI can still analyze whatever was captured or pasted.
-    if (ingredients.length === 0 && ingredientText.trim().length > 0) {
-      const rawFallback = ingredientText
+    if (ingredients.length === 0 && processedIngredientText.trim().length > 0) {
+      const rawFallback = processedIngredientText
         .replace(/([\u4e00-\u9fa5])([a-zA-Z0-9])/g, "$1, $2")
         .replace(/([a-zA-Z0-9])([\u4e00-\u9fa5])/g, "$1, $2")
         .split(ingredientSplitPunctuationPattern)
+        .flatMap(seg => seg.split(multilingualIngredientJoinerPattern))
         .map(s => s.trim())
         .filter(s => s.length >= 3 && s.length <= MAX_INGREDIENT_TOKEN_LENGTH && isLikelyIngredientToken(s))
       if (rawFallback.length > 0) {
@@ -2475,7 +2520,7 @@ async function analyzeIngredients(){
     // where split-token mapping may miss per-ingredient raw names.
     for (const ingredient of ingredients) {
       if (displayNameMap[ingredient]) continue
-      const inferredDisplayName = inferOriginalDisplayNameFromText(ingredient, ingredientText)
+      const inferredDisplayName = inferOriginalDisplayNameFromText(ingredient, processedIngredientText)
       if (inferredDisplayName) {
         displayNameMap[ingredient] = inferredDisplayName
       }
