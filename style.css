@@ -1342,22 +1342,10 @@ input[type="file"].visually-hidden {
   display: none;
 }
 @media (max-width: 920px) {
-  .pricing-scroll-wrap::after { display: block; }
   .pricing-scroll-wrap {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x mandatory;
-    /* vertical padding so featured-card box-shadow isn't clipped by overflow */
-    padding-top: 10px;
-    margin-top: -10px;
-    padding-bottom: 4px;
-  }
-  /* No extra shadow on mobile */
-  .plan-card.featured {
-    box-shadow: none;
-  }
-  .plan-card.featured:hover {
-    box-shadow: none;
   }
 }
 
@@ -1479,7 +1467,6 @@ input[type="file"].visually-hidden {
   /* === Pricing: keep 3-column horizontal layout (scrollable) on phone === */
   .pricing-grid           { grid-template-columns: repeat(3, 270px); padding-bottom: 12px; }
   .pricing-scroll-wrap    { overflow-x: auto; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
-  .pricing-scroll-wrap::after { display: block; }
   .plan-card              { scroll-snap-align: start; }
   .plan-price             { font-size: clamp(30px, 8.5vw, 38px); }
   .plan-price[data-i18n="enterprisePrice"] { font-size: clamp(22px, 6vw, 28px); }

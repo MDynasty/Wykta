@@ -611,6 +611,46 @@ function normalizeIngredientName(value = ""){
   return ingredientAliases[normalized] || normalized
 }
 
+function inferOriginalDisplayNameFromText(canonicalIngredient = "", sourceText = "") {
+  const canonical = normalizeIngredientName(canonicalIngredient)
+  if (!canonical || !sourceText) return ""
+
+  const cjkPattern = /[\u4e00-\u9fa5]/
+  const rawText = String(sourceText)
+  const lowerText = rawText.toLowerCase()
+  let bestAlias = ""
+
+  for (const [alias, target] of Object.entries(ingredientAliases)) {
+    if (target !== canonical) continue
+    const aliasText = String(alias || "").trim()
+    if (!aliasText) continue
+
+    const hasLatinChars = /[a-z\u00C0-\u024F]/i.test(aliasText)
+    const matched = hasLatinChars
+      ? lowerText.includes(aliasText.toLowerCase())
+      : rawText.includes(aliasText)
+    if (!matched) continue
+
+    if (!bestAlias) {
+      bestAlias = aliasText
+      continue
+    }
+
+    const aliasIsCjk = cjkPattern.test(aliasText)
+    const bestIsCjk = cjkPattern.test(bestAlias)
+    if (aliasIsCjk && !bestIsCjk) {
+      bestAlias = aliasText
+      continue
+    }
+
+    if (aliasText.length > bestAlias.length) {
+      bestAlias = aliasText
+    }
+  }
+
+  return bestAlias
+}
+
 function extractVocabularyMatches(text = ""){
   const normalizedText = sanitizeIngredientTerm(text)
   if(!normalizedText) return []
@@ -670,6 +710,22 @@ function isLikelyIngredientToken(token = ""){
   // INCI names — the highest E-number is E1521 (4 digits), and PEG numbers top out at 4 digits.
   // CI colorant numbers ("CI 77891") are multi-word after sanitization so hasSingleWord=false.
   if (hasSingleWord && /\d{5,}/.test(normalized)) return false
+  // CJK tokens that contain unambiguous product-metadata phrases — company-name suffixes,
+  // licence-number labels, after-opening instructions, storage instruction openers, and
+  // "see packaging" notes — are not ingredients.  These are a second line of defence after
+  // findIngredientSection's metadataStopRe; they catch any such phrases that slip through
+  // when, for example, an OCR output lacks the expected heading colons.
+  // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
+  // (ingredient-section.js).  Keep both in sync when adding new stop terms.
+  if (/[\u4e00-\u9fa5]/.test(normalized)) {
+    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|产品的保质期|保质期或保鲜期|保鲜期|储存方法\s|保存方法|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在/.test(normalized)) {
+      return false
+    }
+    const locationUnitMatches = normalized.match(/[省市区县镇乡村路街巷大道号弄]/g)
+    if (locationUnitMatches && locationUnitMatches.length >= 2 && normalized.length >= 4) {
+      return false
+    }
+  }
   return true
 }
 
@@ -1554,11 +1610,28 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;")
 }
 
+// Returns "danger", "caution", or "safe" based on the curated local ingredient DB note.
+// This catches known-concern ingredients even when the AI returns a neutral description.
+function riskFromLocalDb(ingredientName) {
+  if (!ingredientName) return "safe"
+  const key = sanitizeIngredientTerm(ingredientName)
+  const entry = localIngredientDb[key]
+  if (!entry) return "safe"
+  const note = entry.note.toLowerCase()
+  if (["allergen", "anaphylax", "carcinogen"].some(k => note.includes(k))) return "danger"
+  if (["caution", "avoid", "irritat", "sensitiv", "sensitiser", "sensitize", "restrict",
+       "concern", "debated", "endocrine", "hyperactiv", "strip", "linked to metabolic"].some(k => note.includes(k))) return "caution"
+  return "safe"
+}
+
 function displayAIAnalysis(message, rawLines, options = {}) {
   const el = document.getElementById("ingredientResult")
   if(!el) return
   const lang = normalizeSupportedLanguage(options.lang || currentLanguage())
   const isLoadingState = Boolean(options.isLoading)
+  const displayNameMap = options.displayNameMap && typeof options.displayNameMap === "object"
+    ? options.displayNameMap
+    : null
 
   el.innerHTML = ""
 
@@ -1589,30 +1662,48 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   }
 
   // Risk keywords across all supported languages.
-  // EN: allergen/allergy/avoid/anaphylaxis | FR: allergène | ZH: 过敏原/过敏/避免/禁用 | DE: vermeiden/nicht verwenden
+  // EN: allergen/allergy/avoid/anaphylaxis/carcinogen/toxic | FR: allergène | ZH: 过敏原/过敏/避免/禁用/致癌/有毒 | DE: vermeiden/nicht verwenden/karzinogen
   const dangerWords  = ["allergen", "allergène", "allergy", "avoid", "anaphylax",
-                        "过敏原", "过敏", "避免", "禁用", "vermeiden", "nicht verwenden"]
-  // EN: irritat/sensitiv/caution/monitor | FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用 | DE: vorsicht/reizung/kann
-  const cautionWords = ["irritat", "sensitiv", "caution", "monitor", "deactivat", "increase skin",
-                        "may affect", "peut augmenter", "kann",
-                        "刺激", "敏感", "注意", "谨慎", "失活", "慎用",
-                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen"]
+                        "carcinogen", "karzinogen", "toxic",
+                        "过敏原", "过敏", "避免", "禁用", "致癌", "有毒",
+                        "vermeiden", "nicht verwenden"]
+  // EN: irritat/sensitiv/sensitis/caution/monitor/endocrine/restrict/hyperactiv/debat |
+  // FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用/内分泌/限制/争议 |
+  // DE: vorsicht/reizung/kann/einschränk
+  const cautionWords = ["irritat", "sensitiv", "sensitise", "sensitize", "caution", "monitor", "deactivat",
+                        "increase skin", "may affect", "endocrine", "restrict", "hyperactiv",
+                        "debat", "peut augmenter", "kann",
+                        "刺激", "敏感", "注意", "谨慎", "失活", "慎用", "内分泌", "限制", "争议",
+                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen", "einschränk"]
 
   filteredLines.slice(startIdx).forEach(line => {
     // Expected format: "name: [Category] detail text"
     const match = line.match(/^(.+?):\s*\[([^\]]+)\]\s*(.*)$/)
     if(match){
       const [, name, category, detail] = match
+      const normalizedName = normalizeIngredientName(name)
+      const mappedDisplayName = (displayNameMap && normalizedName) ? displayNameMap[normalizedName] : ""
+      const resolvedName = mappedDisplayName || name
       const catLower  = category.toLowerCase()
       const detLower  = detail.toLowerCase()
       const nameLower = name.toLowerCase()
+      const resolvedNameLower = resolvedName.toLowerCase()
+      const hasDangerInOriginalName = dangerWords.some(k => nameLower.includes(k))
+      const hasDangerInResolvedName = resolvedNameLower !== nameLower && dangerWords.some(k => resolvedNameLower.includes(k))
+      const hasDangerInDetail = dangerWords.some(k => detLower.includes(k))
 
       let riskClass = "safe"
-      if(dangerWords.some(k => detLower.includes(k) || nameLower.includes(k))){
+      if(hasDangerInDetail || hasDangerInOriginalName || hasDangerInResolvedName){
         riskClass = "danger"
       } else if(cautionWords.some(k => detLower.includes(k))){
         riskClass = "caution"
       }
+
+      // Cross-reference the local ingredient DB to catch known-concern ingredients
+      // that the AI described in neutral language (e.g. parabens, fragrances, SLS).
+      const localRisk = riskFromLocalDb(normalizedName || name)
+      if (localRisk === "danger" && riskClass !== "danger") riskClass = "danger"
+      else if (localRisk === "caution" && riskClass === "safe") riskClass = "caution"
 
       let catClass = "general"
       if(/food|aliment|lebensmittel|食品/i.test(catLower)) catClass = "food"
@@ -1620,7 +1711,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
       el.insertAdjacentHTML("beforeend", `
         <div class="ingredient-card ${riskClass}">
-          <span class="ingredient-name">${escapeHtml(name)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
+          <span class="ingredient-name">${escapeHtml(resolvedName)}</span><span class="ingredient-category ${catClass}">${escapeHtml(category)}</span>
           <span class="ingredient-detail">${escapeHtml(detail)}</span>
         </div>
       `)
@@ -2166,7 +2257,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
         // Continue to open-database fallback below (do not return "ai").
       } else if(data && data.analysis){
         const lines = data.analysis.split("\n")
-        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang })
+        displayAIAnalysis("", lines, { lang: normalizedAnalysisLang, displayNameMap })
         return "ai"
       } else {
         console.warn(tf("noAnalysisFor", langName, normalizedAnalysisLang))
@@ -2179,7 +2270,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
 
   try{
     const fallbackAnalysis = await analyzeWithFreeDatabases(ingredients, normalizedAnalysisLang, displayNameMap)
-    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang })
+    displayAIAnalysis("", fallbackAnalysis.split("\n"), { lang: normalizedAnalysisLang, displayNameMap })
   } catch(err){
     console.error("Public database lookup error:", err)
     displayAIAnalysis(t("failed", normalizedAnalysisLang), [], { lang: normalizedAnalysisLang })
@@ -2329,6 +2420,17 @@ async function analyzeIngredients(){
             displayNameMap[normalized] = raw
           }
         }
+      }
+    }
+
+    // Backfill display names for canonical tokens discovered by vocabulary matching.
+    // This handles compact Chinese allergen strings (e.g. "含小麦大豆花生芝麻")
+    // where split-token mapping may miss per-ingredient raw names.
+    for (const ingredient of ingredients) {
+      if (displayNameMap[ingredient]) continue
+      const inferredDisplayName = inferOriginalDisplayNameFromText(ingredient, ingredientText)
+      if (inferredDisplayName) {
+        displayNameMap[ingredient] = inferredDisplayName
       }
     }
 
@@ -3122,7 +3224,7 @@ async function callGeminiVisionDirect(canvas, lang) {
   try {
     const resized = resizeCanvasForBackend(canvas)
     const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
-    const model = "gemini-1.5-flash"
+    const model = "gemini-2.0-flash"
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey.trim()}`
     const fetchPromise = fetch(url, {
       method: "POST",
