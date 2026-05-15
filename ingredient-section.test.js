@@ -274,6 +274,27 @@ test("English label: ALLERGENS and IMPORTANT INFORMATION blocks are excluded", (
   assert.ok(!result.includes("IMPORTANT INFORMATION"), `must not contain IMPORTANT INFORMATION block, got: ${result}`)
 })
 
+test("English label: (contains X (A, B)) section with line-wrapped OCR is cut at ALLERGENS", () => {
+  // Simulates real OCR output for a UK protein powder label where:
+  // - "(contains Emulsifiers (Soya Lecithin, Sunflower\nLecithin))" wraps across lines
+  // - "(89%)" and "(5%)" are percentage declarations
+  // - ALLERGENS and IMPORTANT INFORMATION follow immediately after INGREDIENTS
+  const text =
+    "INGREDIENTS: Whey Protein Concentrate (Milk) (89%)\n" +
+    "(contains Emulsifiers (Soya Lecithin, Sunflower\n" +
+    "Lecithin)). Juice Powders (5%) (White Grape and\n" +
+    "Peach). Flavourings. Acid (Citric Acid). Colour (Carotenes). Sweetener (Sucralose).\n" +
+    "ALLERGENS: For allergens, see ingredients in bold.\n" +
+    "IMPORTANT INFORMATION: Store in a cool, dry place away from direct sunlight.\n" +
+    "Suitable for vegetarians. *Naturally Occurring BCAAs."
+  const result = findIngredientSection(text, "en")
+  assert.ok(result.includes("Whey Protein Concentrate"), `expected WPC, got: ${result}`)
+  assert.ok(result.includes("Soya Lecithin"), `expected Soya Lecithin, got: ${result}`)
+  assert.ok(!result.includes("ALLERGENS"), `must not contain ALLERGENS block, got: ${result}`)
+  assert.ok(!result.includes("IMPORTANT INFORMATION"), `must not contain IMPORTANT INFORMATION, got: ${result}`)
+  assert.ok(!result.includes("*Naturally"), `must not contain footnote text, got: ${result}`)
+})
+
 test("Chinese label: spaced metadata marker 产 品 标 准 代 号 is stripped", () => {
   const text =
     "配料：黑芝麻，核桃仁，小麦，大豆，花生，芝麻\n" +
