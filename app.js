@@ -781,12 +781,9 @@ function extractIngredients(text){
 INTERACTION CHECKER
 ----------------------- */
 
-function checkInteractions(ingredients, lang = currentLanguage(), displayNameMap = {}){
-
-let warnings = []
-
 // Major food allergens as defined by EU Regulation 1169/2011 and FDA FALCPA,
 // mapped to their canonical ingredient keys used in this codebase.
+// Defined at module scope so the Set is created only once.
 const MAJOR_ALLERGEN_KEYS = new Set([
   "wheat", "gluten", "barley", "rye", "oats",
   "milk", "dairy", "lactose", "casein", "whey",
@@ -805,6 +802,10 @@ const MAJOR_ALLERGEN_KEYS = new Set([
   "molluscs", "mollusks", "squid", "octopus",
   "sulphites", "sulfites", "sulphur dioxide"
 ])
+
+function checkInteractions(ingredients, lang = currentLanguage(), displayNameMap = {}){
+
+let warnings = []
 
 const detectedAllergens = ingredients.filter(i => MAJOR_ALLERGEN_KEYS.has(i))
 if (detectedAllergens.length > 0) {
