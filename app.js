@@ -718,7 +718,7 @@ function isLikelyIngredientToken(token = ""){
   // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
   // (ingredient-section.js).  Keep both in sync when adding new stop terms.
   if (/[\u4e00-\u9fa5]/.test(normalized)) {
-    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|(?:产\s*品\s*的\s*)?保\s*(?:质|鲜)\s*期|储存方法\s|保存方法|净\s*含\s*量|净\s*重|规\s*格|执\s*行\s*标\s*准(?:\s*号)?|产\s*品\s*标\s*准\s*(?:代\s*号|号)|标\s*准\s*代\s*号|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在|本\s*生\s*产\s*线|致\s*敏\s*原/.test(normalized)) {
+    if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|(?:产\s*品\s*的\s*)?保\s*(?:质|鲜)\s*期|储存方法\s|保存方法|净\s*含\s*量|净\s*重|规\s*格|执\s*行\s*标\s*准(?:\s*号)?|产\s*品\s*标\s*准\s*(?:代\s*号|号)|标\s*准\s*代\s*号|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在|本\s*生\s*产\s*线|致\s*敏\s*原|过敏者请慎食|过敏者慎用|过敏者禁用|过敏体质者|过敏体质人群|含有过敏原|可能含有过敏原|如有不适请停用/.test(normalized)) {
       return false
     }
     const locationUnitMatches = normalized.match(/[省市区县镇乡村路街巷大道号弄]/g)
@@ -781,9 +781,40 @@ function extractIngredients(text){
 INTERACTION CHECKER
 ----------------------- */
 
-function checkInteractions(ingredients, lang = currentLanguage()){
+// Major food allergens as defined by EU Regulation 1169/2011 and FDA FALCPA,
+// mapped to their canonical ingredient keys used in this codebase.
+// Defined at module scope so the Set is created only once.
+const MAJOR_ALLERGEN_KEYS = new Set([
+  "wheat", "gluten", "barley", "rye", "oats",
+  "milk", "dairy", "lactose", "casein", "whey",
+  "egg", "eggs",
+  "soy", "soybean",
+  "peanut", "peanuts",
+  "tree nuts", "almond", "almonds", "cashew", "hazelnut",
+  "walnut", "pecan", "pistachio", "macadamia", "brazil nut", "pine nut",
+  "fish", "salmon", "tuna", "cod", "tilapia", "bass", "flounder",
+  "halibut", "perch", "pike", "snapper", "trout",
+  "shellfish", "shrimp", "crab", "lobster", "scallop", "oyster", "clam", "mussel",
+  "sesame",
+  "mustard",
+  "celery",
+  "lupin",
+  "molluscs", "mollusks", "squid", "octopus",
+  "sulphites", "sulfites", "sulphur dioxide"
+])
+
+function checkInteractions(ingredients, lang = currentLanguage(), displayNameMap = {}){
 
 let warnings = []
+
+const detectedAllergens = ingredients.filter(i => MAJOR_ALLERGEN_KEYS.has(i))
+if (detectedAllergens.length > 0) {
+  // Use original label text from displayNameMap when available for better readability
+  const displayNames = detectedAllergens.map(a => displayNameMap[a] || a)
+  const nameList = displayNames.join("、")
+  const warnFn = t("allergenWarning", lang)
+  warnings.push(typeof warnFn === "function" ? warnFn(nameList) : String(warnFn))
+}
 
 if(
 ingredients.includes("retinol") &&
@@ -987,6 +1018,7 @@ const uiMessages = {
     noConflicts: "No obvious ingredient conflicts detected.",
     retinolGlycolic: "Retinol combined with glycolic acid may increase skin irritation.",
     peroxideRetinol: "Benzoyl peroxide may deactivate retinol.",
+    allergenWarning: (names) => `Declared allergen(s) detected: ${names}. Individuals with allergies to any of these ingredients should exercise caution or avoid this product. (Ref: EU Regulation 1169/2011 / FDA FALCPA)`,
     analyzing: "Analyzing ingredients...",
     ocrProcessing: "Processing image and running OCR...",
     cameraAccessFailed: "Unable to access camera. Please allow camera permission in your browser settings, then try again. On mobile you can also use the 'Upload image' option.",
@@ -1103,6 +1135,7 @@ const uiMessages = {
     noConflicts: "Aucun conflit évident entre ingrédients détecté.",
     retinolGlycolic: "Le rétinol combiné à l'acide glycolique peut augmenter l'irritation cutanée.",
     peroxideRetinol: "Le peroxyde de benzoyle peut désactiver le rétinol.",
+    allergenWarning: (names) => `Allergène(s) déclaré(s) détecté(s) : ${names}. Les personnes allergiques à ces ingrédients doivent faire preuve de prudence ou éviter ce produit. (Réf. : Règlement UE n° 1169/2011)`,
     analyzing: "Analyse des ingrédients...",
     ocrProcessing: "Traitement de l'image et OCR en cours...",
     cameraAccessFailed: "Impossible d'accéder à la caméra. Autorisez l'accès dans les paramètres de votre navigateur, puis réessayez. Sur mobile, vous pouvez aussi utiliser l'option « Charger une image ».",
@@ -1219,6 +1252,7 @@ const uiMessages = {
     noConflicts: "Keine offensichtlichen Inhaltsstoffkonflikte erkannt.",
     retinolGlycolic: "Retinol in Kombination mit Glykolsäure kann Hautreizungen verstärken.",
     peroxideRetinol: "Benzoylperoxid kann Retinol deaktivieren.",
+    allergenWarning: (names) => `Deklariertes/deklarierte Allergen(e) erkannt: ${names}. Personen mit Allergien auf diese Zutaten sollten Vorsicht walten lassen oder dieses Produkt meiden. (Ref.: EU-Verordnung Nr. 1169/2011)`,
     analyzing: "Inhaltsstoffe werden analysiert...",
     ocrProcessing: "Bild wird verarbeitet und OCR läuft...",
     cameraAccessFailed: "Kein Kamerazugriff möglich. Bitte Berechtigung in den Browsereinstellungen erteilen und erneut versuchen. Auf dem Handy können Sie auch die Option „Bild hochladen“ verwenden.",
@@ -1335,6 +1369,7 @@ const uiMessages = {
     noConflicts: "未检测到明显成分冲突。",
     retinolGlycolic: "视黄醇与乙醇酸同时使用可能增加皮肤刺激。",
     peroxideRetinol: "过氧化苯甲酰可能使视黄醇失活。",
+    allergenWarning: (names) => `检测到已申报过敏原：${names}。对上述成分过敏的消费者请谨慎食用或避免食用本品。如有不适请咨询医生。（参考标准：中国 GB 7718-2011、欧盟 EU 1169/2011）`,
     analyzing: "正在分析成分...",
     ocrProcessing: "正在处理图像并执行 OCR...",
     cameraAccessFailed: "无法访问相机。请在浏览器设置中允许相机权限后重试。在手机上，您也可以使用“上传图片”选项。",
@@ -1759,14 +1794,19 @@ function showResultsSummary(lang = currentLanguage()) {
   const dangerCount = resultEl.querySelectorAll(".ingredient-card.danger").length
   const flaggedCount = cautionCount + dangerCount
 
-  // Compute 0-100 safety score.
-  // Danger ingredients (allergens/avoid) are weighted 2× higher than caution
-  // ingredients because they pose immediate health risks (e.g. anaphylaxis)
-  // versus caution items which are merely inadvisable for some users.
-  // Each danger item deducts 20 points (not 25) so that 4 common food allergens
-  // (e.g. wheat, soy, peanut, sesame) yield a score of 20 rather than 0,
-  // keeping the score meaningful even for products with multiple allergens.
-  const safetyScore = Math.max(0, Math.min(100, 100 - dangerCount * 20 - cautionCount * 10))
+  // Compute 0–100 safety score using capped, diminishing-penalty deductions.
+  // Scoring rationale (based on EU 1169/2011 / FDA FALCPA risk tiers):
+  //   • Each danger ingredient (major allergen / carcinogen) deducts 12 points, capped
+  //     at a maximum total danger deduction of 50.  This means a product with 4 common
+  //     food allergens (wheat, soy, peanut, sesame) scores 52 — moderate concern —
+  //     rather than 0, which is disproportionate for a product safe for non-allergic consumers.
+  //   • Each caution ingredient deducts 6 points, capped at 20 total.
+  //   • The combined minimum is 30, never 0, reflecting that even high-allergen products
+  //     are not universally unsafe and a score of 0 would be misleading.
+  // Thresholds: ≥75 → high (green), 45–74 → medium (amber), <45 → low (red).
+  const safetyScore = Math.min(100, Math.max(30,
+    100 - Math.min(50, dangerCount * 12) - Math.min(20, cautionCount * 6)
+  ))
   const scoreClass = safetyScore >= 75 ? "score-high" : safetyScore >= 45 ? "score-medium" : "score-low"
 
   const parts = [
@@ -2388,11 +2428,11 @@ async function analyzeIngredients(){
     // Always use the user's chosen UI language for AI responses and all display,
     // so results are consistently in the language the user selected.
     const detectedInputLang = detectInputLanguage(ingredientText, ingredients)
-    const warnings = checkInteractions(ingredients, analysisLanguage)
 
     // Build a map from normalized ingredient key → original user-typed token.
     // This preserves the input language and display name (e.g. "芦荟" instead of "aloe vera")
     // for per-ingredient language detection and display in the results.
+    // Built before checkInteractions so allergen warnings can use original label names.
     const displayNameMap = {}
     const scriptBoundaryNormalized = (ingredientText || "")
       .replace(/([\u4e00-\u9fa5])([a-z\u00C0-\u024F0-9])/giu, "$1, $2")
@@ -2440,6 +2480,9 @@ async function analyzeIngredients(){
         displayNameMap[ingredient] = inferredDisplayName
       }
     }
+
+    // Pass displayNameMap so allergen warnings use original label names (e.g. "花生及其制品")
+    const warnings = checkInteractions(ingredients, analysisLanguage, displayNameMap)
 
     displayInteractions(warnings, analysisLanguage)
 
