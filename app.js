@@ -225,7 +225,57 @@ const ingredientAliases = {
   "aloe barbadensis": "aloe vera",
   "sonnenblumenöl": "sunflower oil",
   "zitronensäure": "citric acid",
-  "duftstoff": "fragrance"
+  "duftstoff": "fragrance",
+  // Additional Latin aliases for common botanical ingredients
+  "rosehip": "rosehip oil",
+  "rose hip": "rosehip oil",
+  "rose hips": "rosehip oil",
+  "rose hip seed oil": "rosehip oil",
+  "jojoba": "jojoba oil",
+  "squalene": "squalane",
+  "bisabolol": "bisabolol",
+  "allantoin": "allantoin",
+  "bakuchiol": "bakuchiol",
+  "centella": "centella asiatica",
+  // Additional French aliases
+  "huile de rose musquée": "rosehip oil",
+  "huile de jojoba": "jojoba oil",
+  "huile d'argan": "argan oil",
+  "huile de coco": "coconut oil",
+  "huile d'olive": "olive oil",
+  "huile de palme": "palm oil",
+  "huile de tournesol": "sunflower oil",
+  "extrait de thé vert": "green tea extract",
+  "beurre de karité": "shea butter",
+  "aloe barbadensis": "aloe vera",
+  "retinol": "retinol",
+  "niacinamide": "niacinamide",
+  // Additional German aliases
+  "retinol": "retinol",
+  "jojobaöl": "jojoba oil",
+  "arganöl": "argan oil",
+  "kokosöl": "coconut oil",
+  "olivenöl": "olive oil",
+  "palmöl": "palm oil",
+  "rosenöl": "rosehip oil",
+  "grüntee-extrakt": "green tea extract",
+  "grüner tee extrakt": "green tea extract",
+  // More Chinese aliases for safety-critical ingredients
+  "对羟基苯甲酸甲酯": "methylparaben",
+  "对羟基苯甲酸乙酯": "ethylparaben",
+  "对羟基苯甲酸丁酯": "butylparaben",
+  "月桂醇硫酸酯钠": "sodium lauryl sulfate",
+  "月桂醇聚醚硫酸酯钠": "sodium laureth sulfate",
+  "亚硝酸钠": "sodium nitrite",
+  "阿斯巴甜": "aspartame",
+  "蔗糖素": "sucralose",
+  "安赛蜜": "acesulfame potassium",
+  "山梨糖醇": "sorbitol",
+  "红色素40": "red 40",
+  "柠檬黄": "yellow 5",
+  "日落黄": "yellow 6",
+  "茶树提取物": "tea tree oil",
+  "金盏花提取物": "bisabolol"
 }
 
 // Keep slightly lower than fetchJsonWithTimeout default (7000ms) so this fallback cannot block overall analysis.
@@ -320,18 +370,18 @@ const localIngredientDb = {
   "glycolic acid":                { category: "skincare", fn: "Exfoliant (AHA)",             note: "Alpha hydroxy acid; removes dead skin cells and improves texture. Source: CosIng (EU)." },
   "salicylic acid":               { category: "skincare", fn: "Exfoliant (BHA)",             note: "Beta hydroxy acid; unclogs pores; suited to oily or acne-prone skin. Source: CosIng (EU)." },
   "mandelic acid":                { category: "skincare", fn: "Exfoliant (AHA)",             note: "Large-molecule AHA; gentle enough for sensitive skin. Source: CosIng (EU)." },
-  "benzoyl peroxide":             { category: "skincare", fn: "Antimicrobial",               note: "Kills acne-causing bacteria; may bleach fabric. Use with caution. Source: CosIng (EU)." },
+  "benzoyl peroxide":             { category: "skincare", fn: "Antimicrobial",               note: "Kills acne-causing bacteria; may bleach fabric. Use with caution. Source: CosIng (EU).",    risk: "caution" },
   "vitamin c":                    { category: "skincare", fn: "Antioxidant",                 note: "Brightens skin and boosts collagen synthesis. Source: CosIng (EU)." },
   "ceramide":                     { category: "skincare", fn: "Skin barrier lipid",          note: "Replenishes and strengthens the skin barrier. Source: CosIng (EU)." },
   "panthenol":                    { category: "skincare", fn: "Humectant / Emollient",       note: "Pro-vitamin B5; soothes, moisturises, and aids wound healing. Source: CosIng (EU)." },
   "shea butter":                  { category: "skincare", fn: "Emollient",                   note: "Rich in fatty acids; deeply nourishing and softening. Source: CosIng (EU)." },
   "cetearyl alcohol":             { category: "skincare", fn: "Emulsifier / Emollient",      note: "Fatty alcohol; thickens formulas and softens skin. Source: CosIng (EU)." },
-  "fragrance":                    { category: "skincare", fn: "Fragrance",                   note: "May contain undisclosed allergens; caution for sensitive skin. Source: CosIng (EU)." },
-  "parfum":                       { category: "skincare", fn: "Fragrance",                   note: "EU term for fragrance blend; potential sensitiser. Source: CosIng (EU)." },
+  "fragrance":                    { category: "skincare", fn: "Fragrance",                   note: "May contain undisclosed allergens; caution for sensitive skin. Source: CosIng (EU).",     risk: "caution" },
+  "parfum":                       { category: "skincare", fn: "Fragrance",                   note: "EU term for fragrance blend; potential sensitiser. Source: CosIng (EU).",                  risk: "caution" },
   "phenoxyethanol":               { category: "skincare", fn: "Preservative",                note: "Broad-spectrum preservative; well tolerated at ≤1%. Source: CosIng (EU)." },
-  "methylparaben":                { category: "skincare", fn: "Preservative",                note: "Paraben preservative; debated endocrine concerns at high doses. Source: CosIng (EU)." },
-  "ethylparaben":                 { category: "skincare", fn: "Preservative",                note: "Paraben preservative; low concentration considered safe. Source: CosIng (EU)." },
-  "butylparaben":                 { category: "skincare", fn: "Preservative",                note: "Paraben with higher lipophilicity; restricted in some regions. Source: CosIng (EU)." },
+  "methylparaben":                { category: "skincare", fn: "Preservative",                note: "Paraben preservative; debated endocrine concerns at high doses. Source: CosIng (EU).",     risk: "caution" },
+  "ethylparaben":                 { category: "skincare", fn: "Preservative",                note: "Paraben preservative; low concentration considered safe. Source: CosIng (EU).",            risk: "caution" },
+  "butylparaben":                 { category: "skincare", fn: "Preservative",                note: "Paraben with higher lipophilicity; restricted in some regions. Source: CosIng (EU).",      risk: "caution" },
   "zinc oxide":                   { category: "skincare", fn: "UV filter / Mineral",         note: "Broad-spectrum physical sunscreen; also soothing on skin. Source: CosIng (EU)." },
   "titanium dioxide":             { category: "skincare", fn: "UV filter / Colourant",       note: "Physical sunscreen and whitening pigment. Source: CosIng (EU)." },
   "petrolatum":                   { category: "skincare", fn: "Occlusive",                   note: "Forms a barrier to seal in moisture; non-comedogenic. Source: CosIng (EU)." },
@@ -346,7 +396,7 @@ const localIngredientDb = {
   "jojoba oil":                   { category: "skincare", fn: "Emollient",                   note: "Liquid wax; closely mimics the skin's natural sebum. Source: CosIng (EU)." },
   "rosehip oil":                  { category: "skincare", fn: "Emollient",                   note: "Rich in vitamins A and C; supports skin renewal. Source: Open Beauty Facts taxonomy." },
   "argan oil":                    { category: "skincare", fn: "Emollient",                   note: "Vitamin E rich; nourishing and softening. Source: CosIng (EU)." },
-  "sodium lauryl sulfate":        { category: "skincare", fn: "Surfactant / Cleansing",      note: "Foaming cleansing agent; can strip natural oils and irritate. Source: CosIng (EU)." },
+  "sodium lauryl sulfate":        { category: "skincare", fn: "Surfactant / Cleansing",      note: "Foaming cleansing agent; can strip natural oils and irritate. Source: CosIng (EU).",      risk: "caution" },
   "sodium laureth sulfate":       { category: "skincare", fn: "Surfactant / Cleansing",      note: "Milder than SLS; common in shampoos and body washes. Source: CosIng (EU)." },
   "cocamidopropyl betaine":       { category: "skincare", fn: "Surfactant",                  note: "Mild amphoteric surfactant used in gentle cleansers. Source: CosIng (EU)." },
   "butylene glycol":              { category: "skincare", fn: "Humectant / Solvent",         note: "Draws moisture and aids penetration of other ingredients. Source: CosIng (EU)." },
@@ -372,15 +422,15 @@ const localIngredientDb = {
   // ── Food ──────────────────────────────────────────────────────────────
   "sugar":                        { category: "food",     fn: "Sweetener",                   note: "Sucrose; high intake linked to obesity and dental caries. Source: FDA GRAS." },
   "salt":                         { category: "food",     fn: "Seasoning / Preservative",    note: "Sodium chloride; excess intake raises blood pressure. Source: FDA GRAS." },
-  "wheat":                        { category: "food",     fn: "Grain",                       note: "Contains gluten; avoid if coeliac or gluten-sensitive. Top allergen (EU/US)." },
-  "milk":                         { category: "food",     fn: "Dairy",                       note: "Common allergen (EU top 14 / US top 9); source of calcium." },
-  "egg":                          { category: "food",     fn: "Binder / Emulsifier",         note: "Common allergen (EU top 14 / US top 9); provides structure in baking." },
-  "soy":                          { category: "food",     fn: "Protein / Emulsifier",        note: "Common allergen; source of plant protein and isoflavones." },
-  "peanut":                       { category: "food",     fn: "Legume",                      note: "Major allergen; can cause anaphylaxis. Strict avoidance required. Source: FDA." },
-  "tree nuts":                    { category: "food",     fn: "Nut",                         note: "Allergen category (almonds, cashews, etc.); risk of cross-contamination. Source: FDA." },
-  "fish":                         { category: "food",     fn: "Seafood",                     note: "Common allergen; source of omega-3 fatty acids. Source: EU allergen list." },
-  "shellfish":                    { category: "food",     fn: "Seafood",                     note: "Allergen category (shrimp, crab, lobster). Source: EU/FDA allergen list." },
-  "sesame":                       { category: "food",     fn: "Seed",                        note: "Major allergen in US (since 2023) and EU; also a source of healthy fats." },
+  "wheat":                        { category: "food",     fn: "Grain",                       note: "Contains gluten; avoid if coeliac or gluten-sensitive. Top allergen (EU/US).",             risk: "danger" },
+  "milk":                         { category: "food",     fn: "Dairy",                       note: "Common allergen (EU top 14 / US top 9); source of calcium.",                              risk: "danger" },
+  "egg":                          { category: "food",     fn: "Binder / Emulsifier",         note: "Common allergen (EU top 14 / US top 9); provides structure in baking.",                  risk: "danger" },
+  "soy":                          { category: "food",     fn: "Protein / Emulsifier",        note: "Common allergen; source of plant protein and isoflavones.",                               risk: "danger" },
+  "peanut":                       { category: "food",     fn: "Legume",                      note: "Major allergen; can cause anaphylaxis. Strict avoidance required. Source: FDA.",          risk: "danger" },
+  "tree nuts":                    { category: "food",     fn: "Nut",                         note: "Allergen category (almonds, cashews, etc.); risk of cross-contamination. Source: FDA.",   risk: "danger" },
+  "fish":                         { category: "food",     fn: "Seafood",                     note: "Common allergen; source of omega-3 fatty acids. Source: EU allergen list.",               risk: "danger" },
+  "shellfish":                    { category: "food",     fn: "Seafood",                     note: "Allergen category (shrimp, crab, lobster). Source: EU/FDA allergen list.",                risk: "danger" },
+  "sesame":                       { category: "food",     fn: "Seed",                        note: "Major allergen in US (since 2023) and EU; also a source of healthy fats.",                risk: "danger" },
   "palm oil":                     { category: "food",     fn: "Fat / Oil",                   note: "High in saturated fat; significant environmental concerns over deforestation." },
   "coconut oil":                  { category: "food",     fn: "Fat / Oil",                   note: "High in saturated fat; stable for high-heat cooking. Source: OFF taxonomy." },
   "olive oil":                    { category: "food",     fn: "Fat / Oil",                   note: "Rich in monounsaturated fats; heart-healthy (Mediterranean diet). Source: OFF taxonomy." },
@@ -390,10 +440,10 @@ const localIngredientDb = {
   "monosodium glutamate":         { category: "food",     fn: "Flavour enhancer",            note: "MSG (E621); umami flavour; safe for the general population. Source: FDA GRAS." },
   "artificial flavor":            { category: "food",     fn: "Flavouring",                  note: "Synthetic flavour compounds; exact composition often undisclosed. Source: FDA." },
   "natural flavors":              { category: "food",     fn: "Flavouring",                  note: "Derived from natural sources; exact compounds often undisclosed. Source: FDA." },
-  "high fructose corn syrup":     { category: "food",     fn: "Sweetener",                   note: "Liquid sweetener; linked to metabolic concerns at high intake. Source: FDA GRAS." },
+  "high fructose corn syrup":     { category: "food",     fn: "Sweetener",                   note: "Liquid sweetener; linked to metabolic concerns at high intake. Source: FDA GRAS.",        risk: "caution" },
   "maltodextrin":                 { category: "food",     fn: "Thickener / Filler",          note: "Derived from starch; rapidly digested and raises blood sugar. Source: FDA GRAS." },
   "guar gum":                     { category: "food",     fn: "Thickener",                   note: "E412; plant-based thickener; high fibre content. Source: EU additive list." },
-  "carrageenan":                  { category: "food",     fn: "Thickener / Emulsifier",      note: "E407; seaweed extract; some evidence of gut inflammation at high doses. Source: EU additive list." },
+  "carrageenan":                  { category: "food",     fn: "Thickener / Emulsifier",      note: "E407; seaweed extract; some evidence of gut inflammation at high doses. Source: EU additive list.", risk: "caution" },
   "lecithin":                     { category: "food",     fn: "Emulsifier",                  note: "E322; often from soy or sunflower; keeps oil and water blended. Source: EU additive list." },
   "mono- and diglycerides":       { category: "food",     fn: "Emulsifier",                  note: "E471; derived from fats; used in baked goods and margarines. Source: EU additive list." },
   "baking powder":                { category: "food",     fn: "Leavening agent",             note: "Mixture of sodium bicarbonate and acid; raises baked goods. Source: FDA GRAS." },
@@ -403,24 +453,24 @@ const localIngredientDb = {
   "caramel color":                { category: "food",     fn: "Colourant",                   note: "E150; made from heated sugar; Class IV linked to 4-MEI concerns. Source: EU additive list." },
   "annatto":                      { category: "food",     fn: "Colourant",                   note: "E160b; natural yellow-orange colour from achiote seeds. Source: EU additive list." },
   "beta-carotene":                { category: "food",     fn: "Colourant / Nutrient",        note: "E160a; provitamin A; natural orange pigment. Source: EU additive list." },
-  "sodium nitrite":               { category: "food",     fn: "Preservative / Curing agent", note: "E250; used in cured meats; potential carcinogen at high doses. Source: EU additive list." },
-  "red 40":                       { category: "food",     fn: "Artificial colourant",        note: "FD&C Red No. 40; may cause hyperactivity in sensitive children. Source: FDA." },
-  "yellow 5":                     { category: "food",     fn: "Artificial colourant",        note: "Tartrazine (E102); rare allergy risk; EU warning label required. Source: EU additive list." },
-  "yellow 6":                     { category: "food",     fn: "Artificial colourant",        note: "Sunset Yellow (E110); EU warning label required. Source: EU additive list." },
+  "sodium nitrite":               { category: "food",     fn: "Preservative / Curing agent", note: "E250; used in cured meats; potential carcinogen at high doses. Source: EU additive list.", risk: "danger"  },
+  "red 40":                       { category: "food",     fn: "Artificial colourant",        note: "FD&C Red No. 40; may cause hyperactivity in sensitive children. Source: FDA.",             risk: "caution" },
+  "yellow 5":                     { category: "food",     fn: "Artificial colourant",        note: "Tartrazine (E102); rare allergy risk; EU warning label required. Source: EU additive list.", risk: "caution" },
+  "yellow 6":                     { category: "food",     fn: "Artificial colourant",        note: "Sunset Yellow (E110); EU warning label required. Source: EU additive list.",               risk: "caution" },
   "stevia":                       { category: "food",     fn: "Sweetener",                   note: "Plant-based zero-calorie sweetener; considered safe (E960). Source: EU additive list." },
   "erythritol":                   { category: "food",     fn: "Sweetener (sugar alcohol)",   note: "Low glycaemic; well tolerated; minimally absorbed (E968). Source: EU additive list." },
   "sorbitol":                     { category: "food",     fn: "Sweetener (sugar alcohol)",   note: "E420; laxative effect in amounts above 50 g/day. Source: EU additive list." },
-  "aspartame":                    { category: "food",     fn: "Artificial sweetener",        note: "E951; avoid with PKU (contains phenylalanine). Source: EU additive list." },
+  "aspartame":                    { category: "food",     fn: "Artificial sweetener",        note: "E951; avoid with PKU (contains phenylalanine). Source: EU additive list.",              risk: "caution" },
   "sucralose":                    { category: "food",     fn: "Artificial sweetener",        note: "E955; 600× sweeter than sugar; heat-stable. Source: EU additive list." },
   "acesulfame potassium":         { category: "food",     fn: "Artificial sweetener",        note: "Acesulfame K (E950); often combined with sucralose or aspartame. Source: EU additive list." },
   "rice":                         { category: "food",     fn: "Grain / Starch",              note: "Gluten-free grain; common wheat substitute. Source: OFF taxonomy." },
   "oat":                          { category: "food",     fn: "Grain / Fibre",               note: "Rich in beta-glucan fibre; may be cross-contaminated with gluten. Source: OFF taxonomy." },
   "corn":                         { category: "food",     fn: "Grain / Starch",              note: "Gluten-free; common in processed food as starch or syrup. Source: OFF taxonomy." },
-  "almond":                       { category: "food",     fn: "Tree nut",                    note: "Major tree-nut allergen; source of vitamin E and healthy fats." },
-  "almonds":                      { category: "food",     fn: "Tree nut",                    note: "Major tree-nut allergen; source of vitamin E and healthy fats." },
-  "cashew":                       { category: "food",     fn: "Tree nut",                    note: "Common tree-nut allergen; rich in magnesium." },
-  "hazelnut":                     { category: "food",     fn: "Tree nut",                    note: "Tree-nut allergen; also contains vitamin E." },
-  "shrimp":                       { category: "food",     fn: "Shellfish",                   note: "Common shellfish allergen; high in protein and iodine." },
+  "almond":                       { category: "food",     fn: "Tree nut",                    note: "Major tree-nut allergen; source of vitamin E and healthy fats.",                          risk: "danger" },
+  "almonds":                      { category: "food",     fn: "Tree nut",                    note: "Major tree-nut allergen; source of vitamin E and healthy fats.",                          risk: "danger" },
+  "cashew":                       { category: "food",     fn: "Tree nut",                    note: "Common tree-nut allergen; rich in magnesium.",                                            risk: "danger" },
+  "hazelnut":                     { category: "food",     fn: "Tree nut",                    note: "Tree-nut allergen; also contains vitamin E.",                                             risk: "danger" },
+  "shrimp":                       { category: "food",     fn: "Shellfish",                   note: "Common shellfish allergen; high in protein and iodine.",                                  risk: "danger" },
   "vinegar":                      { category: "food",     fn: "Acidulant / Preservative",    note: "Acetic acid solution; used for flavour and natural preservation. Source: OFF taxonomy." },
   "msg":                          { category: "food",     fn: "Flavour enhancer",            note: "Monosodium glutamate (E621); umami flavour; safe for the general population. Source: FDA GRAS." },
   "artificial color":             { category: "food",     fn: "Colourant",                   note: "Synthetic dye category; specific dyes vary in safety profile. Source: FDA." },
@@ -681,15 +731,17 @@ function isLikelyIngredientToken(token = ""){
   // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
   // (e.g. "LS", "OP", "OI", "XRF") — reject them.
   if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
-  // Single-word Latin fragments of length 3-5 are frequently OCR shreds from a
-  // larger ingredient name (e.g. "RET", "NOL", "CHA"). Keep only if the token
-  // is recognised by known vocabulary/aliases/local DB.
-  if (!hasCjk && !normalized.includes(" ") && /^[a-z\u00C0-\u024F]+$/iu.test(normalized) && normalized.length >= 3 && normalized.length <= 5) {
+  // Single-word Latin fragments of length 3–5 are frequently OCR shreds from a
+  // larger ingredient name (e.g. "RET", "NOL", "CHA", or "RET-" with a trailing
+  // hyphen from physical label word-wrap).  Strip leading/trailing hyphens before
+  // testing so "ret-" (length 4) is evaluated as "ret" (length 3) and rejected.
+  const normalizedCore = normalized.replace(/^[-–—]+|[-–—]+$/g, "").trim()
+  if (!hasCjk && !normalizedCore.includes(" ") && /^[a-z\u00C0-\u024F]+$/iu.test(normalizedCore) && normalizedCore.length >= 3 && normalizedCore.length <= 5) {
     const isKnownShortToken =
-      knownIngredients.includes(lower) ||
-      Object.hasOwn(ingredientAliases, lower) ||
-      Object.hasOwn(localIngredientDb, lower) ||
-      extractVocabularyMatches(normalized).length > 0
+      knownIngredients.includes(normalizedCore) ||
+      Object.hasOwn(ingredientAliases, normalizedCore) ||
+      Object.hasOwn(localIngredientDb, normalizedCore) ||
+      extractVocabularyMatches(normalizedCore).length > 0
     if (!isKnownShortToken) return false
   }
   // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
@@ -724,6 +776,30 @@ function isLikelyIngredientToken(token = ""){
     if (words.length >= 2 && words.length <= 4) {
       const allWordsAreFiller = words.every(w => w.length <= 2 || !/[aeiouy]/i.test(w))
       if (allWordsAreFiller) return false
+
+      // Short words that legitimately appear in ingredient names and must not trigger
+      // the fragment checks below (common botanical materials, food components, etc.).
+      const knownShortWords = new Set([
+        "oil", "wax", "gum", "bark", "root", "leaf", "seed", "pulp", "juice", "rind",
+        "peel", "herb", "stem", "bud", "resin", "sap", "hip", "pod", "ash",
+        "oat", "rye", "soy", "egg", "tea", "rice", "corn", "palm", "milk", "salt",
+        "lime", "mint", "sage", "aloe", "vera", "rose", "bees", "acid", "tar",
+      ])
+
+      const hasSubstantiveWord = words.some(w => w.length >= 6)
+      const firstWord = words[0]
+      const lastWord  = words[words.length - 1]
+
+      // Trigger a vocabulary check when:
+      //  a) no word reaches 6 chars  (e.g. "nsis leae")
+      //  b) last word ≤4 chars and not a known botanical/food word  (e.g. "camellia sine")
+      //  c) first word ≤3 chars and not a known word  (e.g. "cha momile")
+      const needsVocabCheck =
+        !hasSubstantiveWord ||
+        (lastWord.length  <= 4 && !knownShortWords.has(lastWord))  ||
+        (firstWord.length <= 3 && !knownShortWords.has(firstWord))
+
+      if (needsVocabCheck && extractVocabularyMatches(normalized).length === 0) return false
     }
   }
   // Single-word tokens containing a run of 5 or more consecutive digits are almost certainly
@@ -773,8 +849,12 @@ function isLikelyIngredientToken(token = ""){
 //     while preserving the actual sub-ingredient names for extraction.
 function preprocessIngredientText(text) {
   if (!text) return text
-  // Step 1 – de-wrap word-boundary line breaks.
-  let result = text.replace(/([a-zA-Z\u00C0-\u024F0-9])\n([a-zA-Z\u00C0-\u024F0-9])/g, "$1 $2")
+  // Step 0 – join hard-hyphen line continuations (word-wrap artefact on physical labels):
+  // "RETIN-\nOL" → "RETINOL". Must run before the generic word-boundary de-wrap (step 1)
+  // so that "RET-\nINOL" is merged into "RETINOL" rather than "RET INOL" (a two-word fragment).
+  let result = text.replace(/([a-zA-Z\u00C0-\u024F])-[ \t]*[\r\n]+[ \t]*([a-zA-Z\u00C0-\u024F])/g, "$1$2")
+  // Step 1 – de-wrap word-boundary line breaks (handles \r\n and bare \r in addition to \n).
+  result = result.replace(/([a-zA-Z\u00C0-\u024F0-9])[\r\n]+([a-zA-Z\u00C0-\u024F0-9])/g, "$1 $2")
   // Step 2 – strip percentage-only parentheticals.
   result = result.replace(/\(\s*\d+(?:[.,]\d+)?\s*%\s*\)/g, "")
   // Step 3 – flatten "(contains WORD (A, B))" → "(A, B)".
@@ -1701,11 +1781,16 @@ function escapeHtml(text) {
 
 // Returns "danger", "caution", or "safe" based on the curated local ingredient DB note.
 // This catches known-concern ingredients even when the AI returns a neutral description.
+// Explicit `risk` fields on DB entries take precedence (language-independent); keyword
+// matching on the English note text is used as a fallback for entries without one.
 function riskFromLocalDb(ingredientName) {
   if (!ingredientName) return "safe"
   const key = sanitizeIngredientTerm(ingredientName)
   const entry = localIngredientDb[key]
   if (!entry) return "safe"
+  // Use the curated risk level when available — avoids relying on English keyword matching
+  // and therefore works correctly regardless of what language the UI is in.
+  if (entry.risk) return entry.risk
   const note = entry.note.toLowerCase()
   if (["allergen", "anaphylax", "carcinogen", "过敏原", "过敏", "过敏性休克", "致癌", "有毒"].some(k => note.includes(k))) return "danger"
   if (["caution", "avoid", "irritat", "sensitiv", "sensitiser", "sensitize", "restrict",
@@ -1752,19 +1837,28 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   }
 
   // Risk keywords across all supported languages.
-  // EN: allergen/allergy/avoid/anaphylaxis/carcinogen/toxic | FR: allergène | ZH: 过敏原/过敏/避免/禁用/致癌/有毒 | DE: vermeiden/nicht verwenden/karzinogen
-  const dangerWords  = ["allergen", "allergène", "allergy", "avoid", "anaphylax",
-                        "carcinogen", "karzinogen", "toxic",
+  // EN: allergen/allergy/avoid/anaphylaxis/carcinogen/toxic
+  // FR: allergène/allergique/allerg(ie)/éviter/anaphylaxie/cancérogène
+  // ZH: 过敏原/过敏/避免/禁用/致癌/有毒
+  // DE: vermeiden/meiden/nicht verwenden/karzinogen/allergisch/allergie/krebserregend
+  const dangerWords  = ["allergen", "allergène", "allergique", "allerg", "allergy",
+                        "avoid", "éviter", "anaphylax", "anaphylaxie",
+                        "carcinogen", "cancérogène", "karzinogen", "krebserregend", "toxic",
                         "过敏原", "过敏", "避免", "禁用", "致癌", "有毒",
-                        "vermeiden", "nicht verwenden"]
-  // EN: irritat/sensitiv/sensitis/caution/monitor/endocrine/restrict/hyperactiv/debat |
-  // FR: peut augmenter | ZH: 刺激/敏感/注意/谨慎/失活/慎用/内分泌/限制/争议 |
-  // DE: vorsicht/reizung/kann/einschränk
-  const cautionWords = ["irritat", "sensitiv", "sensitise", "sensitize", "caution", "monitor", "deactivat",
-                        "increase skin", "may affect", "endocrine", "restrict", "hyperactiv",
-                        "debat", "peut augmenter", "kann",
+                        "vermeiden", "meiden", "nicht verwenden",
+                        "allergisch", "allergie"]
+  // EN: irritat/sensitiv/sensitis/caution/monitor/endocrine/restrict/hyperactiv/debat
+  // FR: irritant/sensibilis/prudence/endocrinien/perturbateur/peut augmenter
+  // ZH: 刺激/敏感/注意/谨慎/失活/慎用/内分泌/限制/争议
+  // DE: vorsicht/reizung/sensibilis/endokrin/einschränk/kann
+  const cautionWords = ["irritat", "sensitiv", "sensitise", "sensitize", "sensibilis",
+                        "caution", "prudence", "monitor", "deactivat",
+                        "increase skin", "may affect", "endocrine", "endocrinien", "endokrin",
+                        "restrict", "hyperactiv", "debat",
+                        "perturbateur", "peut augmenter", "kann",
                         "刺激", "敏感", "注意", "谨慎", "失活", "慎用", "内分泌", "限制", "争议",
-                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen", "einschränk"]
+                        "vorsicht", "reizung", "hautreizung", "nicht empfohlen", "einschränk",
+                        "vorsichtig"]
 
   filteredLines.slice(startIdx).forEach(line => {
     // Expected format: "name: [Category] detail text"
@@ -1796,8 +1890,8 @@ function displayAIAnalysis(message, rawLines, options = {}) {
       else if (localRisk === "caution" && riskClass === "safe") riskClass = "caution"
 
       let catClass = "general"
-      if(/food|aliment|lebensmittel|食品/i.test(catLower)) catClass = "food"
-      else if(/skin|soin|haut|护肤/i.test(catLower))       catClass = "skincare"
+      if(/food|aliment|lebensmittel|nahrung|nourriture|食品|食物/i.test(catLower)) catClass = "food"
+      else if(/skin|soin|haut|护肤|cosmétique|kosmetik|护肤品|化妆品|皮肤/i.test(catLower)) catClass = "skincare"
 
       el.insertAdjacentHTML("beforeend", `
         <div class="ingredient-card ${riskClass}">
