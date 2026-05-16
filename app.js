@@ -247,11 +247,7 @@ const ingredientAliases = {
   "huile de tournesol": "sunflower oil",
   "extrait de thé vert": "green tea extract",
   "beurre de karité": "shea butter",
-  "aloe barbadensis": "aloe vera",
-  "retinol": "retinol",
-  "niacinamide": "niacinamide",
   // Additional German aliases
-  "retinol": "retinol",
   "jojobaöl": "jojoba oil",
   "arganöl": "argan oil",
   "kokosöl": "coconut oil",
