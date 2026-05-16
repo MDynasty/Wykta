@@ -684,7 +684,7 @@ function isLikelyIngredientToken(token = ""){
   // Single-word Latin fragments of length 3-5 are frequently OCR shreds from a
   // larger ingredient name (e.g. "RET", "NOL", "CHA"). Keep only if the token
   // is recognised by known vocabulary/aliases/local DB.
-  if (!hasCjk && !normalized.includes(" ") && /^[a-z\u00C0-\u024F]+$/iu.test(normalized) && normalized.length <= 5) {
+  if (!hasCjk && !normalized.includes(" ") && /^[a-z\u00C0-\u024F]+$/iu.test(normalized) && normalized.length >= 3 && normalized.length <= 5) {
     const isKnownShortToken =
       knownIngredients.includes(lower) ||
       Object.hasOwn(ingredientAliases, lower) ||
@@ -3596,7 +3596,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const ingredientsInput = document.getElementById("ingredients")
       const analyzeBtn = document.getElementById("analyzeBtn")
       const hasAnalysisCards = Boolean(analysisEl && analysisEl.querySelector(".ingredient-card"))
-      if (hasAnalysisCards && ingredientsInput && ingredientsInput.value.trim() && !(analyzeBtn && analyzeBtn.disabled)) {
+      if (hasAnalysisCards && ingredientsInput && ingredientsInput.value.trim() && analyzeBtn && !analyzeBtn.disabled) {
         analyzeIngredients().catch((err) => {
           console.error("Language switch re-analysis failed:", err)
         })
