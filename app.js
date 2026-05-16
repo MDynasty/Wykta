@@ -1768,7 +1768,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
   filteredLines.slice(startIdx).forEach(line => {
     // Expected format: "name: [Category] detail text"
-    const match = line.match(/^(.+?)[：:]\s*[\[［【]([^\]］】]+)[\]］】]\s*(.*)$/)
+    const match = line.match(/^(.+?)[：:]\s*(?:\[|［|【)([^\]\uFF3D\u3011]+)(?:\]|］|】)\s*(.*)$/)
     if(match){
       const [, name, category, detail] = match
       const normalizedName = normalizeIngredientName(name)
