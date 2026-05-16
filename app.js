@@ -666,6 +666,7 @@ function extractVocabularyMatches(text = ""){
 function isLikelyIngredientToken(token = ""){
   const normalized = sanitizeIngredientTerm(token)
   const lower = normalized.toLowerCase()
+  const hasCjk = /[\u4e00-\u9fa5]/.test(normalized)
   if(!normalized || normalized.length < 3) return false
   if(/^\d+([.,]\d+)?$/.test(normalized)) return false
   if(normalized.split(" ").length > 8) return false
@@ -680,6 +681,17 @@ function isLikelyIngredientToken(token = ""){
   // Tokens ≤ 4 chars with no vowels are almost always OCR noise or abbreviations
   // (e.g. "LS", "OP", "OI", "XRF") — reject them.
   if(normalized.length <= 4 && !/[aeiouy]/i.test(normalized)) return false
+  // Single-word Latin fragments of length 3-5 are frequently OCR shreds from a
+  // larger ingredient name (e.g. "RET", "NOL", "CHA"). Keep only if the token
+  // is recognised by known vocabulary/aliases/local DB.
+  if (!hasCjk && !normalized.includes(" ") && /^[a-z\u00C0-\u024F]+$/iu.test(normalized) && normalized.length <= 5) {
+    const isKnownShortToken =
+      knownIngredients.includes(lower) ||
+      Object.hasOwn(ingredientAliases, lower) ||
+      Object.hasOwn(localIngredientDb, lower) ||
+      extractVocabularyMatches(normalized).length > 0
+    if (!isKnownShortToken) return false
+  }
   // Tokens ≤ 4 chars that mix digits and letters (e.g. "52S", "22b") are
   // scan-code or batch-number fragments — reject them.
   if(normalized.length <= 4 && /\d/.test(normalized) && /[a-z]/i.test(normalized)) return false
@@ -691,7 +703,7 @@ function isLikelyIngredientToken(token = ""){
   const hasSingleWord = !normalized.includes(" ")
   const asciiOnly = normalized.replace(/[^a-z]/gi, "")
   // \u4e00-\u9fa5 = CJK Unified Ideographs (Chinese characters)
-  if (hasSingleWord && asciiOnly.length >= 5 && !/[\u4e00-\u9fa5]/.test(normalized)) {
+  if (hasSingleWord && asciiOnly.length >= 5 && !hasCjk) {
     const leadConsonantMatch = asciiOnly.match(/^([^aeiouy]+)/i)
     if (leadConsonantMatch) {
       const lead = leadConsonantMatch[1].toLowerCase()
@@ -707,7 +719,7 @@ function isLikelyIngredientToken(token = ""){
   // or is only 1-2 letters are almost certainly address/code fragments
   // (e.g. "LSE SBF", "BIR Raa E"). Real INCI multi-word names always have at least
   // one word with a vowel and >= 3 letters (e.g. "sodium lauryl sulfate", "aloe vera").
-  if (!hasSingleWord && !/[\u4e00-\u9fa5]/.test(normalized)) {
+  if (!hasSingleWord && !hasCjk) {
     const words = normalized.trim().split(/\s+/)
     if (words.length >= 2 && words.length <= 4) {
       const allWordsAreFiller = words.every(w => w.length <= 2 || !/[aeiouy]/i.test(w))
@@ -726,7 +738,7 @@ function isLikelyIngredientToken(token = ""){
   // when, for example, an OCR output lacks the expected heading colons.
   // NOTE: this pattern intentionally mirrors the Chinese metadata block in metadataStopRe
   // (ingredient-section.js).  Keep both in sync when adding new stop terms.
-  if (/[\u4e00-\u9fa5]/.test(normalized)) {
+  if (hasCjk) {
     if (/有限公司|股份有限公司|股份公司|合伙企业|食品生产许可证编号|卫生许可证编号|生产许可证编号|(?:产\s*品\s*的\s*)?保\s*(?:质|鲜)\s*期|储存方法\s|保存方法|净\s*含\s*量|净\s*重|规\s*格|执\s*行\s*标\s*准(?:\s*号)?|产\s*品\s*标\s*准\s*(?:代\s*号|号)|标\s*准\s*代\s*号|开封后请|开封后需|开封后立即|开封后应|见包装|喷码处|请置于阴凉|请存放于|请放置于|不受阳光直射|避免阳光直射|交叉口|本品在|本产品在|本\s*生\s*产\s*线|致\s*敏\s*原|过敏者请慎食|过敏者慎用|过敏者禁用|过敏体质者|过敏体质人群|含有过敏原|可能含有过敏原|如有不适请停用/.test(normalized)) {
       return false
     }
@@ -1731,7 +1743,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
   let startIdx = 0
 
   // First line is the section title ("Ingredient Analysis:")
-  if(filteredLines[0] && filteredLines[0].trim().endsWith(":") && !filteredLines[0].includes("[")){
+  if(filteredLines[0] && /[:：]$/.test(filteredLines[0].trim()) && !/[[\]［］【】]/.test(filteredLines[0])){
     el.insertAdjacentHTML(
       "beforeend",
       `<p class="analysis-heading">${escapeHtml(filteredLines[0])}</p>`
@@ -1756,7 +1768,7 @@ function displayAIAnalysis(message, rawLines, options = {}) {
 
   filteredLines.slice(startIdx).forEach(line => {
     // Expected format: "name: [Category] detail text"
-    const match = line.match(/^(.+?):\s*\[([^\]]+)\]\s*(.*)$/)
+    const match = line.match(/^(.+?)[：:]\s*[\[［【]([^\]］】]+)[\]］】]\s*(.*)$/)
     if(match){
       const [, name, category, detail] = match
       const normalizedName = normalizeIngredientName(name)
@@ -3580,6 +3592,15 @@ document.addEventListener("DOMContentLoaded", () => {
       localizeInternalLinks(lang)
       const isAnnual = annualBtn ? annualBtn.classList.contains("active") : false
       setBilling(isAnnual)
+      const analysisEl = document.getElementById("ingredientResult")
+      const ingredientsInput = document.getElementById("ingredients")
+      const analyzeBtn = document.getElementById("analyzeBtn")
+      const hasAnalysisCards = Boolean(analysisEl && analysisEl.querySelector(".ingredient-card"))
+      if (hasAnalysisCards && ingredientsInput && ingredientsInput.value.trim() && !(analyzeBtn && analyzeBtn.disabled)) {
+        analyzeIngredients().catch((err) => {
+          console.error("Language switch re-analysis failed:", err)
+        })
+      }
     })
   }
 
