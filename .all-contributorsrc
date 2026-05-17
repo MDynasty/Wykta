@@ -1,0 +1,26 @@
+{
+  "projectName": "Wykta-app",
+  "projectOwner": "MDynasty",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": true,
+  "commitConvention": "angular",
+  "contributors": [
+    {
+      "login": "cursor",
+      "name": "Cursor",
+      "avatar_url": "https://avatars.githubusercontent.com/u/126759922?v=4",
+      "profile": "https://cursor.com/",
+      "contributions": [
+        "code",
+        "tool"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "badgeTemplate": "[![All Contributors](https://shields.io)](#contributors)"
+}
