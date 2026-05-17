@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Wykta – Smart Diet Ingredient Analyzer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Analyze diet ingredients with AI. Get detailed nutritional analysis in multiple languages.">
+  <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="ambient-glow"></div>
+  <div class="app">
+    <header class="hero">
+      <div class="hero-topline">
+        <span class="tagline">Cloud Nutrition Intelligence</span>
+        <span id="cloudStatusBadge" class="status-chip">Cloud status checking...</span>
+      </div>
+      <h1>Wykta</h1>
+      <p class="subtitle">Scan ingredients, detect nutrition risks, and get multilingual AI analysis powered by your live cloud backend.</p>
+      <div class="badge-group">
+        <span class="badge free">Free Tier</span>
+        <span class="badge premium premium-badge" onclick="upgradeToPremium()">Premium Available</span>
+      </div>
+      <p id="cloudStatusText" class="cloud-status-text">Waiting for cloud configuration check...</p>
+    </header>
+
+    <section class="stats-row" aria-label="Product Highlights">
+      <article class="stat-card">
+        <h3>Real-time AI</h3>
+        <p>Cloud function analysis with language-aware responses.</p>
+      </article>
+      <article class="stat-card">
+        <h3>Smart OCR</h3>
+        <p>Scan labels from camera or upload with image preprocessing.</p>
+      </article>
+      <article class="stat-card">
+        <h3>Diet Safety</h3>
+        <p>Highlights ingredient interactions and known warning patterns.</p>
+      </article>
+    </section>
+
+    <div class="pro-tip">
+      <strong>Tip:</strong> Set up your Supabase project and deployed edge function to keep analysis fully cloud-powered.
+    </div>
+
+    <section class="editor-grid">
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Analyze Ingredients</h2>
+          <p class="section-description">Paste ingredient text from a package, then run AI analysis.</p>
+        </div>
+
+        <div class="section">
+          <label for="language">Analysis Language</label>
+          <select id="language">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="zh">中文</option>
+          </select>
+        </div>
+
+        <div class="section">
+          <label for="ingredients">Ingredients List</label>
+          <textarea
+            id="ingredients"
+            placeholder="Example: Water, Sugar, Salt, Wheat Flour, Palm Oil, Eggs"
+            rows="7"
+          ></textarea>
+        </div>
+
+        <div class="button-row">
+          <button onclick="analyzeIngredients()" id="analyzeBtn" class="primary-btn">Analyze Ingredients</button>
+        </div>
+      </div>
+
+      <div class="section-card camera-section">
+        <div class="section-header">
+          <h2>Scan Food Label</h2>
+          <p class="section-description">Capture with camera or upload an image to extract ingredient text with OCR.</p>
+        </div>
+
+        <div class="camera-actions">
+          <button onclick="startScan()" id="cameraBtn" class="primary-btn">Open Camera</button>
+          <label for="imageUpload" class="upload-button">Upload Photo</label>
+          <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+        </div>
+        <div id="cameraNote" class="camera-note">Free scan/upload limit: 2 per session.</div>
+
+        <video id="camera" style="display: none;" autoplay muted></video>
+
+        <div class="capture-actions">
+          <button onclick="capture()" id="captureBtn" class="secondary-btn" style="display: none;">Capture & Analyze</button>
+          <button onclick="retryScan()" id="retryBtn" class="secondary-btn" style="display: none;">Try Again</button>
+        </div>
+
+        <canvas id="snapshot" style="display: none;"></canvas>
+      </div>
+    </section>
+
+    <section class="dashboard-grid">
+      <div class="section-card">
+        <div class="section-header">
+          <h2>AI Analysis Results</h2>
+          <p class="section-description">Cloud-generated insights for ingredient safety, additives, and warnings.</p>
+        </div>
+        <div id="ingredientResult" class="result-panel">
+          <div class="placeholder-block">
+            <div class="placeholder-icon">AI</div>
+            <p>Run an analysis to view cloud results here.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Nutritional Interactions</h2>
+          <p class="section-description">Potential conflicts and caution signals based on ingredient combinations.</p>
+        </div>
+        <div id="interactionWarnings" class="result-panel">
+          <div class="placeholder-block">
+            <div class="placeholder-icon">Alert</div>
+            <p>No obvious nutritional conflicts detected.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card ocr-card">
+      <div class="section-header">
+        <h2>Detected Ingredients</h2>
+        <p class="section-description">Review OCR text before analysis. You can edit it in the input box above.</p>
+      </div>
+
+      <div id="ocrSpinner" class="spinner" style="display: none;"></div>
+
+      <div id="ocrResult" class="ocr-result">
+        OCR results will appear here.
+        <button onclick="testOCRWithSample()" class="secondary-btn test-btn">Run OCR Test Sample</button>
+      </div>
+    </section>
+
+    <section id="upgradeCard" class="upgrade-card">
+      <h3>Upgrade to Premium</h3>
+      <p>Get unlimited scans, faster OCR, and priority insights for smarter nutrition decisions.</p>
+      <div class="upgrade-tags">
+        <span>Unlimited Scans</span>
+        <span>Advanced AI</span>
+        <span>Priority Support</span>
+      </div>
+      <button onclick="upgradeToPremium()" class="primary-btn upgrade-btn">Upgrade Now - $4.99/month</button>
+    </section>
+  </div>
+
+  <footer>
+    <p>Powered by cloud AI for practical nutrition decisions.</p>
+  </footer>
+
+  <!-- Supabase library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- App config -->
+  <script src="config.js"></script>
+
+  <!-- OCR library -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+  <!-- Application logic -->
+  <script src="app.js"></script>
+
+  <script>
+    // Add loading state to button
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const originalAnalyzeText = analyzeBtn.textContent;
+
+    // Override analyzeIngredients to add loading
+    const originalAnalyzeIngredients = window.analyzeIngredients;
+    window.analyzeIngredients = async function() {
+      analyzeBtn.innerHTML = '<span class="loading"></span>Analyzing...';
+      analyzeBtn.disabled = true;
+
+      try {
+        await originalAnalyzeIngredients();
+      } finally {
+        analyzeBtn.innerHTML = originalAnalyzeText;
+        analyzeBtn.disabled = false;
+      }
+    };
+
+    // Camera functionality is handled in app.js
+  </script>
+</body>
+</html>
