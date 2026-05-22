@@ -1,0 +1,226 @@
+You are helping fix bugs and develop features in Wykta, a smart ingredient analyzer web app using Cursor IDE.
+
+## 🎯 Project Context
+
+**Project**: Wykta - Smart Diet & Skincare Ingredient Analyzer
+**Description**: Multi-language app that scans food/skincare labels via camera/upload, extracts ingredients with OCR (Tesseract.js), and provides AI-powered nutritional/ingredient analysis.
+
+**Tech Stack**:
+- Frontend: HTML5, CSS3, JavaScript (81% JS, 10% CSS, 8% HTML)
+- OCR: Tesseract.js v4
+- Backend: Supabase Edge Functions (Deno)
+- Cloud: Supabase (database, auth, edge functions)
+- Languages: English, French, German, Chinese
+
+**Key Files**:
+- `app.js` (1725 lines) - Main logic, OCR, UI, ingredient extraction
+- `index.html` (195 lines) - UI structure
+- `style.css` (536 lines) - Styling, responsive design
+- `wykta-backend.js` - Supabase Edge Function for AI analysis
+- `config.js` - Supabase credentials (git-ignored)
+
+---
+
+## 🐛 Critical Bugs to Fix
+
+### Bug #1: Race Condition in handleFileUpload
+**File**: `app.js` lines 1655-1724
+**Issue**: `event.target.value = ''` resets AFTER async runOCR() completes. If user uploads same file twice, second upload won't trigger change event.
+**Fix**: Reset before async operations
+```javascript
+// Reset FIRST
+event.target.value = ''
+
+try {
+  // Then do async work
+  await runOCR(canvas)
+} catch (err) {
+  // error handling
+}
+```
+
+### Bug #2: Memory Leak in startScan
+**File**: `app.js` lines 1028-1097
+**Issue**: Global `stream` variable accumulates old tracks if startScan() called multiple times.
+**Fix**: Stop existing stream before starting new one
+```javascript
+if (stream) {
+  stream.getTracks().forEach(track => track.stop())
+}
+// Then start new stream
+```
+
+### Bug #3: Missing OCR Language Support Handling
+**File**: `app.js` lines 1295-1302
+**Issue**: Unsupported languages silently default to 'eng'. User sees no warning.
+**Fix**: Add console warning, validate language support
+```javascript
+if (!ocrLanguageMap[selectedLanguage]) {
+  console.warn(`Language "${selectedLanguage}" not supported for OCR`)
+}
+```
+
+### Bug #4: XSS Vulnerability in displayAIAnalysis
+**File**: `app.js` lines 858-879
+**Issue**: AI message uses `insertAdjacentHTML()` without escaping. API response could inject malicious HTML.
+**Fix**: Escape message before inserting
+```javascript
+if(message){
+  el.insertAdjacentHTML(
+    "beforeend",
+    `<div class="ai-message">${escapeHtml(message)}</div>`  // ← ADD escapeHtml
+  )
+}
+```
+
+### Bug #5: Missing Error Handling for Supabase Failures
+**File**: `app.js` lines 330-349, 885-943
+**Issue**: Supabase errors silently log to console. UI never notifies user that save/analysis failed.
+**Fix**: Show user-facing error toast notifications
+```javascript
+catch(err){
+  console.error("Supabase error:", err)
+  showSuccessMessage(`❌ Error: ${err.message}`, 'error')  // ← Add UI notification
+}
+```
+
+---
+
+## ✅ When Fixing Bugs
+
+1. **Maintain backward compatibility** - Don't break existing features
+2. **Test all languages** - EN, FR, DE, ZH support must work
+3. **Keep OCR pipeline** - Image preprocessing (grayscale, contrast, sharpening) must remain intact
+4. **Supabase fallback** - If Supabase unavailable, local database analysis must still work
+5. **Console logging** - Add debug logs for troubleshooting
+6. **Code style** - Follow existing code patterns (camelCase, async/await, consistent formatting)
+
+---
+
+## 📋 Next Phase Features (After Bugs Fixed)
+
+### Phase 2: User Experience Enhancements
+- **Dark Mode**: Toggle in header, save preference to localStorage
+- **Analysis History**: Store last 10 scans locally
+- **Favorites**: Bookmark frequent ingredients
+- **Export**: Save analysis as PDF or JSON
+
+### Phase 3: Advanced Features
+- **Allergen Management**: User sets allergens, auto-flag in analysis
+- **Diet Preferences**: Vegan, gluten-free, keto, etc.
+- **Ingredient Substitutions**: Suggest healthier alternatives
+- **Nutrition Calculator**: Estimated macro breakdown
+
+---
+
+## 🔍 Code Analysis Guidelines
+
+When analyzing code:
+- **Understand multi-file dependencies** - app.js uses functions from index.html attributes
+- **Check language support** - All strings have i18n equivalents for EN, FR, DE, ZH
+- **Validate async chains** - Promises and await sequences
+- **Memory management** - Check for leak patterns (globals, event listeners, streams)
+- **Error boundaries** - All try-catch blocks have proper fallbacks
+
+---
+
+## 🚀 Development Workflow
+
+1. **Create feature branch** from main: `fix/bug-name` or `feature/feature-name`
+2. **Make focused changes** - One bug/feature per branch
+3. **Test locally** - Open index.html in browser, test all languages
+4. **Check console** - No errors in DevTools console (F12)
+5. **Commit with conventional messages**:
+   - `fix: resolve race condition in handleFileUpload`
+   - `feat: add dark mode toggle`
+   - `docs: update README with setup instructions`
+6. **Create PR** - Link to GitHub issue
+7. **Review before merge** - Check all changes
+
+---
+
+## 📝 File Structure Reference
+
+```
+Wykta/
+├── index.html          # UI structure
+├── app.js              # Main logic (OCR, analysis, UI handlers)
+├── style.css           # Styling
+├── wykta-backend.js    # Supabase Edge Function (Deno)
+├── config.example.js   # Configuration template
+├── .cursorrules        # This file
+├── README.md           # Documentation
+└── DATABASE_SETUP.md   # Supabase setup guide
+```
+
+---
+
+## 🎯 Cursor Commands Reference
+
+```bash
+# Analyze codebase
+@codebase what bugs exist in app.js?
+
+# Fix specific issue
+@codebase fix the race condition in handleFileUpload function
+
+# Multi-file refactoring
+@codebase update app.js, index.html, and style.css to add dark mode
+
+# Understand patterns
+@codebase explain how the ingredient extraction pipeline works
+
+# Generate tests
+@codebase write unit tests for extractIngredients function
+
+# Search codebase
+@codebase find all uses of supabaseClient throughout the code
+```
+
+---
+
+## 💡 Tips for Success
+
+- **Start with Bug #5** (Supabase errors) - Affects user experience most
+- **Then Bug #1** (race condition) - Critical for UX stability  
+- **Then Bug #4** (XSS) - Security fix
+- **Then Bug #2** (memory leak) - Performance
+- **Then Bug #3** (language handling) - UX polish
+
+- **Test each fix individually** in browser before moving to next
+- **Use browser DevTools (F12)** to verify console logs are clean
+- **Check all 4 languages** at least once per fix
+- **Keep the Supabase fallback working** - test offline mode
+
+---
+
+## ⚡ Quick Commands to Get Started
+
+```bash
+# Clone and setup
+git clone https://github.com/MDynasty/Wykta.git
+cd Wykta
+
+# Create feature branch for first bug fix
+git checkout -b fix/supabase-error-handling
+
+# Open in Cursor
+cursor .
+
+# After fixes, push
+git add -A
+git commit -m "fix: add error notifications for Supabase failures"
+git push origin fix/supabase-error-handling
+
+# Create PR on GitHub
+```
+
+---
+
+## 📞 Reference Links
+
+- **Project Repo**: https://github.com/MDynasty/Wykta
+- **Cursor IDE**: https://cursor.com
+- **Tesseract.js Docs**: https://github.com/naptha/tesseract.js
+- **Supabase Docs**: https://supabase.com/docs
+- **JavaScript Async/Await**: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
