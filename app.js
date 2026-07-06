@@ -246,6 +246,7 @@ let analysisMode = 'ai'
 
 function injectAnalysisModeToggle() {
   const resultEl = document.getElementById('ingredientResult')
+  // Guard: only inject once; the toggle persists across analyses
   if (!resultEl || document.getElementById('analysisModeToggle')) return
 
   const wrapper = document.createElement('div')
@@ -278,9 +279,14 @@ function injectAnalysisModeToggle() {
   btnAI.addEventListener('click', () => { analysisMode = 'ai'; applyModeStyles() })
   btnLocal.addEventListener('click', () => { analysisMode = 'local'; applyModeStyles() })
 
+  const hint = document.createElement('span')
+  hint.style.cssText = 'font-size:0.75rem;color:#6b7280;'
+  hint.textContent = '(applies on next scan)'
+
   wrapper.appendChild(label)
   wrapper.appendChild(btnAI)
   wrapper.appendChild(btnLocal)
+  wrapper.appendChild(hint)
 
   resultEl.parentNode.insertBefore(wrapper, resultEl)
   applyModeStyles()
@@ -1030,7 +1036,7 @@ function appendSafetySummary(ingredients) {
 
   if (warnings.length) {
     summaryLines.push(`<div style="margin-top:8px;font-weight:600;">🔴 Flagged ingredients:</div>`)
-    warnings.forEach(({ data }) => {
+    warnings.forEach(({ name, data }) => {
       const note = data.warning ? ` — ${escapeHtml(data.warning)}` : ''
       summaryLines.push(`<div style="margin-left:8px;">⚠️ ${escapeHtml(data.en)}${note}</div>`)
     })
@@ -1558,7 +1564,7 @@ CLEAN INDIVIDUAL INGREDIENT LINE
 ----------------------- */
 function cleanIngredientLine(line) {
   return line
-    .replace(/\(([^)]*)\)/g, ' $1 ') // Keep content inside parentheses (sub-ingredients), just remove the parens
+    .replace(/\s*\(([^)]*)\)\s*/g, ' $1 ') // Keep content inside parentheses (sub-ingredients), just remove the parens
     .replace(/^\d+\.?\s*/, '') // Remove leading numbers (1. Water, etc.)
     .replace(/\d+g|\d+mg|\d+kg|\d+ml|\d+l|\d+oz|\d+lb/g, '') // Remove measurements
     .replace(/%\s*/g, '') // Remove percentages
