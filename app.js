@@ -256,25 +256,23 @@ function injectAnalysisModeToggle() {
   label.textContent = 'Analysis mode:'
   label.style.cssText = 'font-size:0.85rem;font-weight:600;'
 
+  const BASE_STYLE     = 'padding:4px 12px;border-radius:20px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;'
+  const ACTIVE_STYLE   = BASE_STYLE + 'background:#4f46e5;color:#fff;border:2px solid #4f46e5;'
+  const INACTIVE_STYLE = BASE_STYLE + 'background:transparent;color:inherit;border:2px solid #d1d5db;'
+
   const btnAI = document.createElement('button')
   btnAI.id = 'modeBtn_ai'
   btnAI.textContent = '🤖 AI'
   btnAI.title = 'Use cloud AI (with local safety overlay)'
-  btnAI.style.cssText = 'padding:4px 12px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:0.85rem;transition:all 0.2s;'
 
   const btnLocal = document.createElement('button')
   btnLocal.id = 'modeBtn_local'
   btnLocal.textContent = '📊 Local DB'
   btnLocal.title = 'Use built-in ingredient database only'
-  btnLocal.style.cssText = 'padding:4px 12px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:0.85rem;transition:all 0.2s;'
 
   function applyModeStyles() {
-    const activeStyle = 'background:#4f46e5;color:#fff;border-color:#4f46e5;'
-    const inactiveStyle = 'background:transparent;color:inherit;border-color:#d1d5db;'
-    btnAI.style.cssText = btnAI.style.cssText.replace(/background:[^;]+;color:[^;]+;border-color:[^;]+;/, '')
-    btnLocal.style.cssText = btnLocal.style.cssText.replace(/background:[^;]+;color:[^;]+;border-color:[^;]+;/, '')
-    btnAI.setAttribute('style', `padding:4px 12px;border-radius:20px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;${analysisMode === 'ai' ? activeStyle : inactiveStyle}`)
-    btnLocal.setAttribute('style', `padding:4px 12px;border-radius:20px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;${analysisMode === 'local' ? activeStyle : inactiveStyle}`)
+    btnAI.style.cssText    = analysisMode === 'ai'    ? ACTIVE_STYLE : INACTIVE_STYLE
+    btnLocal.style.cssText = analysisMode === 'local' ? ACTIVE_STYLE : INACTIVE_STYLE
   }
 
   btnAI.addEventListener('click', () => { analysisMode = 'ai'; applyModeStyles() })
@@ -845,10 +843,11 @@ function buildIngredientSearchPattern() {
     .filter((term) => term && term.length > 1 && !ingredientNoiseWords.has(term))
     .sort((left, right) => right.length - left.length)
 
-  // Wrap each term with word-boundary lookarounds so "oil" won't match inside "broil"
+  // Wrap each term with word-boundary lookarounds so "oil" won't match inside "broil".
+  // Include A-Z to handle any uppercase that survives normalization.
   ingredientSearchPattern = terms.map((term) => {
     const escaped = escapeRegex(term)
-    return `(?<![a-z0-9])${escaped}(?![a-z0-9])`
+    return `(?<![a-zA-Z0-9])${escaped}(?![a-zA-Z0-9])`
   }).join('|')
   return ingredientSearchPattern
 }
@@ -1526,8 +1525,8 @@ function isNonIngredientLine(line) {
       lower.includes('total fat') || lower.includes('saturated fat') ||
       lower.includes('total carbohydrate') ||
       lower.includes('dietary fiber') ||
-      lower.match(/\bsodium\s+\d/) || lower.match(/\bcalcium\s+\d/) ||
-      lower.match(/\biron\s+\d/) || lower.match(/\bpotassium\s+\d/)) {
+      lower.match(/\bsodium\s+\d+/) || lower.match(/\bcalcium\s+\d+/) ||
+      lower.match(/\biron\s+\d+/) || lower.match(/\bpotassium\s+\d+/)) {
     return true;
   }
 
