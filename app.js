@@ -234,7 +234,59 @@ function testOCRWithSample() {
 document.addEventListener('DOMContentLoaded', () => {
   updatePremiumUI()
   updateCloudStatusUI()
+  injectAnalysisModeToggle()
 })
+
+/* -----------------------
+ANALYSIS MODE TOGGLE
+----------------------- */
+
+// 'ai' = cloud AI (with safety summary overlay); 'local' = local database only
+let analysisMode = 'ai'
+
+function injectAnalysisModeToggle() {
+  const resultEl = document.getElementById('ingredientResult')
+  if (!resultEl || document.getElementById('analysisModeToggle')) return
+
+  const wrapper = document.createElement('div')
+  wrapper.id = 'analysisModeToggle'
+  wrapper.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:12px;'
+
+  const label = document.createElement('span')
+  label.textContent = 'Analysis mode:'
+  label.style.cssText = 'font-size:0.85rem;font-weight:600;'
+
+  const btnAI = document.createElement('button')
+  btnAI.id = 'modeBtn_ai'
+  btnAI.textContent = '🤖 AI'
+  btnAI.title = 'Use cloud AI (with local safety overlay)'
+  btnAI.style.cssText = 'padding:4px 12px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:0.85rem;transition:all 0.2s;'
+
+  const btnLocal = document.createElement('button')
+  btnLocal.id = 'modeBtn_local'
+  btnLocal.textContent = '📊 Local DB'
+  btnLocal.title = 'Use built-in ingredient database only'
+  btnLocal.style.cssText = 'padding:4px 12px;border-radius:20px;border:2px solid transparent;cursor:pointer;font-size:0.85rem;transition:all 0.2s;'
+
+  function applyModeStyles() {
+    const activeStyle = 'background:#4f46e5;color:#fff;border-color:#4f46e5;'
+    const inactiveStyle = 'background:transparent;color:inherit;border-color:#d1d5db;'
+    btnAI.style.cssText = btnAI.style.cssText.replace(/background:[^;]+;color:[^;]+;border-color:[^;]+;/, '')
+    btnLocal.style.cssText = btnLocal.style.cssText.replace(/background:[^;]+;color:[^;]+;border-color:[^;]+;/, '')
+    btnAI.setAttribute('style', `padding:4px 12px;border-radius:20px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;${analysisMode === 'ai' ? activeStyle : inactiveStyle}`)
+    btnLocal.setAttribute('style', `padding:4px 12px;border-radius:20px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;${analysisMode === 'local' ? activeStyle : inactiveStyle}`)
+  }
+
+  btnAI.addEventListener('click', () => { analysisMode = 'ai'; applyModeStyles() })
+  btnLocal.addEventListener('click', () => { analysisMode = 'local'; applyModeStyles() })
+
+  wrapper.appendChild(label)
+  wrapper.appendChild(btnAI)
+  wrapper.appendChild(btnLocal)
+
+  resultEl.parentNode.insertBefore(wrapper, resultEl)
+  applyModeStyles()
+}
 
 
 function extractIngredients(text) {
@@ -793,7 +845,11 @@ function buildIngredientSearchPattern() {
     .filter((term) => term && term.length > 1 && !ingredientNoiseWords.has(term))
     .sort((left, right) => right.length - left.length)
 
-  ingredientSearchPattern = terms.map(escapeRegex).join('|')
+  // Wrap each term with word-boundary lookarounds so "oil" won't match inside "broil"
+  ingredientSearchPattern = terms.map((term) => {
+    const escaped = escapeRegex(term)
+    return `(?<![a-z0-9])${escaped}(?![a-z0-9])`
+  }).join('|')
   return ingredientSearchPattern
 }
 
@@ -939,11 +995,56 @@ async function analyzeWithAI(ingredients){
 
     const lines = data.analysis.split("\n")
     displayAIAnalysis("", lines)
+    appendSafetySummary(ingredients)
 
   } catch(err){
     console.error("AI function error:", err)
     analyzeWithLocalDatabase(ingredients)
   }
+}
+
+/* Build and append a compact safety-level summary from the local database below
+   whatever content is already in ingredientResult (used after AI analysis). */
+function appendSafetySummary(ingredients) {
+  const el = document.getElementById("ingredientResult")
+  if (!el) return
+
+  const ingredientList = Array.isArray(ingredients) ? ingredients : extractIngredients(ingredients)
+  if (!ingredientList.length) return
+
+  const safe = [], warnings = [], unknown = []
+  for (const ing of ingredientList) {
+    const data = searchIngredientDatabase(ing)
+    if (data) {
+      if (data.safe === false) warnings.push({ name: ing, data })
+      else safe.push({ name: ing, data })
+    } else {
+      unknown.push(ing)
+    }
+  }
+
+  const summaryLines = [
+    `<hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb;">`,
+    `<div style="font-weight:600;margin-bottom:6px;">📊 Safety Overview (Local DB)</div>`,
+    `<div>✅ ${safe.length} Safe &nbsp;⚠️ ${warnings.length} Warnings &nbsp;❓ ${unknown.length} Unknown</div>`,
+  ]
+
+  if (warnings.length) {
+    summaryLines.push(`<div style="margin-top:8px;font-weight:600;">🔴 Flagged ingredients:</div>`)
+    warnings.forEach(({ data }) => {
+      const note = data.warning ? ` — ${escapeHtml(data.warning)}` : ''
+      summaryLines.push(`<div style="margin-left:8px;">⚠️ ${escapeHtml(data.en)}${note}</div>`)
+    })
+  }
+
+  if (unknown.length) {
+    const preview = unknown.slice(0, 8).map(escapeHtml).join(', ')
+    const extra = unknown.length > 8 ? ` … +${unknown.length - 8} more` : ''
+    summaryLines.push(`<div style="margin-top:8px;font-weight:600;">❓ Not in local DB:</div>`)
+    summaryLines.push(`<div style="margin-left:8px;font-size:0.85rem;">${preview}${extra}</div>`)
+  }
+
+  el.insertAdjacentHTML('beforeend', `<div class="result-card" style="margin-top:8px;">${summaryLines.join('')}</div>`)
 }
 
 /* Local Database Analysis (Fallback when AI/Supabase unavailable) */
@@ -1019,7 +1120,12 @@ async function analyzeIngredients(){
   displayInteractions(warnings)
 
   await saveResult(text, warnings.join("; "))
-  await analyzeWithAI(ingredients)
+
+  if (analysisMode === 'local') {
+    analyzeWithLocalDatabase(ingredients)
+  } else {
+    await analyzeWithAI(ingredients)
+  }
 }
 
 
@@ -1369,9 +1475,17 @@ function processExtractedTextAdvanced(text) {
   const lines = processed.split('\n');
   const ingredientLines = [];
 
+  // Regex to strip ingredient-list header labels from the start of a line
+  const headerPrefixRe = /^(?:ingredients?|ingrédients?|zutaten|配料|成分|含有)\s*[:\-]?\s*/i;
+
   for (const line of lines) {
-    const trimmed = line.trim();
+    let trimmed = line.trim();
     if (trimmed.length < 2) continue; // Skip empty lines
+
+    // Strip header prefix (e.g. "INGREDIENTS:") so the ingredients on that
+    // line are kept rather than the whole line being discarded.
+    trimmed = trimmed.replace(headerPrefixRe, '');
+    if (trimmed.length < 2) continue;
 
     // Skip obvious non-ingredient lines
     if (isNonIngredientLine(trimmed)) continue;
@@ -1406,15 +1520,14 @@ CHECK IF LINE IS NON-INGREDIENT CONTENT
 function isNonIngredientLine(line) {
   const lower = line.toLowerCase();
 
-  // Skip nutritional info headers
+  // Skip nutritional info headers — use specific multi-word phrases to avoid
+  // accidentally dropping ingredient lines that contain words like "sodium" or "iron"
   if (lower.includes('serving size') || lower.includes('calories') ||
       lower.includes('total fat') || lower.includes('saturated fat') ||
-      lower.includes('trans fat') || lower.includes('cholesterol') ||
-      lower.includes('sodium') || lower.includes('total carbohydrate') ||
-      lower.includes('dietary fiber') || lower.includes('sugars') ||
-      lower.includes('protein') || lower.includes('vitamin') ||
-      lower.includes('mineral') || lower.includes('calcium') ||
-      lower.includes('iron') || lower.includes('potassium')) {
+      lower.includes('total carbohydrate') ||
+      lower.includes('dietary fiber') ||
+      lower.match(/\bsodium\s+\d/) || lower.match(/\bcalcium\s+\d/) ||
+      lower.match(/\biron\s+\d/) || lower.match(/\bpotassium\s+\d/)) {
     return true;
   }
 
@@ -1422,10 +1535,8 @@ function isNonIngredientLine(line) {
   if (lower.includes('distributed by') || lower.includes('manufactured by') ||
       lower.includes('product of') || lower.includes('best by') ||
       lower.includes('use by') || lower.includes('keep refrigerated') ||
-      lower.includes('net wt') || lower.includes('ingredients:') ||
+      lower.includes('net wt') ||
       lower.includes('contains:') || lower.includes('may contain') ||
-      lower.includes('ingredients') || lower.includes('ingrédients') ||
-      lower.includes('zutaten') || lower.includes('配料') || lower.includes('成分') ||
       lower.includes('allergen') || lower.match(/^\d+%$/)) {
     return true;
   }
@@ -1448,7 +1559,7 @@ CLEAN INDIVIDUAL INGREDIENT LINE
 ----------------------- */
 function cleanIngredientLine(line) {
   return line
-    .replace(/\([^)]*\)/g, '') // Remove parentheses (weights, etc.)
+    .replace(/\(([^)]*)\)/g, ' $1 ') // Keep content inside parentheses (sub-ingredients), just remove the parens
     .replace(/^\d+\.?\s*/, '') // Remove leading numbers (1. Water, etc.)
     .replace(/\d+g|\d+mg|\d+kg|\d+ml|\d+l|\d+oz|\d+lb/g, '') // Remove measurements
     .replace(/%\s*/g, '') // Remove percentages
