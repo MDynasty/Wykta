@@ -2,6 +2,7 @@
   "appId": "com.wykta.app",
   "appName": "Wykta",
   "webDir": ".",
+  "version": "1.0.0",
   "plugins": {
     "Camera": {
       "presentationStyle": "fullscreen"
@@ -16,5 +17,8 @@
   },
   "android": {
     "backgroundColor": "#f3f8f4"
+  },
+  "server": {
+    "androidScheme": "https"
   }
 }

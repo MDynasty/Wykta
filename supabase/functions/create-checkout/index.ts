@@ -202,13 +202,7 @@ serve(async (req) => {
   } catch (err) {
     console.error("create-checkout error:", err)
     return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    )
-  }
-})
-
-// Stripe's API uses application/x-www-form-urlencoded with nested dot-notation keys.
+      JSON.stringify({ error: err instanceof Error ? err.message : "Internal server error" }),
 function encodeStripeForm(obj: Record<string, unknown>, prefix = ""): string {
   const parts: string[] = []
   for (const [k, v] of Object.entries(obj)) {

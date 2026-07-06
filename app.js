@@ -41,6 +41,44 @@ function getCapacitorCamera() {
     : null
 }
 
+/* -----------------------
+CAPACITOR PREFERENCES (persistent storage)
+On iOS/Android, WKWebView can evict localStorage under memory pressure.
+@capacitor/preferences writes to NSUserDefaults (iOS) / SharedPreferences
+(Android) which persists reliably.  On web, falls back to localStorage.
+----------------------- */
+function getCapacitorPreferences() {
+  return window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Preferences
+    ? window.Capacitor.Plugins.Preferences
+    : null
+}
+
+async function storageGet(key) {
+  try {
+    const prefs = getCapacitorPreferences()
+    if (prefs) {
+      const result = await prefs.get({ key })
+      return result && result.value !== null ? result.value : null
+    }
+    return localStorage.getItem(key)
+  } catch (e) {
+    try { return localStorage.getItem(key) } catch (_) { return null }
+  }
+}
+
+async function storageSet(key, value) {
+  try {
+    const prefs = getCapacitorPreferences()
+    if (prefs) {
+      await prefs.set({ key, value: String(value) })
+      return
+    }
+    localStorage.setItem(key, value)
+  } catch (e) {
+    try { localStorage.setItem(key, value) } catch (_) {}
+  }
+}
+
 function trackEvent(category, action, label) {
   try {
     if (window.gtag) window.gtag('event', action, { event_category: category, event_label: label })
@@ -795,13 +833,14 @@ async function saveResult(input, result){
 
 /* -----------------------
 ANONYMOUS SESSION ID
-Returns a stable anonymous UUID stored in localStorage.
-No PII is attached; used only for grouping scan_events from the same session.
+Returns a stable anonymous UUID stored via Capacitor Preferences (native) or
+localStorage (web).  No PII is attached; used only for grouping scan_events
+from the same session.
 ----------------------- */
 
-function getOrCreateSessionId() {
+async function getOrCreateSessionId() {
   try {
-    let id = localStorage.getItem("wykta_session_id")
+    let id = await storageGet("wykta_session_id")
     if (!id) {
       if (typeof crypto !== "undefined" && crypto.randomUUID) {
         id = crypto.randomUUID()
@@ -817,7 +856,7 @@ function getOrCreateSessionId() {
           .map(seg => Array.from(seg).map(x => x.toString(16).padStart(2, "0")).join(""))
           .join("-")
       }
-      localStorage.setItem("wykta_session_id", id)
+      await storageSet("wykta_session_id", id)
     }
     return id
   } catch (e) {
@@ -834,7 +873,7 @@ No ingredient text or user identity is stored.
 async function recordScanEvent({ ingredientCount, inputLang, analysisSource, warningCount, allergenCount, lang }) {
   if (!supabaseClient) return
   try {
-    const sessionId = getOrCreateSessionId()
+    const sessionId = await getOrCreateSessionId()
     const { error } = await supabaseClient
       .from("scan_events")
       .insert([{
@@ -2140,7 +2179,7 @@ async function analyzeWithAI(ingredients, analysisLang = currentLanguage(), disp
             lang: langLocale,
             targetLanguage: langName,
             promptLanguage: langName,
-            sessionId: getOrCreateSessionId()
+            sessionId: await getOrCreateSessionId()
           }
         }
       )
@@ -3059,12 +3098,13 @@ async function callAIVisionOCR(canvas) {
   try {
     const resized = resizeCanvasForBackend(canvas)
     const imageBase64 = resized.toDataURL("image/jpeg", AI_OCR_JPEG_QUALITY).split(",")[1]
+    const sessionId = await getOrCreateSessionId()
     const invokePromise = supabaseClient.functions.invoke("wykta-backend", {
       body: {
         action: "ocrImage",
         imageBase64,
         lang: currentLanguage(),
-        sessionId: getOrCreateSessionId(),
+        sessionId,
       },
     })
     const timeoutPromise = new Promise((_, reject) =>
@@ -3339,7 +3379,7 @@ function syncCurrentUrlLanguage(lang = currentLanguage()) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // UTM parameter capture + retention
   ;(function captureUTM() {
     const p = new URLSearchParams(window.location.search)
@@ -3367,17 +3407,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const languageSelect = document.getElementById("language")
   const urlParams = new URLSearchParams(window.location.search)
   const urlLangRaw = urlParams.get("lang")
-  const storedLangRaw = localStorage.getItem("wykta_lang")
+  const storedLangRaw = await storageGet("wykta_lang")
   const initialLang = normalizeSupportedLanguage(urlLangRaw || storedLangRaw || navigator.language || "en")
   if (languageSelect) languageSelect.value = initialLang
-  localStorage.setItem("wykta_lang", initialLang)
+  await storageSet("wykta_lang", initialLang)
   localizeStaticUI()
   syncCurrentUrlLanguage(initialLang)
   localizeInternalLinks(initialLang)
   if(languageSelect){
-    languageSelect.addEventListener("change", () => {
+    languageSelect.addEventListener("change", async () => {
       const lang = normalizeSupportedLanguage(currentLanguage())
-      localStorage.setItem("wykta_lang", lang)
+      await storageSet("wykta_lang", lang)
       localizeStaticUI()
       syncCurrentUrlLanguage(lang)
       localizeInternalLinks(lang)
