@@ -1,0 +1,9 @@
+{
+  "name": "wykta",
+  "private": true,
+  "scripts": {
+    "build": "echo \"No build step required for Cloudflare Workers deployment.\"",
+    "lint": "echo \"No lint step configured.\"",
+    "test": "echo \"No test suite configured.\""
+  }
+}
