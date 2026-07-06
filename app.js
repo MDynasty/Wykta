@@ -9,14 +9,18 @@ const hasSupabaseConfig =
   typeof supabaseKey !== "undefined" &&
   supabaseKey.trim().length > 0
 
-const { createClient } = supabase
+const hasSupabaseSdk =
+  typeof supabase !== "undefined" &&
+  typeof supabase.createClient === "function"
 
-const supabaseClient = hasSupabaseConfig
-  ? createClient(supabaseUrl, supabaseKey)
+const supabaseClient = hasSupabaseConfig && hasSupabaseSdk
+  ? supabase.createClient(supabaseUrl, supabaseKey)
   : null
 
 if (supabaseClient) {
   console.log("Supabase connected")
+} else if (!hasSupabaseSdk) {
+  console.warn("Supabase SDK failed to load. Falling back to local analysis mode.")
 } else {
   console.warn("Supabase client is not configured. Create config.js from config.example.js to enable AI and saving.")
 }
