@@ -34,12 +34,19 @@ let isPremium = localStorage.getItem('wykta_premium') === 'true'
 const FREE_SCAN_LIMIT = 5
 const FREE_SCAN_STORAGE_KEY = 'wykta_free_scan_count'
 const TRIAL_EXPIRED_VIEW_ID = 'trialExpiredView'
-let freeScanCount = Number.parseInt(localStorage.getItem(FREE_SCAN_STORAGE_KEY) || '0', 10)
 
-if (Number.isNaN(freeScanCount) || freeScanCount < 0) {
-  freeScanCount = 0
-  localStorage.setItem(FREE_SCAN_STORAGE_KEY, '0')
+function getValidatedFreeScanCount() {
+  const storedCount = Number.parseInt(localStorage.getItem(FREE_SCAN_STORAGE_KEY) || '0', 10)
+
+  if (Number.isNaN(storedCount) || storedCount < 0) {
+    localStorage.setItem(FREE_SCAN_STORAGE_KEY, '0')
+    return 0
+  }
+
+  return storedCount
 }
+
+let freeScanCount = getValidatedFreeScanCount()
 
 function persistFreeScanCount() {
   localStorage.setItem(FREE_SCAN_STORAGE_KEY, String(freeScanCount))
@@ -62,7 +69,7 @@ function showTrialExpiredView() {
     expiredView.innerHTML = `
       <div class="trial-expired-card">
         <span class="trial-expired-kicker">Starter free tier complete</span>
-        <h1>Your 5 free scans are used up</h1>
+        <h1>Your ${FREE_SCAN_LIMIT} free scans are used up</h1>
         <p>
           Upgrade to Premium to keep scanning ingredient labels with unlimited camera and photo uploads.
         </p>
@@ -126,7 +133,7 @@ function updatePremiumUI() {
     }
     if (cameraNote) {
       if (freeScanCount >= FREE_SCAN_LIMIT) {
-        cameraNote.innerText = 'Your 5 free starter scans are used up. Upgrade to Premium for unlimited scanning.'
+        cameraNote.innerText = `Your ${FREE_SCAN_LIMIT} free starter scans are used up. Upgrade to Premium for unlimited scanning.`
       } else {
         cameraNote.innerText = `Free starter scans/uploads remaining: ${FREE_SCAN_LIMIT - freeScanCount} of ${FREE_SCAN_LIMIT}.`
       }
