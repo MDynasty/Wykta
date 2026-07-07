@@ -177,14 +177,15 @@ function showUpgradeModal() {
   }
 }
 
-// Show success message
-function showSuccessMessage(message) {
+// Show success message (type: 'success' | 'error')
+function showSuccessMessage(message, type) {
+  const isError = type === 'error'
   const toast = document.createElement('div')
   toast.style.cssText = `
     position: fixed;
     top: 20px;
     right: 20px;
-    background: var(--success);
+    background: ${isError ? 'var(--warn)' : 'var(--success)'};
     color: white;
     padding: 16px 24px;
     border-radius: 8px;
@@ -405,6 +406,7 @@ async function saveResult(input, result){
     console.log("Saved:", data)
   } catch(err) {
     console.error("Database save error:", err)
+    showSuccessMessage(`❌ Save failed: ${err.message}`, 'error')
   }
 }
 
@@ -929,7 +931,7 @@ function displayAIAnalysis(message, rawLines) {
   if(message){
     el.insertAdjacentHTML(
       "beforeend",
-      `<div class="ai-message">${message}</div>`
+      `<div class="ai-message">${escapeHtml(message)}</div>`
     )
   }
 
@@ -1004,6 +1006,7 @@ async function analyzeWithAI(ingredients){
 
   } catch(err){
     console.error("AI function error:", err)
+    showSuccessMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
     analyzeWithLocalDatabase(ingredients)
   }
 }
@@ -1144,6 +1147,12 @@ async function startScan(){
   if (!isPremium && freeScanCount >= FREE_SCAN_LIMIT) {
     alert(`Free scan limit reached. Upgrade to Premium for unlimited camera and upload scanning.`)
     return
+  }
+
+  // Stop any existing stream to prevent track accumulation (memory leak fix)
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop())
+    stream = null
   }
 
   try {
@@ -1413,6 +1422,9 @@ async function runOCR(canvas) {
       fr: 'fra',
       de: 'deu',
       zh: 'chi_sim'
+    }
+    if (!ocrLanguageMap[selectedLanguage]) {
+      console.warn(`Language "${selectedLanguage}" not supported for OCR. Falling back to English.`)
     }
     const ocrLanguage = ocrLanguageMap[selectedLanguage] || 'eng'
 
@@ -1793,6 +1805,9 @@ async function handleFileUpload(event) {
     return
   }
 
+  // Reset file input BEFORE async work so re-uploading the same file triggers the change event
+  event.target.value = ''
+
   try {
     // Show loading state
     document.getElementById("ocrResult").innerText = "📁 Loading image...";
@@ -1839,7 +1854,4 @@ async function handleFileUpload(event) {
     document.getElementById("ocrResult").innerText = "❌ Failed to process image. Try a different photo."
     document.getElementById("retryBtn").style.display = 'inline-block'
   }
-
-  // Reset file input
-  event.target.value = ''
 }
