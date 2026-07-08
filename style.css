@@ -49,6 +49,79 @@ body {
   line-height: 1.5;
 }
 
+body.trial-expired .ambient-glow,
+body.trial-expired .app {
+  display: none;
+}
+
+#trialExpiredView {
+  position: fixed;
+  inset: 0;
+  z-index: 5;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+body.trial-expired #trialExpiredView {
+  display: flex;
+}
+
+.trial-expired-card {
+  width: min(520px, 100%);
+  padding: 40px 32px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.trial-expired-kicker {
+  display: inline-flex;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(249, 115, 22, 0.12);
+  color: #c2410c;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.trial-expired-card h1 {
+  margin: 0 0 14px;
+  font-size: clamp(2rem, 5vw, 3rem);
+}
+
+.trial-expired-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.trial-expired-actions {
+  margin-top: 24px;
+}
+
+.trial-expired-primary {
+  border: none;
+  border-radius: 999px;
+  padding: 14px 22px;
+  background: linear-gradient(135deg, var(--secondary), #d97706);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.trial-expired-primary:hover {
+  filter: brightness(1.04);
+}
+
 .ambient-glow {
   position: fixed;
   inset: 0;

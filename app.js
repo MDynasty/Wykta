@@ -31,8 +31,80 @@ PREMIUM STATE MANAGEMENT
 
 // Check if user has premium (stored in localStorage for demo)
 let isPremium = localStorage.getItem('wykta_premium') === 'true'
-const FREE_SCAN_LIMIT = 2
-let freeScanCount = 0
+const FREE_SCAN_LIMIT = 5
+const FREE_SCAN_STORAGE_KEY = 'wykta_free_scan_count'
+const TRIAL_EXPIRED_VIEW_ID = 'trialExpiredView'
+
+function getValidatedFreeScanCount() {
+  const storedCount = Number.parseInt(localStorage.getItem(FREE_SCAN_STORAGE_KEY) || '0', 10)
+
+  if (Number.isNaN(storedCount) || storedCount < 0) {
+    localStorage.setItem(FREE_SCAN_STORAGE_KEY, '0')
+    return 0
+  }
+
+  return storedCount
+}
+
+let freeScanCount = getValidatedFreeScanCount()
+
+function persistFreeScanCount() {
+  localStorage.setItem(FREE_SCAN_STORAGE_KEY, String(freeScanCount))
+}
+
+function hasReachedFreeScanLimit() {
+  return !isPremium && freeScanCount >= FREE_SCAN_LIMIT
+}
+
+function hideTrialExpiredView() {
+  document.body.classList.remove('trial-expired')
+}
+
+function showTrialExpiredView() {
+  let expiredView = document.getElementById(TRIAL_EXPIRED_VIEW_ID)
+
+  if (!expiredView) {
+    expiredView = document.createElement('section')
+    expiredView.id = TRIAL_EXPIRED_VIEW_ID
+    expiredView.innerHTML = `
+      <div class="trial-expired-card">
+        <span class="trial-expired-kicker">Starter free tier complete</span>
+        <h1>Your ${FREE_SCAN_LIMIT} free scans are used up</h1>
+        <p>
+          Upgrade to Premium to keep scanning ingredient labels with unlimited camera and photo uploads.
+        </p>
+        <div class="trial-expired-actions">
+          <button type="button" class="trial-expired-primary" id="trialExpiredUpgradeBtn">Upgrade to Premium</button>
+        </div>
+      </div>
+    `
+    document.body.appendChild(expiredView)
+
+    const upgradeButton = expiredView.querySelector('#trialExpiredUpgradeBtn')
+    if (upgradeButton) {
+      upgradeButton.addEventListener('click', showUpgradeModal)
+    }
+  }
+
+  document.body.classList.add('trial-expired')
+}
+
+function syncFreeTrialView() {
+  if (hasReachedFreeScanLimit()) {
+    showTrialExpiredView()
+    return
+  }
+
+  hideTrialExpiredView()
+}
+
+function incrementFreeScanCount() {
+  if (isPremium) return
+
+  freeScanCount += 1
+  persistFreeScanCount()
+  updatePremiumUI()
+}
 
 // Update UI based on premium status
 function updatePremiumUI() {
@@ -61,13 +133,15 @@ function updatePremiumUI() {
     }
     if (cameraNote) {
       if (freeScanCount >= FREE_SCAN_LIMIT) {
-        cameraNote.innerText = 'Free scan/upload limit reached. Upgrade to Premium for unlimited scanning.'
+        cameraNote.innerText = `Your ${FREE_SCAN_LIMIT} free starter scans are used up. Upgrade to Premium for unlimited scanning.`
       } else {
-        cameraNote.innerText = `Free scans/uploads remaining: ${FREE_SCAN_LIMIT - freeScanCount} of ${FREE_SCAN_LIMIT} this session.`
+        cameraNote.innerText = `Free starter scans/uploads remaining: ${FREE_SCAN_LIMIT - freeScanCount} of ${FREE_SCAN_LIMIT}.`
       }
     }
     if (upgradeSection) upgradeSection.style.display = 'block'
   }
+
+  syncFreeTrialView()
 }
 
 function updateCloudStatusUI() {
@@ -1144,8 +1218,8 @@ CAMERA SCAN
 let stream
 
 async function startScan(){
-  if (!isPremium && freeScanCount >= FREE_SCAN_LIMIT) {
-    alert(`Free scan limit reached. Upgrade to Premium for unlimited camera and upload scanning.`)
+  if (hasReachedFreeScanLimit()) {
+    showTrialExpiredView()
     return
   }
 
@@ -1246,11 +1320,6 @@ async function capture(){
       stream.getTracks().forEach(track => track.stop())
       video.style.display = 'none'
       document.getElementById("captureBtn").style.display = 'none'
-    }
-
-    if (!isPremium) {
-      freeScanCount += 1
-      updatePremiumUI()
     }
 
     // Pre-process image for better OCR
@@ -1461,6 +1530,7 @@ async function runOCR(canvas) {
     document.getElementById("ingredients").value = processedText;
     document.getElementById("retryBtn").style.display = 'none';
     document.getElementById("ocrSpinner").style.display = 'none';
+    incrementFreeScanCount()
     showSuccessMessage("Ingredients extracted! Click Analyze to continue.");
 
   } catch (err) {
@@ -1785,8 +1855,8 @@ function retryScan() {
 HANDLE FILE UPLOAD
 ----------------------- */
 async function handleFileUpload(event) {
-  if (!isPremium && freeScanCount >= FREE_SCAN_LIMIT) {
-    alert(`Free scan/upload limit reached. Upgrade to Premium for unlimited camera and photo scanning.`)
+  if (hasReachedFreeScanLimit()) {
+    showTrialExpiredView()
     return
   }
 
