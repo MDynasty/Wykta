@@ -341,8 +341,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Persist and restore language preference
   const langSelect = document.getElementById('language')
   if (langSelect) {
+    const ALLOWED_LANGS = ['en', 'fr', 'de', 'zh']
     const savedLang = localStorage.getItem('wykta_language')
-    if (savedLang && langSelect.querySelector(`option[value="${savedLang}"]`)) {
+    if (savedLang && ALLOWED_LANGS.includes(savedLang)) {
       langSelect.value = savedLang
     }
     langSelect.addEventListener('change', () => {
@@ -1599,7 +1600,12 @@ async function runOCR(canvas) {
     document.getElementById("ocrSpinner").style.display = 'none';
     incrementFreeScanCount()
     showSuccessMessage("✅ Ingredients extracted! Analyzing now...");
-    await analyzeIngredients()
+    try {
+      await analyzeIngredients()
+    } catch (err) {
+      console.error('Auto-analysis failed:', err)
+      showSuccessMessage('Analysis failed. Please try again manually.', 'error')
+    }
 
   } catch (err) {
     console.error("OCR error:", err);
