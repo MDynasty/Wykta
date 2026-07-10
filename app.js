@@ -261,20 +261,47 @@ function showSuccessMessage(message, type) {
     right: 20px;
     background: ${isError ? 'var(--warn)' : 'var(--success)'};
     color: white;
-    padding: 16px 24px;
+    padding: 12px 16px;
     border-radius: 8px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    z-index: 1001;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 360px;
   `
-  toast.textContent = message
+
+  const msgSpan = document.createElement('span')
+  msgSpan.textContent = message
+
+  const closeBtn = document.createElement('button')
+  closeBtn.textContent = '✕'
+  closeBtn.style.cssText = `
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    opacity: 0.75;
+    flex-shrink: 0;
+    box-shadow: none;
+  `
+  closeBtn.addEventListener('click', () => {
+    if (toast.parentNode) toast.parentNode.removeChild(toast)
+  })
+
+  toast.appendChild(msgSpan)
+  toast.appendChild(closeBtn)
   document.body.appendChild(toast)
 
   setTimeout(() => {
     if (toast.parentNode) {
       document.body.removeChild(toast)
     }
-  }, 3000)
+  }, 4000)
 }
 
 // Debug function to toggle premium (call from console: togglePremium())
@@ -310,6 +337,30 @@ document.addEventListener('DOMContentLoaded', () => {
   updatePremiumUI()
   updateCloudStatusUI()
   injectAnalysisModeToggle()
+
+  // Persist and restore language preference
+  const langSelect = document.getElementById('language')
+  if (langSelect) {
+    const ALLOWED_LANGS = ['en', 'fr', 'de', 'zh']
+    const savedLang = localStorage.getItem('wykta_language')
+    if (savedLang && ALLOWED_LANGS.includes(savedLang)) {
+      langSelect.value = savedLang
+    }
+    langSelect.addEventListener('change', () => {
+      localStorage.setItem('wykta_language', langSelect.value)
+    })
+  }
+
+  // Ctrl+Enter / Cmd+Enter keyboard shortcut to trigger analysis
+  const ingredientsTextarea = document.getElementById('ingredients')
+  if (ingredientsTextarea) {
+    ingredientsTextarea.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        analyzeIngredients()
+      }
+    })
+  }
 })
 
 /* -----------------------
@@ -317,7 +368,7 @@ ANALYSIS MODE TOGGLE
 ----------------------- */
 
 // 'ai' = cloud AI (with safety summary overlay); 'local' = local database only
-let analysisMode = 'ai'
+let analysisMode = localStorage.getItem('wykta_analysis_mode') === 'local' ? 'local' : 'ai'
 
 function injectAnalysisModeToggle() {
   const resultEl = document.getElementById('ingredientResult')
@@ -351,8 +402,16 @@ function injectAnalysisModeToggle() {
     btnLocal.style.cssText = analysisMode === 'local' ? ACTIVE_STYLE : INACTIVE_STYLE
   }
 
-  btnAI.addEventListener('click', () => { analysisMode = 'ai'; applyModeStyles() })
-  btnLocal.addEventListener('click', () => { analysisMode = 'local'; applyModeStyles() })
+  btnAI.addEventListener('click', () => {
+    analysisMode = 'ai'
+    localStorage.setItem('wykta_analysis_mode', 'ai')
+    applyModeStyles()
+  })
+  btnLocal.addEventListener('click', () => {
+    analysisMode = 'local'
+    localStorage.setItem('wykta_analysis_mode', 'local')
+    applyModeStyles()
+  })
 
   const hint = document.createElement('span')
   hint.style.cssText = 'font-size:0.75rem;color:#6b7280;'
@@ -996,6 +1055,13 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;")
 }
 
+function scrollToResults() {
+  const el = document.getElementById("ingredientResult")
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+  }
+}
+
 function displayAIAnalysis(message, rawLines) {
   const el = document.getElementById("ingredientResult")
   if(!el) return
@@ -1016,6 +1082,7 @@ function displayAIAnalysis(message, rawLines) {
         `<div class="result-card">${escapeHtml(line)}</div>`
       ).join("")
     )
+    scrollToResults()
   }
 }
 
@@ -1188,6 +1255,7 @@ function analyzeWithLocalDatabase(ingredients) {
   }
   
   displayAIAnalysis("", analysisLines)
+  scrollToResults()
 }
 
 /* -----------------------
@@ -1303,8 +1371,8 @@ async function capture(){
   const canvas = document.getElementById("snapshot")
 
   if (!video.srcObject) {
-    alert("Please start the camera first!");
-    return;
+    showSuccessMessage('Please start the camera first!', 'error')
+    return
   }
 
   try {
@@ -1531,7 +1599,13 @@ async function runOCR(canvas) {
     document.getElementById("retryBtn").style.display = 'none';
     document.getElementById("ocrSpinner").style.display = 'none';
     incrementFreeScanCount()
-    showSuccessMessage("Ingredients extracted! Click Analyze to continue.");
+    showSuccessMessage("✅ Ingredients extracted! Analyzing now...");
+    try {
+      await analyzeIngredients()
+    } catch (err) {
+      console.error('Auto-analysis failed:', err)
+      showSuccessMessage('Analysis failed. Please try again manually.', 'error')
+    }
 
   } catch (err) {
     console.error("OCR error:", err);
@@ -1865,13 +1939,13 @@ async function handleFileUpload(event) {
 
   // Validate file type
   if (!file.type.startsWith('image/')) {
-    alert('Please select an image file.')
+    showSuccessMessage('Please select an image file.', 'error')
     return
   }
 
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
-    alert('File size too large. Please choose an image under 10MB.')
+    showSuccessMessage('File size too large. Please choose an image under 10MB.', 'error')
     return
   }
 
