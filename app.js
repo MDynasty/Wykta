@@ -557,7 +557,7 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
-const ANALYSIS_FUNCTION_NAMES = ['wykta-backend', 'Wykta-backend']
+const SUPABASE_FUNCTION_NAME_VARIANTS = ['wykta-backend', 'Wykta-backend']
 
 /* Comprehensive Ingredient Database - 200+ ingredients */
 const ingredientDatabase = {
@@ -1111,7 +1111,7 @@ async function analyzeWithAI(ingredients){
     const langLocale = languageLocales[lang] || lang
     let response = null
 
-    for (const functionName of ANALYSIS_FUNCTION_NAMES) {
+    for (const functionName of SUPABASE_FUNCTION_NAME_VARIANTS) {
       response = await supabaseClient.functions.invoke(
         functionName,
         {
@@ -1131,13 +1131,17 @@ async function analyzeWithAI(ingredients){
       console.warn(`Supabase function "${functionName}" failed:`, response.error)
     }
 
-    const { data, error } = response || {}
+    if (!response) {
+      throw new Error('Supabase AI function did not return a response.')
+    }
+
+    const { data, error } = response
 
     if(error) throw error
 
     console.log("AI result:", data)
 
-    if(!data || !data.analysis){
+    if(!data || typeof data.analysis !== 'string' || !data.analysis.trim()){
       console.warn(`AI returned no analysis for ${langName}. Falling back to local database.`)
       showSuccessMessage('⚠️ AI returned no analysis. Using local database instead.', 'error')
       return analyzeWithLocalDatabase(ingredients)
@@ -1269,7 +1273,7 @@ function analyzeWithLocalDatabase(ingredients) {
 }
 
 function formatSavedResult(analysisResult, warnings) {
-  if (!warnings.length) {
+  if (!Array.isArray(warnings) || !warnings.length) {
     return analysisResult
   }
 
