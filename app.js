@@ -1095,30 +1095,19 @@ async function analyzeWithAI(ingredients){
 
   if(!supabaseClient){
     console.warn("Supabase not configured. Cloud AI unavailable.")
-    analyzeWithLocalDatabase(ingredients)
-    return
+    return analyzeWithLocalDatabase(ingredients)
   }
 
   try{
-    const lang = document.getElementById("language").value
+    const lang = document.getElementById("language")?.value || 'en'
     const langName = languageNames[lang] || lang
     const langLocale = languageLocales[lang] || lang
+    const functionNames = ['wykta-backend', 'Wykta-backend']
+    let response = null
 
-    let response = await supabaseClient.functions.invoke(
-      "wykta-backend",
-      {
-        body: {
-          ingredients,
-          lang: langLocale,
-          targetLanguage: langName,
-          promptLanguage: langName
-        }
-      }
-    )
-
-    if (response.error) {
+    for (const functionName of functionNames) {
       response = await supabaseClient.functions.invoke(
-        "Wykta-backend",
+        functionName,
         {
           body: {
             ingredients,
@@ -1128,9 +1117,15 @@ async function analyzeWithAI(ingredients){
           }
         }
       )
+
+      if (!response.error) {
+        break
+      }
+
+      console.warn(`Supabase function "${functionName}" failed:`, response.error)
     }
 
-    const { data, error } = response
+    const { data, error } = response || {}
 
     if(error) throw error
 
@@ -1138,17 +1133,19 @@ async function analyzeWithAI(ingredients){
 
     if(!data || !data.analysis){
       displayAIAnalysis(`❌ AI returned no analysis for ${langName}. The backend function may not be deployed.`, [])
-      return
+      return ''
     }
 
-    const lines = data.analysis.split("\n")
+    const analysisText = data.analysis.trim()
+    const lines = analysisText.split("\n")
     displayAIAnalysis("", lines)
     appendSafetySummary(ingredients)
+    return analysisText
 
   } catch(err){
     console.error("AI function error:", err)
     showSuccessMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
-    analyzeWithLocalDatabase(ingredients)
+    return analyzeWithLocalDatabase(ingredients)
   }
 }
 
@@ -1196,8 +1193,7 @@ function appendSafetySummary(ingredients) {
   el.insertAdjacentHTML('beforeend', `<div class="result-card" style="margin-top:8px;">${summaryLines.join('')}</div>`)
 }
 
-/* Local Database Analysis (Fallback when AI/Supabase unavailable) */
-function analyzeWithLocalDatabase(ingredients) {
+function buildLocalAnalysisLines(ingredients) {
   const ingredientList = Array.isArray(ingredients) ? ingredients : extractIngredients(ingredients)
   const analysisLines = []
   
@@ -1253,9 +1249,16 @@ function analyzeWithLocalDatabase(ingredients) {
     analysisLines.push("")
     analysisLines.push("💡 Pro Tip: Set up Supabase Edge Functions for complete AI-powered ingredient analysis.")
   }
-  
+
+  return analysisLines
+}
+
+/* Local Database Analysis (Fallback when AI/Supabase unavailable) */
+function analyzeWithLocalDatabase(ingredients) {
+  const analysisLines = buildLocalAnalysisLines(ingredients)
   displayAIAnalysis("", analysisLines)
   scrollToResults()
+  return analysisLines.join("\n")
 }
 
 /* -----------------------
@@ -1263,19 +1266,34 @@ MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
-  const text = document.getElementById("ingredients").value
+  const text = document.getElementById("ingredients")?.value || ''
   const ingredients = extractIngredients(text)
+
+  if (!text.trim() || !ingredients.length) {
+    displayInteractions([])
+    displayAIAnalysis("❌ Enter or scan an ingredient list first.", [
+      "Try typing ingredients manually or use the camera/upload scanner before analyzing."
+    ])
+    showSuccessMessage('Please enter or scan an ingredient list first.', 'error')
+    return
+  }
+
   const warnings = checkInteractions(ingredients)
 
   displayInteractions(warnings)
-
-  await saveResult(text, warnings.join("; "))
+  let analysisResult = ''
 
   if (analysisMode === 'local') {
-    analyzeWithLocalDatabase(ingredients)
+    analysisResult = analyzeWithLocalDatabase(ingredients)
   } else {
-    await analyzeWithAI(ingredients)
+    analysisResult = await analyzeWithAI(ingredients)
   }
+
+  const savedResult = warnings.length
+    ? `${analysisResult}\n\nPotential interactions:\n- ${warnings.join('\n- ')}`
+    : analysisResult
+
+  await saveResult(text, savedResult)
 }
 
 
