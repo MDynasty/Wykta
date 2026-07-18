@@ -1131,10 +1131,6 @@ async function analyzeWithAI(ingredients){
       console.warn(`Supabase function "${functionName}" failed:`, response.error)
     }
 
-    if (!response) {
-      throw new Error('Supabase AI function did not return a response.')
-    }
-
     const { data, error } = response
 
     if(error) throw error
@@ -1152,7 +1148,6 @@ async function analyzeWithAI(ingredients){
     displayAIAnalysis("", lines)
     appendSafetySummary(ingredients)
     return analysisText
-
   } catch(err){
     console.error("AI function error:", err)
     showSuccessMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
