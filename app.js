@@ -1132,8 +1132,9 @@ async function analyzeWithAI(ingredients){
     console.log("AI result:", data)
 
     if(!data || !data.analysis){
-      displayAIAnalysis(`❌ AI returned no analysis for ${langName}. The backend function may not be deployed.`, [])
-      return ''
+      console.warn(`AI returned no analysis for ${langName}. Falling back to local database.`)
+      showSuccessMessage('⚠️ AI returned no analysis. Using local database instead.', 'error')
+      return analyzeWithLocalDatabase(ingredients)
     }
 
     const analysisText = data.analysis.trim()
@@ -1261,6 +1262,14 @@ function analyzeWithLocalDatabase(ingredients) {
   return analysisLines.join("\n")
 }
 
+function formatSavedResult(analysisResult, warnings) {
+  if (!warnings.length) {
+    return analysisResult
+  }
+
+  return `${analysisResult}\n\nPotential interactions:\n- ${warnings.join('\n- ')}`
+}
+
 /* -----------------------
 MAIN ANALYSIS BUTTON
 ----------------------- */
@@ -1289,11 +1298,7 @@ async function analyzeIngredients(){
     analysisResult = await analyzeWithAI(ingredients)
   }
 
-  const savedResult = warnings.length
-    ? `${analysisResult}\n\nPotential interactions:\n- ${warnings.join('\n- ')}`
-    : analysisResult
-
-  await saveResult(text, savedResult)
+  await saveResult(text, formatSavedResult(analysisResult, warnings))
 }
 
 
