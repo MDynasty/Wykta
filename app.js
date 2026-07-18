@@ -557,6 +557,8 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
+const ANALYSIS_FUNCTION_NAMES = ['wykta-backend', 'Wykta-backend']
+
 /* Comprehensive Ingredient Database - 200+ ingredients */
 const ingredientDatabase = {
   'water': { en: 'Water', type: 'solvent', safe: true },
@@ -1099,13 +1101,17 @@ async function analyzeWithAI(ingredients){
   }
 
   try{
-    const lang = document.getElementById("language")?.value || 'en'
+    const languageField = document.getElementById("language")
+    if (!languageField) {
+      console.warn('Language selector not found. Falling back to English analysis.')
+    }
+
+    const lang = languageField?.value || 'en'
     const langName = languageNames[lang] || lang
     const langLocale = languageLocales[lang] || lang
-    const functionNames = ['wykta-backend', 'Wykta-backend']
     let response = null
 
-    for (const functionName of functionNames) {
+    for (const functionName of ANALYSIS_FUNCTION_NAMES) {
       response = await supabaseClient.functions.invoke(
         functionName,
         {
@@ -1275,7 +1281,14 @@ MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
-  const text = document.getElementById("ingredients")?.value || ''
+  const ingredientsField = document.getElementById("ingredients")
+  if (!ingredientsField) {
+    console.warn('Ingredients input not found. Cannot run analysis.')
+    showSuccessMessage('Ingredient input is unavailable right now. Please refresh and try again.', 'error')
+    return
+  }
+
+  const text = ingredientsField.value || ''
   const ingredients = extractIngredients(text)
 
   if (!text.trim() || !ingredients.length) {
