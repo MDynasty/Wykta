@@ -235,7 +235,7 @@ function showUpgradeModal() {
     localStorage.setItem('wykta_premium', 'true')
     updatePremiumUI()
     document.body.removeChild(modal)
-    showSuccessMessage('Welcome to Premium! 🎉')
+    showToastMessage('Welcome to Premium! 🎉')
   }
 
   // Handle cancel
@@ -252,7 +252,7 @@ function showUpgradeModal() {
 }
 
 // Show success message (type: 'success' | 'error')
-function showSuccessMessage(message, type) {
+function showToastMessage(message, type) {
   const isError = type === 'error'
   const toast = document.createElement('div')
   toast.style.cssText = `
@@ -309,7 +309,7 @@ window.togglePremium = function() {
   isPremium = !isPremium
   localStorage.setItem('wykta_premium', isPremium.toString())
   updatePremiumUI()
-  showSuccessMessage(isPremium ? 'Premium activated! 🎉' : 'Switched to free tier')
+  showToastMessage(isPremium ? 'Premium activated! 🎉' : 'Switched to free tier')
 }
 
 // Debug function to test OCR processing (call from console: testOCR("your text here"))
@@ -539,7 +539,7 @@ async function saveResult(input, result){
     console.log("Saved:", data)
   } catch(err) {
     console.error("Database save error:", err)
-    showSuccessMessage(`❌ Save failed: ${err.message}`, 'error')
+    showToastMessage(`❌ Save failed: ${err.message}`, 'error')
   }
 }
 
@@ -555,6 +555,18 @@ const languageLocales = {
   fr: "fr-FR",
   de: "de-DE",
   zh: "zh-CN"
+}
+
+const SUPABASE_FUNCTION_NAMES = ['wykta-backend', 'Wykta-backend']
+
+function shouldRetrySupabaseFunction(error) {
+  if (!error) return false
+
+  const status = error.status || error.context?.status || error.response?.status
+  if (status === 404) return true
+
+  const message = `${error.name || ''} ${error.message || ''}`.toLowerCase()
+  return message.includes('function not found') || message.includes('not found')
 }
 
 /* Comprehensive Ingredient Database - 200+ ingredients */
@@ -1095,30 +1107,23 @@ async function analyzeWithAI(ingredients){
 
   if(!supabaseClient){
     console.warn("Supabase not configured. Cloud AI unavailable.")
-    analyzeWithLocalDatabase(ingredients)
-    return
+    return analyzeWithLocalDatabase(ingredients)
   }
 
   try{
-    const lang = document.getElementById("language").value
+    const languageField = document.getElementById("language")
+    if (!languageField) {
+      console.warn('Language selector not found. Falling back to English analysis.')
+    }
+
+    const lang = languageField?.value || 'en'
     const langName = languageNames[lang] || lang
     const langLocale = languageLocales[lang] || lang
+    let response = null
 
-    let response = await supabaseClient.functions.invoke(
-      "wykta-backend",
-      {
-        body: {
-          ingredients,
-          lang: langLocale,
-          targetLanguage: langName,
-          promptLanguage: langName
-        }
-      }
-    )
-
-    if (response.error) {
+    for (const functionName of SUPABASE_FUNCTION_NAMES) {
       response = await supabaseClient.functions.invoke(
-        "Wykta-backend",
+        functionName,
         {
           body: {
             ingredients,
@@ -1128,6 +1133,16 @@ async function analyzeWithAI(ingredients){
           }
         }
       )
+
+      if (!response.error) {
+        break
+      }
+
+      console.warn(`Supabase function "${functionName}" failed:`, response.error)
+
+      if (!shouldRetrySupabaseFunction(response.error)) {
+        break
+      }
     }
 
     const { data, error } = response
@@ -1136,19 +1151,21 @@ async function analyzeWithAI(ingredients){
 
     console.log("AI result:", data)
 
-    if(!data || !data.analysis){
-      displayAIAnalysis(`❌ AI returned no analysis for ${langName}. The backend function may not be deployed.`, [])
-      return
+    if(!data || typeof data.analysis !== 'string' || !data.analysis.trim()){
+      console.warn(`AI returned no analysis for ${langName}. Falling back to local database.`)
+      showToastMessage('⚠️ AI returned no analysis. Using local database instead.', 'error')
+      return analyzeWithLocalDatabase(ingredients)
     }
 
-    const lines = data.analysis.split("\n")
+    const analysisText = data.analysis.trim()
+    const lines = analysisText.split("\n")
     displayAIAnalysis("", lines)
     appendSafetySummary(ingredients)
-
+    return analysisText
   } catch(err){
     console.error("AI function error:", err)
-    showSuccessMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
-    analyzeWithLocalDatabase(ingredients)
+    showToastMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
+    return analyzeWithLocalDatabase(ingredients)
   }
 }
 
@@ -1196,8 +1213,7 @@ function appendSafetySummary(ingredients) {
   el.insertAdjacentHTML('beforeend', `<div class="result-card" style="margin-top:8px;">${summaryLines.join('')}</div>`)
 }
 
-/* Local Database Analysis (Fallback when AI/Supabase unavailable) */
-function analyzeWithLocalDatabase(ingredients) {
+function buildLocalAnalysisLines(ingredients) {
   const ingredientList = Array.isArray(ingredients) ? ingredients : extractIngredients(ingredients)
   const analysisLines = []
   
@@ -1253,9 +1269,24 @@ function analyzeWithLocalDatabase(ingredients) {
     analysisLines.push("")
     analysisLines.push("💡 Pro Tip: Set up Supabase Edge Functions for complete AI-powered ingredient analysis.")
   }
-  
+
+  return analysisLines
+}
+
+/* Local Database Analysis (Fallback when AI/Supabase unavailable) */
+function analyzeWithLocalDatabase(ingredients) {
+  const analysisLines = buildLocalAnalysisLines(ingredients)
   displayAIAnalysis("", analysisLines)
   scrollToResults()
+  return analysisLines.join("\n")
+}
+
+function formatSavedResult(analysisResult, warnings) {
+  if (!Array.isArray(warnings) || !warnings.length) {
+    return analysisResult
+  }
+
+  return `${analysisResult}\n\nPotential interactions:\n- ${warnings.join('\n- ')}`
 }
 
 /* -----------------------
@@ -1263,19 +1294,37 @@ MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
-  const text = document.getElementById("ingredients").value
+  const ingredientsField = document.getElementById("ingredients")
+  if (!ingredientsField) {
+    console.warn('Ingredients input not found. Cannot run analysis.')
+    showToastMessage('Ingredient input is unavailable right now. Please refresh and try again.', 'error')
+    return
+  }
+
+  const text = ingredientsField.value || ''
   const ingredients = extractIngredients(text)
+
+  if (!text.trim() || !ingredients.length) {
+    displayInteractions([])
+    displayAIAnalysis("❌ Enter or scan an ingredient list first.", [
+      "Try typing ingredients manually or use the camera/upload scanner before analyzing."
+    ])
+    showToastMessage('Please enter or scan an ingredient list first.', 'error')
+    return
+  }
+
   const warnings = checkInteractions(ingredients)
 
   displayInteractions(warnings)
-
-  await saveResult(text, warnings.join("; "))
+  let analysisResult = ''
 
   if (analysisMode === 'local') {
-    analyzeWithLocalDatabase(ingredients)
+    analysisResult = analyzeWithLocalDatabase(ingredients)
   } else {
-    await analyzeWithAI(ingredients)
+    analysisResult = await analyzeWithAI(ingredients)
   }
+
+  await saveResult(text, formatSavedResult(analysisResult, warnings))
 }
 
 
@@ -1371,7 +1420,7 @@ async function capture(){
   const canvas = document.getElementById("snapshot")
 
   if (!video.srcObject) {
-    showSuccessMessage('Please start the camera first!', 'error')
+    showToastMessage('Please start the camera first!', 'error')
     return
   }
 
@@ -1599,12 +1648,12 @@ async function runOCR(canvas) {
     document.getElementById("retryBtn").style.display = 'none';
     document.getElementById("ocrSpinner").style.display = 'none';
     incrementFreeScanCount()
-    showSuccessMessage("✅ Ingredients extracted! Analyzing now...");
+    showToastMessage("✅ Ingredients extracted! Analyzing now...");
     try {
       await analyzeIngredients()
     } catch (err) {
       console.error('Auto-analysis failed:', err)
-      showSuccessMessage('Analysis failed. Please try again manually.', 'error')
+      showToastMessage('Analysis failed. Please try again manually.', 'error')
     }
 
   } catch (err) {
@@ -1939,13 +1988,13 @@ async function handleFileUpload(event) {
 
   // Validate file type
   if (!file.type.startsWith('image/')) {
-    showSuccessMessage('Please select an image file.', 'error')
+    showToastMessage('Please select an image file.', 'error')
     return
   }
 
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
-    showSuccessMessage('File size too large. Please choose an image under 10MB.', 'error')
+    showToastMessage('File size too large. Please choose an image under 10MB.', 'error')
     return
   }
 
