@@ -235,7 +235,7 @@ function showUpgradeModal() {
     localStorage.setItem('wykta_premium', 'true')
     updatePremiumUI()
     document.body.removeChild(modal)
-    showSuccessMessage('Welcome to Premium! 🎉')
+    showToastMessage('Welcome to Premium! 🎉')
   }
 
   // Handle cancel
@@ -252,7 +252,7 @@ function showUpgradeModal() {
 }
 
 // Show success message (type: 'success' | 'error')
-function showSuccessMessage(message, type) {
+function showToastMessage(message, type) {
   const isError = type === 'error'
   const toast = document.createElement('div')
   toast.style.cssText = `
@@ -309,7 +309,7 @@ window.togglePremium = function() {
   isPremium = !isPremium
   localStorage.setItem('wykta_premium', isPremium.toString())
   updatePremiumUI()
-  showSuccessMessage(isPremium ? 'Premium activated! 🎉' : 'Switched to free tier')
+  showToastMessage(isPremium ? 'Premium activated! 🎉' : 'Switched to free tier')
 }
 
 // Debug function to test OCR processing (call from console: testOCR("your text here"))
@@ -539,7 +539,7 @@ async function saveResult(input, result){
     console.log("Saved:", data)
   } catch(err) {
     console.error("Database save error:", err)
-    showSuccessMessage(`❌ Save failed: ${err.message}`, 'error')
+    showToastMessage(`❌ Save failed: ${err.message}`, 'error')
   }
 }
 
@@ -557,7 +557,17 @@ const languageLocales = {
   zh: "zh-CN"
 }
 
-const SUPABASE_FUNCTION_NAME_VARIANTS = ['wykta-backend', 'Wykta-backend']
+const SUPABASE_FUNCTION_NAMES = ['wykta-backend', 'Wykta-backend']
+
+function shouldRetrySupabaseFunction(error) {
+  if (!error) return false
+
+  const status = error.status || error.context?.status || error.response?.status
+  if (status === 404) return true
+
+  const message = `${error.name || ''} ${error.message || ''}`.toLowerCase()
+  return message.includes('function not found') || message.includes('not found')
+}
 
 /* Comprehensive Ingredient Database - 200+ ingredients */
 const ingredientDatabase = {
@@ -1111,7 +1121,7 @@ async function analyzeWithAI(ingredients){
     const langLocale = languageLocales[lang] || lang
     let response = null
 
-    for (const functionName of SUPABASE_FUNCTION_NAME_VARIANTS) {
+    for (const functionName of SUPABASE_FUNCTION_NAMES) {
       response = await supabaseClient.functions.invoke(
         functionName,
         {
@@ -1129,6 +1139,10 @@ async function analyzeWithAI(ingredients){
       }
 
       console.warn(`Supabase function "${functionName}" failed:`, response.error)
+
+      if (!shouldRetrySupabaseFunction(response.error)) {
+        break
+      }
     }
 
     const { data, error } = response
@@ -1139,7 +1153,7 @@ async function analyzeWithAI(ingredients){
 
     if(!data || typeof data.analysis !== 'string' || !data.analysis.trim()){
       console.warn(`AI returned no analysis for ${langName}. Falling back to local database.`)
-      showSuccessMessage('⚠️ AI returned no analysis. Using local database instead.', 'error')
+      showToastMessage('⚠️ AI returned no analysis. Using local database instead.', 'error')
       return analyzeWithLocalDatabase(ingredients)
     }
 
@@ -1150,7 +1164,7 @@ async function analyzeWithAI(ingredients){
     return analysisText
   } catch(err){
     console.error("AI function error:", err)
-    showSuccessMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
+    showToastMessage('⚠️ AI analysis unavailable. Using local database.', 'error')
     return analyzeWithLocalDatabase(ingredients)
   }
 }
@@ -1283,7 +1297,7 @@ async function analyzeIngredients(){
   const ingredientsField = document.getElementById("ingredients")
   if (!ingredientsField) {
     console.warn('Ingredients input not found. Cannot run analysis.')
-    showSuccessMessage('Ingredient input is unavailable right now. Please refresh and try again.', 'error')
+    showToastMessage('Ingredient input is unavailable right now. Please refresh and try again.', 'error')
     return
   }
 
@@ -1295,7 +1309,7 @@ async function analyzeIngredients(){
     displayAIAnalysis("❌ Enter or scan an ingredient list first.", [
       "Try typing ingredients manually or use the camera/upload scanner before analyzing."
     ])
-    showSuccessMessage('Please enter or scan an ingredient list first.', 'error')
+    showToastMessage('Please enter or scan an ingredient list first.', 'error')
     return
   }
 
@@ -1406,7 +1420,7 @@ async function capture(){
   const canvas = document.getElementById("snapshot")
 
   if (!video.srcObject) {
-    showSuccessMessage('Please start the camera first!', 'error')
+    showToastMessage('Please start the camera first!', 'error')
     return
   }
 
@@ -1634,12 +1648,12 @@ async function runOCR(canvas) {
     document.getElementById("retryBtn").style.display = 'none';
     document.getElementById("ocrSpinner").style.display = 'none';
     incrementFreeScanCount()
-    showSuccessMessage("✅ Ingredients extracted! Analyzing now...");
+    showToastMessage("✅ Ingredients extracted! Analyzing now...");
     try {
       await analyzeIngredients()
     } catch (err) {
       console.error('Auto-analysis failed:', err)
-      showSuccessMessage('Analysis failed. Please try again manually.', 'error')
+      showToastMessage('Analysis failed. Please try again manually.', 'error')
     }
 
   } catch (err) {
@@ -1974,13 +1988,13 @@ async function handleFileUpload(event) {
 
   // Validate file type
   if (!file.type.startsWith('image/')) {
-    showSuccessMessage('Please select an image file.', 'error')
+    showToastMessage('Please select an image file.', 'error')
     return
   }
 
   // Validate file size (max 10MB)
   if (file.size > 10 * 1024 * 1024) {
-    showSuccessMessage('File size too large. Please choose an image under 10MB.', 'error')
+    showToastMessage('File size too large. Please choose an image under 10MB.', 'error')
     return
   }
 
