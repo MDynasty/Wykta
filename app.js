@@ -950,6 +950,24 @@ const ingredientNoiseWords = new Set([
   'composition', 'aquae', '配料', '成分', '含有', '及', '和', 'avec', 'et', 'und', 'mit'
 ])
 
+function isLikelyIngredientText(item) {
+  const normalized = normalizeIngredientKey(item)
+  if (!normalized) return false
+  if (ingredientNoiseWords.has(normalized)) return false
+  if (/^\d+$/.test(normalized)) return false
+  if (/(.)\1{3,}/.test(normalized)) return false
+  if (normalized.length < 2) return false
+
+  const words = normalized.split(/\s+/).filter(Boolean)
+  if (!words.length || words.length > 8) return false
+
+  const letterCount = (normalized.match(/\p{L}/gu) || []).length
+  const numberCount = (normalized.match(/\d/g) || []).length
+  if (numberCount > letterCount) return false
+
+  return true
+}
+
 const ingredientNormalizedKeyMap = new Map()
 let ingredientSearchPattern = ''
 
@@ -1015,8 +1033,14 @@ function resolveCanonicalIngredient(ingredient) {
     return ingredientNormalizedKeyMap.get(normalized)
   }
 
+  if (normalized.length < 3) return normalized
+
   for (const [candidate, canonical] of ingredientNormalizedKeyMap.entries()) {
-    if (candidate.includes(normalized) || normalized.includes(candidate)) {
+    if (
+      normalized.length >= 4 &&
+      candidate.length >= 4 &&
+      (candidate.includes(normalized) || normalized.includes(candidate))
+    ) {
       return canonical
     }
   }
@@ -1041,7 +1065,7 @@ function splitUnknownIngredientSegment(segment) {
   return cleaned
     .split(/\s*,\s*/)
     .map((item) => item.trim())
-    .filter((item) => item && !ingredientNoiseWords.has(item))
+    .filter((item) => isLikelyIngredientText(item))
 }
 
 function searchIngredientDatabase(ingredient) {
@@ -1302,11 +1326,11 @@ async function analyzeIngredients(){
   }
 
   const text = ingredientsField.value || ''
-  const ingredients = extractIngredients(text)
+  const ingredients = extractIngredients(text).filter(isLikelyIngredientText)
 
   if (!text.trim() || !ingredients.length) {
     displayInteractions([])
-    displayAIAnalysis("❌ Enter or scan an ingredient list first.", [
+    displayAIAnalysis("❌ Enter or scan a clear ingredient list first.", [
       "Try typing ingredients manually or use the camera/upload scanner before analyzing."
     ])
     showToastMessage('Please enter or scan an ingredient list first.', 'error')
@@ -1500,15 +1524,10 @@ function preprocessImageForOCR(canvas) {
   // Step 2: Apply simple noise reduction (median filter approximation)
   // applyMedianFilter(data, canvas.width, canvas.height) // Temporarily disabled
 
-  // Step 3: Apply sharpening to enhance text edges
+  // Step 3: Light sharpening to enhance text edges without destroying fine characters
   applySharpenFilter(data, canvas.width, canvas.height)
 
-  // Step 4: Apply adaptive thresholding for better text extraction
-  const threshold = calculateAdaptiveThreshold(data, canvas.width, canvas.height)
-  for (let i = 0; i < data.length; i += 4) {
-    const gray = data[i]
-    data[i] = data[i + 1] = data[i + 2] = gray > threshold ? 255 : 0
-  }
+  // Step 4: Keep grayscale detail (full binarization caused many OCR misses on real labels)
 
   ctx.putImageData(imageData, 0, 0)
 }
@@ -1630,7 +1649,9 @@ async function runOCR(canvas) {
     // Validate the result with more sophisticated checks
     const validation = validateIngredientListAdvanced(processedText);
 
-    if (!validation.isValid) {
+    const parsedIngredients = extractIngredients(processedText).filter(isLikelyIngredientText)
+
+    if (!validation.isValid && !parsedIngredients.length) {
       document.getElementById("ocrResult").innerText = `❌ ${validation.message}\n\nTry:\n• Better image quality\n• Closer zoom on ingredients\n• Straight, flat surface\n• Good lighting`;
       document.getElementById("retryBtn").style.display = 'inline-block';
       document.getElementById("ocrSpinner").style.display = 'none';
@@ -1641,10 +1662,15 @@ async function runOCR(canvas) {
     const confidence = validation.confidence || 0;
     const confidenceEmoji = confidence > 80 ? '🟢' : confidence > 60 ? '🟡' : '🟠';
 
-    document.getElementById("ocrResult").innerText = `${confidenceEmoji} Ingredients extracted (${confidence}% confidence):\n${processedText}`;
+    if (!validation.isValid) {
+      document.getElementById("ocrResult").innerText = `⚠️ Scan quality is low (${confidence}%), but some ingredients were extracted:\n${parsedIngredients.join(', ')}`;
+      showToastMessage('Scan quality is low. Please verify the extracted text before analyzing.', 'error')
+    } else {
+      document.getElementById("ocrResult").innerText = `${confidenceEmoji} Ingredients extracted (${confidence}% confidence):\n${processedText}`;
+    }
 
     // Auto-fill ingredients
-    document.getElementById("ingredients").value = processedText;
+    document.getElementById("ingredients").value = (parsedIngredients.join(', ') || processedText);
     document.getElementById("retryBtn").style.display = 'none';
     document.getElementById("ocrSpinner").style.display = 'none';
     incrementFreeScanCount()
@@ -1970,8 +1996,105 @@ function retryScan() {
       • Crop close to ingredients for best accuracy<br>
       • Avoid curved or wrinkled labels if possible
     </div>
-    Choose Camera or Upload Photo above to start scanning
+    Choose Camera, Upload Image, or Scan Barcode above to start scanning
   `
+}
+
+async function scanBarcode() {
+  try {
+    if (hasReachedFreeScanLimit()) {
+      showTrialExpiredView()
+      return
+    }
+
+    if (!('BarcodeDetector' in window)) {
+      showToastMessage('Barcode scanning is not supported on this browser. Use Upload Image or Camera OCR.', 'error')
+      return
+    }
+
+    const supportedFormats = await BarcodeDetector.getSupportedFormats()
+    const preferredFormats = ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
+    const formats = preferredFormats.filter((format) => supportedFormats.includes(format))
+
+    if (!formats.length) {
+      showToastMessage('No supported retail barcode formats found on this device.', 'error')
+      return
+    }
+
+    showToastMessage('Point your camera at the barcode...')
+    const barcodeStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
+    })
+
+    const video = document.getElementById("camera")
+    const canvas = document.getElementById("snapshot")
+    const ctx = canvas.getContext("2d")
+    const detector = new BarcodeDetector({ formats })
+
+    video.srcObject = barcodeStream
+    video.style.display = 'block'
+    await video.play()
+
+    let barcodeValue = ''
+    const startedAt = Date.now()
+    const timeoutMs = 12000
+
+    while (!barcodeValue && Date.now() - startedAt < timeoutMs) {
+      if (!video.videoWidth || !video.videoHeight) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        continue
+      }
+
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+      const detections = await detector.detect(canvas)
+      if (detections.length > 0 && detections[0].rawValue) {
+        barcodeValue = detections[0].rawValue.trim()
+        break
+      }
+      await new Promise((resolve) => setTimeout(resolve, 220))
+    }
+
+    barcodeStream.getTracks().forEach((track) => track.stop())
+    video.style.display = 'none'
+
+    if (!barcodeValue) {
+      showToastMessage('No barcode detected. Try better lighting and fill more of the frame.', 'error')
+      return
+    }
+
+    document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nLooking up ingredients...`
+
+    try {
+      const lookupUrl = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcodeValue)}.json`
+      const res = await fetch(lookupUrl)
+      const data = await res.json()
+      const ingredientsText =
+        data?.product?.ingredients_text ||
+        data?.product?.ingredients_text_en ||
+        ''
+
+      if (!ingredientsText.trim()) {
+        document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nNo ingredients found in product database.`
+        showToastMessage('Barcode scanned, but ingredients were not found for this product.', 'error')
+        return
+      }
+
+      const cleaned = extractIngredients(ingredientsText).filter(isLikelyIngredientText).join(', ')
+      document.getElementById("ingredients").value = cleaned || ingredientsText
+      document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nIngredients loaded from product database.`
+      incrementFreeScanCount()
+      await analyzeIngredients()
+    } catch (lookupError) {
+      console.error('Barcode lookup failed:', lookupError)
+      document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nProduct lookup failed. You can still paste ingredients manually.`
+      showToastMessage('Barcode scanned, but product lookup failed.', 'error')
+    }
+  } catch (err) {
+    console.error('Barcode scan failed:', err)
+    showToastMessage('Barcode scan failed. Please try Camera OCR or Upload Image.', 'error')
+  }
 }
 
 /* -----------------------
