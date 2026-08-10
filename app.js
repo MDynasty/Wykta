@@ -109,7 +109,7 @@ function incrementFreeScanCount() {
 // Update UI based on premium status
 function updatePremiumUI() {
   const freeBadge = document.querySelector('.app header .badge.free')
-  const premiumBadge = document.querySelector('.app header .premium-badge')
+  const premiumBadge = document.querySelector('.app header .badge.premium')
   const cameraNote = document.getElementById('cameraNote')
   const upgradeSection = document.getElementById('upgradeCard')
 
