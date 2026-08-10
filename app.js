@@ -1750,6 +1750,7 @@ function processExtractedTextAdvanced(text) {
     // Strip header prefix (e.g. "INGREDIENTS:") so the ingredients on that
     // line are kept rather than the whole line being discarded.
     trimmed = trimmed.replace(headerPrefixRe, '');
+    trimmed = stripTrailingAllergenClause(trimmed)
     if (trimmed.length < 2) continue;
 
     // Skip obvious non-ingredient lines
@@ -1801,7 +1802,7 @@ function isNonIngredientLine(line) {
       lower.includes('product of') || lower.includes('best by') ||
       lower.includes('use by') || lower.includes('keep refrigerated') ||
       lower.includes('net wt') ||
-      lower.includes('contains:') || lower.includes('may contain') ||
+      lower.match(/^(?:contains|may contain|allergen)\b/) ||
       lower.includes('allergen') || lower.match(/^\d+%$/)) {
     return true;
   }
@@ -1817,6 +1818,12 @@ function isNonIngredientLine(line) {
   }
 
   return false;
+}
+
+function stripTrailingAllergenClause(line) {
+  return line
+    .replace(/\s*(?:[.;,]|\b)\s*(?:contains|may contain)\s*:?.*$/i, '')
+    .trim()
 }
 
 /* -----------------------
