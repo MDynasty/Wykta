@@ -25,8 +25,16 @@ const WARNING_INGREDIENTS = {
   'yellow 5': 'Can trigger allergies in sensitive individuals.',
   'sulfites': 'May trigger asthma-like reactions in sensitive people.',
   'fragrance': 'May irritate sensitive skin.',
+  'parfum': 'May irritate sensitive skin.',
+  'limonene': 'Potential fragrance allergen for sensitive skin.',
+  'linalool': 'Potential fragrance allergen for sensitive skin.',
+  'citral': 'Potential fragrance allergen for sensitive skin.',
+  'geraniol': 'Potential fragrance allergen for sensitive skin.',
+  'phenoxyethanol': 'May irritate very sensitive skin.',
   'sodium lauryl sulfate': 'Can be irritating or drying for sensitive skin.',
-  'retinol': 'Powerful active ingredient; may irritate sensitive skin.'
+  'retinol': 'Powerful active ingredient; may irritate sensitive skin.',
+  'natural flavors': 'Generic flavor blend; the exact source is often unspecified.',
+  'artificial flavors': 'Generic artificial flavor blend; exact compounds are usually unspecified.'
 }
 
 const ALIASES = {
@@ -87,6 +95,8 @@ const ALIASES = {
   'hfcs': 'high fructose corn syrup',
   'trans fats': 'trans fat',
   'artificial sweetener': 'artificial sweeteners',
+  'natural flavor': 'natural flavors',
+  'artificial flavor': 'artificial flavors',
   // Skincare multilingual variants
   'glycerine': 'glycerin',
   'glycerol': 'glycerin',
@@ -231,6 +241,7 @@ function asIngredientArray(ingredients) {
   if (Array.isArray(ingredients)) return ingredients
   if (typeof ingredients === 'string') {
     return ingredients
+      .replace(/\s*(?:[.;,]|\b)\s*(?:contains|may contain)\s*:?.*$/i, ' ')
       .replace(/\b(?:ingredients?|contains|with|and|et|avec|und|mit)\b/giu, ', ')
       .replace(/(?:配料|成分|含有|以及|和)/gu, ', ')
       .split(/[,.;•\n，；、]/)

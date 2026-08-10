@@ -367,8 +367,9 @@ document.addEventListener('DOMContentLoaded', () => {
 ANALYSIS MODE TOGGLE
 ----------------------- */
 
-// 'ai' = cloud AI (with safety summary overlay); 'local' = local database only
-let analysisMode = localStorage.getItem('wykta_analysis_mode') === 'local' ? 'local' : 'ai'
+// Default to the local database because it is more consistent for common ingredients.
+// Users can still switch to cloud analysis explicitly.
+let analysisMode = localStorage.getItem('wykta_analysis_mode') === 'ai' ? 'ai' : 'local'
 
 function injectAnalysisModeToggle() {
   const resultEl = document.getElementById('ingredientResult')
@@ -455,7 +456,7 @@ function extractIngredients(text) {
 
   results.push(...splitUnknownIngredientSegment(prepared.slice(cursor)))
 
-  return results.filter(Boolean)
+  return dedupeIngredients(results.filter(Boolean))
 }
 
 
@@ -496,6 +497,20 @@ warnings.push(
 
 return warnings
 
+}
+
+function dedupeIngredients(ingredients) {
+  const seen = new Set()
+  const unique = []
+
+  for (const ingredient of ingredients || []) {
+    const normalized = normalizeIngredientKey(ingredient)
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    unique.push(ingredient)
+  }
+
+  return unique
 }
 
 /* -----------------------
@@ -1049,8 +1064,11 @@ function resolveCanonicalIngredient(ingredient) {
 }
 
 function prepareIngredientText(text) {
+  const withoutAllergenDisclosure = String(text || '')
+    .replace(/\s*(?:[.;,]|\b)\s*(?:contains|may contain)\s*:?.*$/i, ' ')
+
   return normalizeIngredientKey(
-    String(text || '')
+    withoutAllergenDisclosure
       .replace(/[\r\n]+/g, ', ')
       .replace(/[•;，；、|]/g, ', ')
       .replace(/\b(?:ingredients?|contains|with|and|plus|et|avec|und|mit)\b/giu, ', ')
@@ -1206,7 +1224,7 @@ function appendSafetySummary(ingredients) {
   for (const ing of ingredientList) {
     const data = searchIngredientDatabase(ing)
     if (data) {
-      if (data.safe === false) warnings.push({ name: ing, data })
+      if (isFlaggedIngredientData(data)) warnings.push({ name: ing, data })
       else safe.push({ name: ing, data })
     } else {
       unknown.push(ing)
@@ -1216,13 +1234,14 @@ function appendSafetySummary(ingredients) {
   const summaryLines = [
     `<hr style="margin:12px 0;border:none;border-top:1px solid #e5e7eb;">`,
     `<div style="font-weight:600;margin-bottom:6px;">📊 Safety Overview (Local DB)</div>`,
-    `<div>✅ ${safe.length} Safe &nbsp;⚠️ ${warnings.length} Warnings &nbsp;❓ ${unknown.length} Unknown</div>`,
+    `<div>✅ ${safe.length} Safe &nbsp;⚠️ ${warnings.length} Review &nbsp;❓ ${unknown.length} Unknown</div>`,
   ]
 
   if (warnings.length) {
-    summaryLines.push(`<div style="margin-top:8px;font-weight:600;">🔴 Flagged ingredients:</div>`)
+    summaryLines.push(`<div style="margin-top:8px;font-weight:600;">⚠️ Ingredients to review:</div>`)
     warnings.forEach(({ name, data }) => {
-      const note = data.warning ? ` — ${escapeHtml(data.warning)}` : ''
+      const noteText = data.warning || data.note || data.type || ''
+      const note = noteText ? ` — ${escapeHtml(noteText)}` : ''
       summaryLines.push(`<div style="margin-left:8px;">⚠️ ${escapeHtml(data.en)}${note}</div>`)
     })
   }
@@ -1235,6 +1254,10 @@ function appendSafetySummary(ingredients) {
   }
 
   el.insertAdjacentHTML('beforeend', `<div class="result-card" style="margin-top:8px;">${summaryLines.join('')}</div>`)
+}
+
+function isFlaggedIngredientData(data) {
+  return Boolean(data && (data.safe === false || data.warning || data.note))
 }
 
 function buildLocalAnalysisLines(ingredients) {
@@ -1251,7 +1274,7 @@ function buildLocalAnalysisLines(ingredients) {
   for (const ingredient of ingredientList) {
     const data = searchIngredientDatabase(ingredient)
     if (data) {
-      if (data.safe === false) {
+      if (isFlaggedIngredientData(data)) {
         warningIngredients.push({ name: ingredient, data })
       } else {
         safeIngredients.push({ name: ingredient, data })
@@ -1261,7 +1284,7 @@ function buildLocalAnalysisLines(ingredients) {
     }
   }
   
-  analysisLines.push(`✅ ${safeIngredients.length} Safe | ⚠️ ${warningIngredients.length} Warnings | ❓ ${unknownIngredients.length} Unknown`)
+  analysisLines.push(`✅ ${safeIngredients.length} Safe | ⚠️ ${warningIngredients.length} Review | ❓ ${unknownIngredients.length} Unknown`)
   analysisLines.push("")
   
   if (safeIngredients.length > 0) {
@@ -1273,11 +1296,12 @@ function buildLocalAnalysisLines(ingredients) {
   }
   
   if (warningIngredients.length > 0) {
-    analysisLines.push("🔴 Ingredients with Warnings:")
+    analysisLines.push("⚠️ Ingredients to Review:")
     warningIngredients.forEach(item => {
       analysisLines.push(`  ⚠️ ${item.data.en}`)
-      if (item.data.warning) {
-        analysisLines.push(`     → ${item.data.warning}`)
+      const noteText = item.data.warning || item.data.note || item.data.type
+      if (noteText) {
+        analysisLines.push(`     → ${noteText}`)
       }
     })
     analysisLines.push("")
@@ -2036,6 +2060,78 @@ function retryScan() {
   `
 }
 
+function normalizeBarcodeValue(value) {
+  return String(value || '').replace(/[^\dA-Za-z]/g, '').trim()
+}
+
+async function promptForBarcodeValue(message) {
+  if (message) {
+    showToastMessage(message, 'error')
+  }
+
+  if (typeof window === 'undefined' || typeof window.prompt !== 'function') {
+    return ''
+  }
+
+  const enteredValue = window.prompt('Enter the barcode digits to look up the product manually:')
+  return normalizeBarcodeValue(enteredValue)
+}
+
+async function lookupIngredientsByBarcode(barcodeValue) {
+  const normalizedBarcode = normalizeBarcodeValue(barcodeValue)
+  if (!normalizedBarcode) {
+    return { ok: false, message: 'No barcode value was provided.' }
+  }
+
+  document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${normalizedBarcode}\nLooking up ingredients...`
+
+  try {
+    const lookupUrl = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(normalizedBarcode)}.json`
+    const res = await fetch(lookupUrl)
+
+    if (!res.ok) {
+      throw new Error(`Lookup failed with status ${res.status}`)
+    }
+
+    const data = await res.json()
+    const product = data?.product || {}
+    const ingredientPieces = [
+      product.ingredients_text,
+      product.ingredients_text_en,
+      product.ingredients_text_with_allergens
+    ]
+
+    if (Array.isArray(product.ingredients)) {
+      product.ingredients.forEach((item) => {
+        if (item?.text) ingredientPieces.push(item.text)
+      })
+    }
+
+    const ingredientsText = ingredientPieces
+      .map((item) => String(item || '').trim())
+      .filter(Boolean)
+      .sort((left, right) => right.length - left.length)[0] || ''
+
+    if (!ingredientsText.trim()) {
+      document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${normalizedBarcode}\nNo ingredients found in product database.`
+      showToastMessage('Barcode found, but ingredients were not available for this product.', 'error')
+      return { ok: false, message: 'No ingredients found.' }
+    }
+
+    const cleaned = dedupeIngredients(extractIngredients(ingredientsText).filter(isLikelyIngredientText)).join(', ')
+    document.getElementById("ingredients").value = cleaned || ingredientsText
+    document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${normalizedBarcode}\nIngredients loaded from product database.`
+    incrementFreeScanCount()
+    await analyzeIngredients()
+    return { ok: true }
+  } catch (lookupError) {
+    console.error('Barcode lookup failed:', lookupError)
+    document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${normalizedBarcode}\nProduct lookup failed. You can still paste ingredients manually.`
+    showToastMessage('Barcode lookup failed. You can enter the barcode digits manually or paste ingredients.', 'error')
+    return { ok: false, message: lookupError.message || 'Lookup failed.' }
+  }
+}
+
 async function scanBarcode() {
   let barcodeStream = null
 
@@ -2046,7 +2142,10 @@ async function scanBarcode() {
     }
 
     if (!('BarcodeDetector' in window)) {
-      showToastMessage('Barcode scanning is not supported on this browser. Use Upload Image or Camera OCR.', 'error')
+      const manualBarcode = await promptForBarcodeValue('Barcode scanning is not supported on this browser. Enter the barcode digits instead.')
+      if (manualBarcode) {
+        await lookupIngredientsByBarcode(manualBarcode)
+      }
       return
     }
 
@@ -2055,7 +2154,10 @@ async function scanBarcode() {
     const formats = preferredFormats.filter((format) => supportedFormats.includes(format))
 
     if (!formats.length) {
-      showToastMessage('No supported retail barcode formats found on this device.', 'error')
+      const manualBarcode = await promptForBarcodeValue('This device cannot scan retail barcode formats. Enter the barcode digits instead.')
+      if (manualBarcode) {
+        await lookupIngredientsByBarcode(manualBarcode)
+      }
       return
     }
 
@@ -2083,10 +2185,17 @@ async function scanBarcode() {
         continue
       }
 
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const detections = await detector.detect(canvas)
+      let detections = []
+      try {
+        detections = await detector.detect(video)
+      } catch (videoDetectError) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        detections = await detector.detect(canvas)
+        console.warn('BarcodeDetector video scan failed; used canvas fallback instead.', videoDetectError)
+      }
+
       if (detections.length > 0 && detections[0].rawValue) {
         barcodeValue = detections[0].rawValue.trim()
         break
@@ -2095,37 +2204,16 @@ async function scanBarcode() {
     }
 
     if (!barcodeValue) {
-      showToastMessage('No barcode detected. Try better lighting and fill more of the frame.', 'error')
+      const manualBarcode = await promptForBarcodeValue('No barcode detected. Enter the barcode digits manually instead.')
+      if (manualBarcode) {
+        await lookupIngredientsByBarcode(manualBarcode)
+      } else {
+        showToastMessage('No barcode detected. Try better lighting and fill more of the frame.', 'error')
+      }
       return
     }
 
-    document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nLooking up ingredients...`
-
-    try {
-      const lookupUrl = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcodeValue)}.json`
-      const res = await fetch(lookupUrl)
-      const data = await res.json()
-      const ingredientsText =
-        data?.product?.ingredients_text ||
-        data?.product?.ingredients_text_en ||
-        ''
-
-      if (!ingredientsText.trim()) {
-        document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nNo ingredients found in product database.`
-        showToastMessage('Barcode scanned, but ingredients were not found for this product.', 'error')
-        return
-      }
-
-      const cleaned = extractIngredients(ingredientsText).filter(isLikelyIngredientText).join(', ')
-      document.getElementById("ingredients").value = cleaned || ingredientsText
-      document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nIngredients loaded from product database.`
-      incrementFreeScanCount()
-      await analyzeIngredients()
-    } catch (lookupError) {
-      console.error('Barcode lookup failed:', lookupError)
-      document.getElementById("ocrResult").innerText = `✅ Barcode detected: ${barcodeValue}\nProduct lookup failed. You can still paste ingredients manually.`
-      showToastMessage('Barcode scanned, but product lookup failed.', 'error')
-    }
+    await lookupIngredientsByBarcode(barcodeValue)
   } catch (err) {
     console.error('Barcode scan failed:', err)
     showToastMessage('Barcode scan failed. Please try Camera OCR or Upload Image.', 'error')
