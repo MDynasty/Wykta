@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecting to Wykta</title>
   <meta name="robots" content="noindex">
-  <link rel="canonical" href="https://wykta.pages.dev/">
+  <link rel="canonical" href="https://wykta.pages.dev/?lang=en">
   <style>
     :root {
       color-scheme: light dark;
@@ -35,13 +35,13 @@
 <body>
   <main>
     <h1>Redirecting to Wykta</h1>
-    <p>If you are not redirected automatically, <a id="redirectLink" href="https://wykta.pages.dev/">open wykta.pages.dev</a>.</p>
+    <p>If you are not redirected automatically, <a id="redirectLink" href="https://wykta.pages.dev/?lang=en">open wykta.pages.dev</a>.</p>
     <noscript>
       <p>JavaScript is required to preserve the full URL during redirect.</p>
     </noscript>
   </main>
   <script>
-    const target = new URL('https://wykta.pages.dev/')
+    const target = new URL('https://wykta.pages.dev/?lang=en')
     target.pathname = window.location.pathname
     target.search = window.location.search
     target.hash = window.location.hash
