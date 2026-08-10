@@ -41,10 +41,10 @@
     </noscript>
   </main>
   <script>
-    const target = new URL(window.location.href)
-    target.protocol = 'https:'
-    target.hostname = 'wykta.pages.dev'
-    target.port = ''
+    const target = new URL('https://wykta.pages.dev/')
+    target.pathname = window.location.pathname
+    target.search = window.location.search
+    target.hash = window.location.hash
 
     const destination = target.toString()
     document.getElementById('redirectLink').href = destination
