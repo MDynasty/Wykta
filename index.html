@@ -164,21 +164,5 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
   <script src="app.js"></script>
 
-  <script>
-    const analyzeBtn = document.getElementById('analyzeBtn');
-    const originalAnalyzeText = analyzeBtn.textContent;
-    const originalAnalyzeIngredients = window.analyzeIngredients;
-
-    window.analyzeIngredients = async function() {
-      analyzeBtn.innerHTML = '<span class="loading"></span>Analyzing...';
-      analyzeBtn.disabled = true;
-      try {
-        await originalAnalyzeIngredients();
-      } finally {
-        analyzeBtn.innerHTML = originalAnalyzeText;
-        analyzeBtn.disabled = false;
-      }
-    };
-  </script>
 </body>
 </html>

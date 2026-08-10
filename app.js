@@ -1313,11 +1313,32 @@ function formatSavedResult(analysisResult, warnings) {
   return `${analysisResult}\n\nPotential interactions:\n- ${warnings.join('\n- ')}`
 }
 
+function setAnalyzeButtonLoading(isLoading) {
+  const analyzeBtn = document.getElementById('analyzeBtn')
+  if (!analyzeBtn) return
+
+  if (!analyzeBtn.dataset.originalLabel) {
+    analyzeBtn.dataset.originalLabel = analyzeBtn.innerHTML
+  }
+
+  if (isLoading) {
+    analyzeBtn.innerHTML = '<span class="loading"></span>Analyzing...'
+    analyzeBtn.disabled = true
+  } else {
+    analyzeBtn.innerHTML = analyzeBtn.dataset.originalLabel
+    analyzeBtn.disabled = false
+  }
+}
+
+let isAnalyzingIngredients = false
+
 /* -----------------------
 MAIN ANALYSIS BUTTON
 ----------------------- */
 
 async function analyzeIngredients(){
+  if (isAnalyzingIngredients) return
+
   const ingredientsField = document.getElementById("ingredients")
   if (!ingredientsField) {
     console.warn('Ingredients input not found. Cannot run analysis.')
@@ -1325,30 +1346,38 @@ async function analyzeIngredients(){
     return
   }
 
-  const text = ingredientsField.value || ''
-  const ingredients = extractIngredients(text).filter(isLikelyIngredientText)
+  isAnalyzingIngredients = true
+  setAnalyzeButtonLoading(true)
 
-  if (!text.trim() || !ingredients.length) {
-    displayInteractions([])
-    displayAIAnalysis("❌ Enter or scan a clear ingredient list first.", [
-      "Try typing ingredients manually or use the camera/upload scanner before analyzing."
-    ])
-    showToastMessage('Please enter or scan an ingredient list first.', 'error')
-    return
+  try {
+    const text = ingredientsField.value || ''
+    const ingredients = extractIngredients(text).filter(isLikelyIngredientText)
+
+    if (!text.trim() || !ingredients.length) {
+      displayInteractions([])
+      displayAIAnalysis("❌ Enter or scan a clear ingredient list first.", [
+        "Try typing ingredients manually or use the camera/upload scanner before analyzing."
+      ])
+      showToastMessage('Please enter or scan an ingredient list first.', 'error')
+      return
+    }
+
+    const warnings = checkInteractions(ingredients)
+
+    displayInteractions(warnings)
+    let analysisResult = ''
+
+    if (analysisMode === 'local') {
+      analysisResult = analyzeWithLocalDatabase(ingredients)
+    } else {
+      analysisResult = await analyzeWithAI(ingredients)
+    }
+
+    await saveResult(text, formatSavedResult(analysisResult, warnings))
+  } finally {
+    isAnalyzingIngredients = false
+    setAnalyzeButtonLoading(false)
   }
-
-  const warnings = checkInteractions(ingredients)
-
-  displayInteractions(warnings)
-  let analysisResult = ''
-
-  if (analysisMode === 'local') {
-    analysisResult = analyzeWithLocalDatabase(ingredients)
-  } else {
-    analysisResult = await analyzeWithAI(ingredients)
-  }
-
-  await saveResult(text, formatSavedResult(analysisResult, warnings))
 }
 
 
@@ -2001,6 +2030,8 @@ function retryScan() {
 }
 
 async function scanBarcode() {
+  let barcodeStream = null
+
   try {
     if (hasReachedFreeScanLimit()) {
       showTrialExpiredView()
@@ -2022,7 +2053,7 @@ async function scanBarcode() {
     }
 
     showToastMessage('Point your camera at the barcode...')
-    const barcodeStream = await navigator.mediaDevices.getUserMedia({
+    barcodeStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
     })
 
@@ -2055,9 +2086,6 @@ async function scanBarcode() {
       }
       await new Promise((resolve) => setTimeout(resolve, 220))
     }
-
-    barcodeStream.getTracks().forEach((track) => track.stop())
-    video.style.display = 'none'
 
     if (!barcodeValue) {
       showToastMessage('No barcode detected. Try better lighting and fill more of the frame.', 'error')
@@ -2094,6 +2122,15 @@ async function scanBarcode() {
   } catch (err) {
     console.error('Barcode scan failed:', err)
     showToastMessage('Barcode scan failed. Please try Camera OCR or Upload Image.', 'error')
+  } finally {
+    if (barcodeStream) {
+      barcodeStream.getTracks().forEach((track) => track.stop())
+    }
+    const video = document.getElementById("camera")
+    if (video) {
+      video.style.display = 'none'
+      video.srcObject = null
+    }
   }
 }
 
