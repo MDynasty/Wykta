@@ -2081,7 +2081,7 @@ async function scanBarcode() {
     if (captureBtn) captureBtn.style.display = 'none'
     if (retryBtn) retryBtn.style.display = 'none'
     if (ocrSpinner) ocrSpinner.style.display = 'none'
-    if (ocrResult) ocrResult.innerText = '🔍 Scanning barcode automatically...'
+    if (ocrResult) ocrResult.textContent = '🔍 Scanning barcode automatically...'
 
     video.setAttribute('playsinline', 'true')
     video.setAttribute('webkit-playsinline', 'true')
