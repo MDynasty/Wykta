@@ -42,7 +42,8 @@
   </main>
   <script>
     const target = new URL('https://wykta.pages.dev/?lang=en')
-    target.pathname = window.location.pathname
+    const sourcePath = window.location.pathname.replace(/^\/Wykta(?=\/|$)/i, '') || '/'
+    target.pathname = sourcePath
     target.search = window.location.search
     target.hash = window.location.hash
 
