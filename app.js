@@ -2038,6 +2038,7 @@ function retryScan() {
 
 async function scanBarcode() {
   let barcodeStream = null
+  const ocrResult = document.getElementById("ocrResult")
 
   try {
     if (hasReachedFreeScanLimit()) {
@@ -2051,6 +2052,7 @@ async function scanBarcode() {
     }
 
     if (!('BarcodeDetector' in window)) {
+      if (ocrResult) ocrResult.textContent = '❌ Barcode scanning is not supported on this browser.'
       showToastMessage('Barcode scanning is not supported on this browser. Use Upload Image or Camera OCR.', 'error')
       return
     }
@@ -2060,6 +2062,7 @@ async function scanBarcode() {
     const formats = preferredFormats.filter((format) => supportedFormats.includes(format))
 
     if (!formats.length) {
+      if (ocrResult) ocrResult.textContent = '❌ No supported barcode formats were found on this device.'
       showToastMessage('No supported retail barcode formats found on this device.', 'error')
       return
     }
@@ -2076,7 +2079,6 @@ async function scanBarcode() {
     const captureBtn = document.getElementById("captureBtn")
     const retryBtn = document.getElementById("retryBtn")
     const ocrSpinner = document.getElementById("ocrSpinner")
-    const ocrResult = document.getElementById("ocrResult")
 
     if (captureBtn) captureBtn.style.display = 'none'
     if (retryBtn) retryBtn.style.display = 'none'
@@ -2148,6 +2150,9 @@ async function scanBarcode() {
     }
   } catch (err) {
     console.error('Barcode scan failed:', err)
+    if (ocrResult) {
+      ocrResult.textContent = '❌ Barcode scan failed. Please try Camera OCR or Upload Image.'
+    }
     showToastMessage('Barcode scan failed. Please try Camera OCR or Upload Image.', 'error')
   } finally {
     if (barcodeStream) {
