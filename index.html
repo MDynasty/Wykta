@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Analyze diet ingredients with AI. Get detailed nutritional analysis in multiple languages.">
-  <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
 
@@ -50,7 +50,7 @@
 
       <div class="scan-actions" aria-label="Scan input methods">
         <button onclick="startScan()" id="cameraBtn" class="secondary-btn scan-btn">📷 Open Camera</button>
-        <label for="imageUpload" class="upload-button scan-btn">⬆ Upload Image</label>
+        <label for="imageUpload" class="upload-button scan-btn" aria-label="Upload Image"><span aria-hidden="true">⬆</span> Upload Image</label>
         <button onclick="captureLabel()" id="captureBtn" class="secondary-btn scan-btn" style="display: none;">📸 Capture Label</button>
         <button onclick="scanBarcode()" id="barcodeBtn" class="secondary-btn scan-btn">&#9643; Scan Barcode</button>
       </div>

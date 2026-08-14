@@ -2025,14 +2025,19 @@ function processExtractedText(text) {
 RETRY SCAN FUNCTION
 ----------------------- */
 function retryScan() {
+  // Stop any active camera stream
+  if (stream) {
+    stream.getTracks().forEach(track => track.stop())
+    stream = null
+  }
+
   // Hide camera wrapper (video + capture buttons)
   const cameraWrapper = document.getElementById("cameraWrapper")
   if (cameraWrapper) cameraWrapper.style.display = 'none'
-  document.getElementById("captureBtn").style.display = 'none'
   document.getElementById("retryBtn").style.display = 'none'
   document.getElementById("ocrSpinner").style.display = 'none'
 
-  // Hide and reset OCR result panel to placeholder
+  // Reset OCR result panel to placeholder
   const ocrResult = document.getElementById("ocrResult")
   if (ocrResult) {
     ocrResult.innerText = 'Scan results will appear here after you open the camera, upload an image, or scan a barcode.'
