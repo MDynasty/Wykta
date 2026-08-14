@@ -1568,6 +1568,10 @@ function cloneCanvas(sourceCanvas) {
   clonedCanvas.width = sourceCanvas.width
   clonedCanvas.height = sourceCanvas.height
   const clonedCtx = clonedCanvas.getContext('2d')
+  if (!clonedCtx) {
+    console.warn('Unable to clone canvas for OCR fallback.')
+    return null
+  }
   clonedCtx.drawImage(sourceCanvas, 0, 0)
   return clonedCanvas
 }
@@ -1655,6 +1659,11 @@ function calculateAdaptiveThreshold(data, width, height) {
 /* -----------------------
 OCR TEXT RECOGNITION
 ----------------------- */
+const OCR_CANDIDATE_HEADER_BOOST = 25
+const OCR_CANDIDATE_FOCUS_BOOST = 20
+const OCR_CANDIDATE_INGREDIENT_BOOST = 12
+const OCR_CANDIDATE_MAX_INGREDIENT_BOOST = 48
+
 async function recognizeOCRCandidate(canvas, language, pageSegMode) {
   const { data } = await Tesseract.recognize(canvas, language, {
     logger: false,
@@ -1680,9 +1689,12 @@ async function recognizeOCRCandidate(canvas, language, pageSegMode) {
 }
 
 function scoreOCRCandidate(rawText, focusedText, validation, parsedIngredients) {
-  const headerBoost = containsIngredientHeader(rawText) ? 25 : 0
-  const focusBoost = focusedText && focusedText !== rawText ? 20 : 0
-  const ingredientBoost = Math.min(parsedIngredients.length * 12, 48)
+  const headerBoost = containsIngredientHeader(rawText) ? OCR_CANDIDATE_HEADER_BOOST : 0
+  const focusBoost = focusedText && focusedText !== rawText ? OCR_CANDIDATE_FOCUS_BOOST : 0
+  const ingredientBoost = Math.min(
+    parsedIngredients.length * OCR_CANDIDATE_INGREDIENT_BOOST,
+    OCR_CANDIDATE_MAX_INGREDIENT_BOOST
+  )
   return (validation.confidence || 0) + headerBoost + focusBoost + ingredientBoost
 }
 
@@ -1729,21 +1741,28 @@ function extractIngredientFocusedText(text) {
   return focusedLines.join('\n')
 }
 
+function isCommonScanNoiseLine(line) {
+  const lower = String(line || '').toLowerCase()
+  return (
+    lower.includes('distributed by') ||
+    lower.includes('manufactured by') ||
+    lower.includes('made in ') ||
+    lower.includes('shake well before use') ||
+    lower.includes('for external use only') ||
+    /\bspf\s*\d+/i.test(lower) ||
+    /^\*+\s*ingredients? from/i.test(lower)
+  )
+}
+
 function isIngredientSectionStopLine(line) {
   const lower = String(line || '').toLowerCase()
   return (
-    lower.includes('shake well before use') ||
-    lower.includes('for external use only') ||
-    lower.includes('made in ') ||
-    lower.includes('distributed by') ||
-    lower.includes('manufactured by') ||
+    isCommonScanNoiseLine(line) ||
     lower.includes('www.') ||
     lower.includes('http://') ||
     lower.includes('https://') ||
     lower.includes('tel:') ||
-    lower.includes('fax') ||
-    /\bspf\s*\d+/i.test(lower) ||
-    /^\*+\s*ingredients? from/i.test(lower)
+    /\bfax\b/i.test(lower)
   )
 }
 
@@ -1766,11 +1785,11 @@ async function runOCR(canvas, originalCanvas = null) {
     const ocrLanguage = ocrLanguageMap[selectedLanguage] || 'eng'
 
     const candidates = [
-      { canvas, pageSegMode: Tesseract.PSM.SPARSE_TEXT }
+      { canvas, pageSegMode: Tesseract.PSM.AUTO_OSD }
     ]
 
     if (originalCanvas) {
-      candidates.push({ canvas: originalCanvas, pageSegMode: Tesseract.PSM.AUTO_OSD })
+      candidates.push({ canvas: originalCanvas, pageSegMode: Tesseract.PSM.SPARSE_TEXT })
     }
 
     let bestCandidate = null
@@ -1782,9 +1801,6 @@ async function runOCR(canvas, originalCanvas = null) {
         bestCandidate = result
       }
 
-      if (result.validation.isValid && result.parsedIngredients.length >= 3) {
-        break
-      }
     }
 
     const processedText = bestCandidate?.processedText || ''
@@ -1912,9 +1928,7 @@ function isNonIngredientLine(line) {
   if (lower.includes('distributed by') || lower.includes('manufactured by') ||
       lower.includes('product of') || lower.includes('best by') ||
       lower.includes('use by') || lower.includes('keep refrigerated') ||
-      lower.includes('net wt') || lower.includes('made in ') ||
-      lower.includes('shake well before use') || lower.includes('for external use only') ||
-      lower.includes('www.') || /\bspf\s*\d+/i.test(lower) ||
+      lower.includes('net wt') || isCommonScanNoiseLine(line) ||
       lower.match(/^(?:contains|may contain|allergen)\b/) ||
       lower.includes('allergen') || lower.match(/^\d+%$/)) {
     return true;
