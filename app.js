@@ -2045,6 +2045,11 @@ async function scanBarcode() {
       return
     }
 
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      stream = null
+    }
+
     if (!('BarcodeDetector' in window)) {
       showToastMessage('Barcode scanning is not supported on this browser. Use Upload Image or Camera OCR.', 'error')
       return
@@ -2069,6 +2074,17 @@ async function scanBarcode() {
     const ctx = canvas.getContext("2d")
     const detector = new BarcodeDetector({ formats })
 
+    document.getElementById("captureBtn").style.display = 'none'
+    document.getElementById("retryBtn").style.display = 'none'
+    document.getElementById("ocrSpinner").style.display = 'none'
+    document.getElementById("ocrResult").innerText = '🔍 Scanning barcode automatically...'
+
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
+    video.autoplay = true
+    video.muted = true
+    video.controls = false
+    video.disablePictureInPicture = true
     video.srcObject = barcodeStream
     video.style.display = 'block'
     await video.play()
@@ -2135,6 +2151,7 @@ async function scanBarcode() {
     }
     const video = document.getElementById("camera")
     if (video) {
+      video.pause()
       video.style.display = 'none'
       video.srcObject = null
     }
