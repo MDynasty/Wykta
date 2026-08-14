@@ -1375,7 +1375,7 @@ async function analyzeIngredients(){
       analysisResult = await analyzeWithAI(text)
     }
 
-    await saveResult(text, formatSavedResult(analysisResult, warnings))
+    await saveResult(text.trim(), formatSavedResult(analysisResult, warnings))
   } finally {
     isAnalyzingIngredients = false
     setAnalyzeButtonLoading(false)
