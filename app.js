@@ -2073,11 +2073,15 @@ async function scanBarcode() {
     const canvas = document.getElementById("snapshot")
     const ctx = canvas.getContext("2d")
     const detector = new BarcodeDetector({ formats })
+    const captureBtn = document.getElementById("captureBtn")
+    const retryBtn = document.getElementById("retryBtn")
+    const ocrSpinner = document.getElementById("ocrSpinner")
+    const ocrResult = document.getElementById("ocrResult")
 
-    document.getElementById("captureBtn").style.display = 'none'
-    document.getElementById("retryBtn").style.display = 'none'
-    document.getElementById("ocrSpinner").style.display = 'none'
-    document.getElementById("ocrResult").innerText = '🔍 Scanning barcode automatically...'
+    if (captureBtn) captureBtn.style.display = 'none'
+    if (retryBtn) retryBtn.style.display = 'none'
+    if (ocrSpinner) ocrSpinner.style.display = 'none'
+    if (ocrResult) ocrResult.innerText = '🔍 Scanning barcode automatically...'
 
     video.setAttribute('playsinline', 'true')
     video.setAttribute('webkit-playsinline', 'true')
