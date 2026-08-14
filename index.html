@@ -42,7 +42,13 @@
   </main>
   <script>
     const target = new URL('https://wykta.pages.dev/?lang=en')
-    target.pathname = window.location.pathname
+    const pathname = window.location.pathname
+    const legacyBasePattern = /^\/wykta(?:\/|$)/i
+    if (legacyBasePattern.test(pathname)) {
+      target.pathname = pathname.replace(/^\/wykta/i, '') || '/'
+    } else {
+      target.pathname = pathname
+    }
     target.search = window.location.search
     target.hash = window.location.hash
 

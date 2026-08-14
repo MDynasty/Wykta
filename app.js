@@ -2038,6 +2038,7 @@ function retryScan() {
 
 async function scanBarcode() {
   let barcodeStream = null
+  const ocrResult = document.getElementById("ocrResult")
 
   try {
     if (hasReachedFreeScanLimit()) {
@@ -2045,7 +2046,13 @@ async function scanBarcode() {
       return
     }
 
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop())
+      stream = null
+    }
+
     if (!('BarcodeDetector' in window)) {
+      if (ocrResult) ocrResult.textContent = '❌ Barcode scanning is not supported on this browser.'
       showToastMessage('Barcode scanning is not supported on this browser. Use Upload Image or Camera OCR.', 'error')
       return
     }
@@ -2055,6 +2062,7 @@ async function scanBarcode() {
     const formats = preferredFormats.filter((format) => supportedFormats.includes(format))
 
     if (!formats.length) {
+      if (ocrResult) ocrResult.textContent = '❌ No supported barcode formats were found on this device.'
       showToastMessage('No supported retail barcode formats found on this device.', 'error')
       return
     }
@@ -2068,7 +2076,21 @@ async function scanBarcode() {
     const canvas = document.getElementById("snapshot")
     const ctx = canvas.getContext("2d")
     const detector = new BarcodeDetector({ formats })
+    const captureBtn = document.getElementById("captureBtn")
+    const retryBtn = document.getElementById("retryBtn")
+    const ocrSpinner = document.getElementById("ocrSpinner")
 
+    if (captureBtn) captureBtn.style.display = 'none'
+    if (retryBtn) retryBtn.style.display = 'none'
+    if (ocrSpinner) ocrSpinner.style.display = 'none'
+    if (ocrResult) ocrResult.textContent = '🔍 Scanning barcode automatically...'
+
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
+    video.autoplay = true
+    video.muted = true
+    video.controls = false
+    video.disablePictureInPicture = true
     video.srcObject = barcodeStream
     video.style.display = 'block'
     await video.play()
@@ -2128,6 +2150,9 @@ async function scanBarcode() {
     }
   } catch (err) {
     console.error('Barcode scan failed:', err)
+    if (ocrResult) {
+      ocrResult.textContent = '❌ Barcode scan failed. Please try Camera OCR or Upload Image.'
+    }
     showToastMessage('Barcode scan failed. Please try Camera OCR or Upload Image.', 'error')
   } finally {
     if (barcodeStream) {
@@ -2135,6 +2160,7 @@ async function scanBarcode() {
     }
     const video = document.getElementById("camera")
     if (video) {
+      video.pause()
       video.style.display = 'none'
       video.srcObject = null
     }
