@@ -451,6 +451,36 @@ button:disabled {
   font-size: 0.88rem;
 }
 
+.scan-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.scan-actions > * {
+  width: 100%;
+}
+
+.scan-input-card {
+  margin-bottom: 16px;
+}
+
+.analyze-card {
+  margin-bottom: 16px;
+}
+
+.camera-preview-wrapper {
+  margin-top: 14px;
+}
+
+.ocr-placeholder {
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  font-style: italic;
+  min-height: auto;
+}
+
 video {
   width: 100%;
   border-radius: 14px;

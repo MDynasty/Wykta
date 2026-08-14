@@ -1416,25 +1416,32 @@ async function startScan(){
 
     const video = document.getElementById("camera")
     video.srcObject = stream
-    video.style.display = 'block'
+
+    // Show the camera wrapper (preview + capture buttons)
+    const cameraWrapper = document.getElementById("cameraWrapper")
+    if (cameraWrapper) cameraWrapper.style.display = 'block'
 
     // Show capture button
     document.getElementById("captureBtn").style.display = 'inline-block'
 
-    // Reset OCR result
-    document.getElementById("ocrResult").innerHTML = `
-      <div class="ocr-tips">
-        <strong>📋 OCR Tips for Best Results:</strong><br>
-        • Use bright, even lighting without shadows<br>
-        • Hold camera steady and focus on the text<br>
-        • Keep the label flat and parallel to camera<br>
-        • Avoid glare, reflections, and background clutter<br>
-        • Ensure text is sharp and well-contrasted<br>
-        • Crop close to ingredients for best accuracy<br>
-        • Avoid curved or wrinkled labels if possible
-      </div>
-      Camera ready! Point at ingredient list and tap "Capture & Analyze"
-    `
+    // Show and populate OCR result panel
+    const ocrResult = document.getElementById("ocrResult")
+    if (ocrResult) {
+      ocrResult.className = 'ocr-result'
+      ocrResult.innerHTML = `
+        <div class="ocr-tips">
+          <strong>📋 OCR Tips for Best Results:</strong><br>
+          • Use bright, even lighting without shadows<br>
+          • Hold camera steady and focus on the text<br>
+          • Keep the label flat and parallel to camera<br>
+          • Avoid glare, reflections, and background clutter<br>
+          • Ensure text is sharp and well-contrasted<br>
+          • Crop close to ingredients for best accuracy<br>
+          • Avoid curved or wrinkled labels if possible
+        </div>
+        Camera ready! Point at ingredient list and tap "Capture &amp; Analyze"
+      `
+    }
 
     // Hide retry button
     document.getElementById("retryBtn").style.display = 'none'
@@ -1488,7 +1495,8 @@ async function capture(){
     // Stop the camera stream
     if(stream){
       stream.getTracks().forEach(track => track.stop())
-      video.style.display = 'none'
+      const cameraWrapper = document.getElementById("cameraWrapper")
+      if (cameraWrapper) cameraWrapper.style.display = 'none'
       document.getElementById("captureBtn").style.display = 'none'
     }
 
@@ -1503,6 +1511,9 @@ async function capture(){
     document.getElementById("ocrResult").innerText = "❌ Failed to capture image. Try again."
   }
 }
+
+// Alias used by the Capture Label button in the scan-input card
+const captureLabel = capture
 
 /* -----------------------
 IMAGE PREPROCESSING FOR OCR (Enhanced)
@@ -2014,26 +2025,19 @@ function processExtractedText(text) {
 RETRY SCAN FUNCTION
 ----------------------- */
 function retryScan() {
-  // Hide video and buttons
-  document.getElementById("camera").style.display = 'none'
+  // Hide camera wrapper (video + capture buttons)
+  const cameraWrapper = document.getElementById("cameraWrapper")
+  if (cameraWrapper) cameraWrapper.style.display = 'none'
   document.getElementById("captureBtn").style.display = 'none'
   document.getElementById("retryBtn").style.display = 'none'
   document.getElementById("ocrSpinner").style.display = 'none'
 
-  // Reset OCR result
-  document.getElementById("ocrResult").innerHTML = `
-    <div class="ocr-tips">
-      <strong>📋 OCR Tips for Best Results:</strong><br>
-      • Use bright, even lighting without shadows<br>
-      • Hold camera steady and focus on the text<br>
-      • Keep the label flat and parallel to camera<br>
-      • Avoid glare, reflections, and background clutter<br>
-      • Ensure text is sharp and well-contrasted<br>
-      • Crop close to ingredients for best accuracy<br>
-      • Avoid curved or wrinkled labels if possible
-    </div>
-    Choose Camera, Upload Image, or Scan Barcode above to start scanning
-  `
+  // Hide and reset OCR result panel to placeholder
+  const ocrResult = document.getElementById("ocrResult")
+  if (ocrResult) {
+    ocrResult.innerText = 'Scan results will appear here after you open the camera, upload an image, or scan a barcode.'
+    ocrResult.className = 'ocr-result ocr-placeholder'
+  }
 }
 
 async function scanBarcode() {
@@ -2070,7 +2074,8 @@ async function scanBarcode() {
     const detector = new BarcodeDetector({ formats })
 
     video.srcObject = barcodeStream
-    video.style.display = 'block'
+    const cameraWrapper = document.getElementById("cameraWrapper")
+    if (cameraWrapper) cameraWrapper.style.display = 'block'
     await video.play()
 
     let barcodeValue = ''
@@ -2135,9 +2140,10 @@ async function scanBarcode() {
     }
     const video = document.getElementById("camera")
     if (video) {
-      video.style.display = 'none'
       video.srcObject = null
     }
+    const cameraWrapper = document.getElementById("cameraWrapper")
+    if (cameraWrapper) cameraWrapper.style.display = 'none'
   }
 }
 
@@ -2170,7 +2176,11 @@ async function handleFileUpload(event) {
 
   try {
     // Show loading state
-    document.getElementById("ocrResult").innerText = "📁 Loading image...";
+    const ocrResultEl = document.getElementById("ocrResult")
+    if (ocrResultEl) {
+      ocrResultEl.className = 'ocr-result'
+      ocrResultEl.innerText = "📁 Loading image..."
+    }
 
     // Create image element and load file
     const img = new Image()
