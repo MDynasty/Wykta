@@ -978,7 +978,7 @@ function normalizeIngredientKey(text) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[()\[\]{}]/g, ' ')
     .replace(/[/%+]/g, ' ')
-    .replace(/[^\p{L}\p{N}\s,\-+]/gu, ' ')
+    .replace(/[^\p{L}\p{N}\s,\-]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
 }
@@ -1770,7 +1770,7 @@ async function runOCR(canvas, originalCanvas = null) {
     ]
 
     if (originalCanvas) {
-      candidates.push({ canvas: originalCanvas, pageSegMode: Tesseract.PSM.SPARSE_TEXT })
+      candidates.push({ canvas: originalCanvas, pageSegMode: Tesseract.PSM.AUTO_OSD })
     }
 
     let bestCandidate = null
