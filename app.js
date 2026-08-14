@@ -314,7 +314,7 @@ window.togglePremium = function() {
 
 // Debug function to test OCR processing (call from console: testOCR("your text here"))
 window.testOCR = function(text) {
-  const processed = processExtractedText(text)
+  const processed = processExtractedTextAdvanced(text)
   const validation = validateIngredientListAdvanced(processed)
   console.log("Original:", text)
   console.log("Processed:", processed)
@@ -325,7 +325,7 @@ window.testOCR = function(text) {
 // Test OCR with sample text
 function testOCRWithSample() {
   const sampleText = "INGREDIENTS: water, sugar, wheat flour, palm oil, salt, eggs, milk powder, baking soda, vanilla extract. Contains: wheat, eggs, milk.";
-  const processed = processExtractedText(sampleText);
+  const processed = processExtractedTextAdvanced(sampleText);
   const validation = validateIngredientListAdvanced(processed);
 
   document.getElementById("ocrResult").innerText = `🧪 Test Results:\n✅ Valid: ${validation.isValid}\n📝 Processed: ${processed}`;
@@ -977,7 +977,7 @@ function normalizeIngredientKey(text) {
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[()\[\]{}]/g, ' ')
-    .replace(/[%]/g, ' ')
+    .replace(/[/%+]/g, ' ')
     .replace(/[^\p{L}\p{N}\s,\-+]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim()
@@ -1485,6 +1485,8 @@ async function capture(){
 
     ctx.drawImage(video, 0, 0)
 
+    const originalCanvas = cloneCanvas(canvas)
+
     // Stop the camera stream
     if(stream){
       stream.getTracks().forEach(track => track.stop())
@@ -1496,7 +1498,7 @@ async function capture(){
     preprocessImageForOCR(canvas)
 
     // Run OCR
-    await runOCR(canvas)
+    await runOCR(canvas, originalCanvas)
 
   } catch (err) {
     console.error("Capture error:", err)
@@ -1559,6 +1561,15 @@ function preprocessImageForOCR(canvas) {
   // Step 4: Keep grayscale detail (full binarization caused many OCR misses on real labels)
 
   ctx.putImageData(imageData, 0, 0)
+}
+
+function cloneCanvas(sourceCanvas) {
+  const clonedCanvas = document.createElement('canvas')
+  clonedCanvas.width = sourceCanvas.width
+  clonedCanvas.height = sourceCanvas.height
+  const clonedCtx = clonedCanvas.getContext('2d')
+  clonedCtx.drawImage(sourceCanvas, 0, 0)
+  return clonedCanvas
 }
 
 /* -----------------------
@@ -1644,7 +1655,99 @@ function calculateAdaptiveThreshold(data, width, height) {
 /* -----------------------
 OCR TEXT RECOGNITION
 ----------------------- */
-async function runOCR(canvas) {
+async function recognizeOCRCandidate(canvas, language, pageSegMode) {
+  const { data } = await Tesseract.recognize(canvas, language, {
+    logger: false,
+    tessedit_pageseg_mode: pageSegMode,
+    tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
+    preserve_interword_spaces: '1'
+  })
+
+  const rawText = data.text || ''
+  const focusedText = extractIngredientFocusedText(rawText)
+  const processedText = processExtractedTextAdvanced(focusedText || rawText)
+  const validation = validateIngredientListAdvanced(processedText)
+  const parsedIngredients = extractIngredients(processedText).filter(isLikelyIngredientText)
+
+  return {
+    rawText,
+    focusedText,
+    processedText,
+    validation,
+    parsedIngredients,
+    score: scoreOCRCandidate(rawText, focusedText, validation, parsedIngredients)
+  }
+}
+
+function scoreOCRCandidate(rawText, focusedText, validation, parsedIngredients) {
+  const headerBoost = containsIngredientHeader(rawText) ? 25 : 0
+  const focusBoost = focusedText && focusedText !== rawText ? 20 : 0
+  const ingredientBoost = Math.min(parsedIngredients.length * 12, 48)
+  return (validation.confidence || 0) + headerBoost + focusBoost + ingredientBoost
+}
+
+function containsIngredientHeader(text) {
+  return /\b(?:ingredients?|ingrédients?|zutaten|inci)\b|(?:配料|成分|含有)/iu.test(text || '')
+}
+
+function extractIngredientFocusedText(text) {
+  if (!text || !text.trim()) return ''
+
+  const lines = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  if (!lines.length) return text
+
+  const ingredientHeaderPattern = /\b(?:ingredients?|ingrédients?|zutaten|inci)\b|(?:配料|成分|含有)/iu
+  const startIndex = lines.findIndex((line) => ingredientHeaderPattern.test(line))
+  if (startIndex === -1) return text
+
+  const focusedLines = []
+
+  for (let index = startIndex; index < lines.length; index += 1) {
+    let line = lines[index]
+    if (!line) continue
+
+    if (index === startIndex) {
+      const headerIndex = line.search(ingredientHeaderPattern)
+      if (headerIndex >= 0) {
+        line = line.slice(headerIndex)
+      }
+    }
+
+    if (focusedLines.length > 0 && isIngredientSectionStopLine(line)) {
+      break
+    }
+
+    focusedLines.push(line)
+  }
+
+  return focusedLines.join('\n')
+}
+
+function isIngredientSectionStopLine(line) {
+  const lower = String(line || '').toLowerCase()
+  return (
+    lower.includes('shake well before use') ||
+    lower.includes('for external use only') ||
+    lower.includes('made in ') ||
+    lower.includes('distributed by') ||
+    lower.includes('manufactured by') ||
+    lower.includes('www.') ||
+    lower.includes('http://') ||
+    lower.includes('https://') ||
+    lower.includes('tel:') ||
+    lower.includes('fax') ||
+    /\bspf\s*\d+/i.test(lower) ||
+    /^\*+\s*ingredients? from/i.test(lower)
+  )
+}
+
+async function runOCR(canvas, originalCanvas = null) {
   try {
     // Show loading state
     document.getElementById("ocrSpinner").style.display = 'block';
@@ -1662,23 +1765,31 @@ async function runOCR(canvas) {
     }
     const ocrLanguage = ocrLanguageMap[selectedLanguage] || 'eng'
 
-    // Use Tesseract with optimized settings for ingredient labels
-    const { data } = await Tesseract.recognize(canvas, ocrLanguage, {
-      logger: false,
-      tessedit_pageseg_mode: Tesseract.PSM.AUTO_OSD, // Auto orientation and script detection
-      tessedit_ocr_engine_mode: Tesseract.OEM.LSTM_ONLY,
-    });
+    const candidates = [
+      { canvas, pageSegMode: Tesseract.PSM.SPARSE_TEXT }
+    ]
 
-    let text = data.text;
-    console.log("Raw OCR text:", text);
+    if (originalCanvas) {
+      candidates.push({ canvas: originalCanvas, pageSegMode: Tesseract.PSM.SPARSE_TEXT })
+    }
 
-    // Enhanced processing for complex ingredient lists
-    const processedText = processExtractedTextAdvanced(text);
+    let bestCandidate = null
+    for (const candidate of candidates) {
+      const result = await recognizeOCRCandidate(candidate.canvas, ocrLanguage, candidate.pageSegMode)
+      console.log("Raw OCR text:", result.rawText)
 
-    // Validate the result with more sophisticated checks
-    const validation = validateIngredientListAdvanced(processedText);
+      if (!bestCandidate || result.score > bestCandidate.score) {
+        bestCandidate = result
+      }
 
-    const parsedIngredients = extractIngredients(processedText).filter(isLikelyIngredientText)
+      if (result.validation.isValid && result.parsedIngredients.length >= 3) {
+        break
+      }
+    }
+
+    const processedText = bestCandidate?.processedText || ''
+    const validation = bestCandidate?.validation || { isValid: false, message: "No text detected. Try a clearer image.", confidence: 0 }
+    const parsedIngredients = bestCandidate?.parsedIngredients || []
 
     if (!validation.isValid && !parsedIngredients.length) {
       document.getElementById("ocrResult").innerText = `❌ ${validation.message}\n\nTry:\n• Better image quality\n• Closer zoom on ingredients\n• Straight, flat surface\n• Good lighting`;
@@ -1801,7 +1912,9 @@ function isNonIngredientLine(line) {
   if (lower.includes('distributed by') || lower.includes('manufactured by') ||
       lower.includes('product of') || lower.includes('best by') ||
       lower.includes('use by') || lower.includes('keep refrigerated') ||
-      lower.includes('net wt') ||
+      lower.includes('net wt') || lower.includes('made in ') ||
+      lower.includes('shake well before use') || lower.includes('for external use only') ||
+      lower.includes('www.') || /\bspf\s*\d+/i.test(lower) ||
       lower.match(/^(?:contains|may contain|allergen)\b/) ||
       lower.includes('allergen') || lower.match(/^\d+%$/)) {
     return true;
@@ -1835,6 +1948,7 @@ function cleanIngredientLine(line) {
     .replace(/^\d+\.?\s*/, '') // Remove leading numbers (1. Water, etc.)
     .replace(/\d+g|\d+mg|\d+kg|\d+ml|\d+l|\d+oz|\d+lb/g, '') // Remove measurements
     .replace(/%\s*/g, '') // Remove percentages
+    .replace(/[\/+]/g, ' ') // Preserve separated ingredient words instead of merging them
     .replace(/[^\p{L}\p{N}\s,.;()\-]/gu, '') // Remove special chars except common separators
     .replace(/\s+/g, ' ') // Single spaces
     .trim();
@@ -2200,6 +2314,8 @@ async function handleFileUpload(event) {
     // Draw image to canvas
     ctx.drawImage(img, 0, 0, width, height)
 
+    const originalCanvas = cloneCanvas(canvas)
+
     // Clean up object URL
     URL.revokeObjectURL(img.src)
 
@@ -2207,7 +2323,7 @@ async function handleFileUpload(event) {
     preprocessImageForOCR(canvas)
 
     // Run OCR
-    await runOCR(canvas)
+    await runOCR(canvas, originalCanvas)
 
   } catch (err) {
     console.error("Upload error:", err)
