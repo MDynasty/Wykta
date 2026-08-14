@@ -1,54 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <title>Wykta – Smart Diet Ingredient Analyzer</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Redirecting to Wykta</title>
-  <meta name="robots" content="noindex">
-  <link rel="canonical" href="https://wykta.pages.dev/?lang=en">
-  <style>
-    :root {
-      color-scheme: light dark;
-      font-family: Arial, sans-serif;
-    }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: grid;
-      place-items: center;
-      padding: 24px;
-      background: #0f172a;
-      color: #f8fafc;
-      text-align: center;
-    }
-
-    main {
-      max-width: 420px;
-    }
-
-    a {
-      color: #38bdf8;
-    }
-  </style>
+  <meta name="description" content="Analyze diet ingredients with AI. Get detailed nutritional analysis in multiple languages.">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main>
-    <h1>Redirecting to Wykta</h1>
-    <p>If you are not redirected automatically, <a id="redirectLink" href="https://wykta.pages.dev/?lang=en">open wykta.pages.dev</a>.</p>
-    <noscript>
-      <p>JavaScript is required to preserve the full URL during redirect.</p>
-    </noscript>
-  </main>
-  <script>
-    const target = new URL('https://wykta.pages.dev/?lang=en')
-    target.pathname = window.location.pathname
-    target.search = window.location.search
-    target.hash = window.location.hash
 
-    const destination = target.toString()
-    document.getElementById('redirectLink').href = destination
-    window.location.replace(destination)
-  </script>
+<body>
+  <div class="ambient-glow"></div>
+  <div class="app">
+    <header class="hero">
+      <div class="hero-topline">
+        <span class="tagline">Cloud Nutrition Intelligence</span>
+        <span id="cloudStatusBadge" class="status-chip">Cloud status checking...</span>
+      </div>
+      <h1>Wykta</h1>
+      <p class="subtitle">Scan ingredients, detect nutrition risks, and get multilingual AI analysis powered by your live cloud backend.</p>
+      <div class="badge-group">
+        <span class="badge free">Free Tier</span>
+        <span class="badge premium premium-badge" onclick="upgradeToPremium()">Premium Available</span>
+      </div>
+      <p id="cloudStatusText" class="cloud-status-text">Waiting for cloud configuration check...</p>
+    </header>
+
+    <section class="stats-row" aria-label="Product Highlights">
+      <article class="stat-card">
+        <h3>Real-time AI</h3>
+        <p>Cloud function analysis with language-aware responses.</p>
+      </article>
+      <article class="stat-card">
+        <h3>Smart OCR</h3>
+        <p>Scan labels from camera or upload with image preprocessing.</p>
+      </article>
+      <article class="stat-card">
+        <h3>Diet Safety</h3>
+        <p>Highlights ingredient interactions and known warning patterns.</p>
+      </article>
+    </section>
+
+    <!-- Step 1: Choose how to get ingredients -->
+    <section class="section-card scan-input-card">
+      <div class="section-header">
+        <h2>Step 1 – Scan or Upload a Label</h2>
+        <p class="section-description">Use your camera, upload a photo, or scan a barcode to extract ingredients automatically.</p>
+      </div>
+
+      <div class="scan-actions" aria-label="Scan input methods">
+        <button onclick="startScan()" id="cameraBtn" class="secondary-btn scan-btn">📷 Open Camera</button>
+        <label for="imageUpload" class="upload-button scan-btn" aria-label="Upload Image"><span aria-hidden="true">⬆</span> Upload Image</label>
+        <button onclick="captureLabel()" id="captureBtn" class="secondary-btn scan-btn" style="display: none;">📸 Capture Label</button>
+        <button onclick="scanBarcode()" id="barcodeBtn" class="secondary-btn scan-btn">&#9643; Scan Barcode</button>
+      </div>
+      <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+
+      <!-- Camera preview – hidden until Open Camera is clicked -->
+      <div id="cameraWrapper" class="camera-preview-wrapper" style="display: none;">
+        <video id="camera" autoplay muted playsinline></video>
+        <div class="capture-actions">
+          <button onclick="capture()" class="secondary-btn">📸 Capture &amp; Analyze</button>
+          <button onclick="retryScan()" id="retryBtn" class="secondary-btn" style="display: none;">↺ Try Again</button>
+        </div>
+        <canvas id="snapshot" style="display: none;"></canvas>
+      </div>
+
+      <div id="ocrSpinner" class="spinner" style="display: none;"></div>
+      <div id="ocrResult" class="ocr-result ocr-placeholder">Scan results will appear here after you open the camera, upload an image, or scan a barcode.</div>
+
+      <div id="cameraNote" class="camera-note">Free starter scans/uploads remaining will appear here.</div>
+    </section>
+
+    <!-- Step 2: Review & Analyze -->
+    <section class="section-card analyze-card">
+      <div class="section-header">
+        <h2>Step 2 – Review &amp; Analyze</h2>
+        <p class="section-description">Review the extracted ingredients (or paste them manually), choose your language, then analyze.</p>
+      </div>
+
+      <div class="section">
+        <label for="language">Analysis Language</label>
+        <select id="language">
+          <option value="en">English</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="zh">中文</option>
+        </select>
+      </div>
+
+      <div class="section">
+        <label for="ingredients">Ingredient List</label>
+        <textarea id="ingredients" placeholder="Paste ingredients from food or skincare labels, e.g. Water, Sugar, Salt, Palm Oil…" rows="6"></textarea>
+      </div>
+
+      <div class="button-row">
+        <button onclick="analyzeIngredients()" id="analyzeBtn" class="primary-btn">✨ Analyze Ingredients</button>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section class="dashboard-grid">
+      <div class="section-card">
+        <div class="section-header">
+          <h2>AI Analysis Results</h2>
+          <p class="section-description">Cloud-generated insights for ingredient safety, additives, and warnings.</p>
+        </div>
+        <div id="ingredientResult" class="result-panel">
+          <div class="placeholder-block">
+            <div class="placeholder-icon">AI</div>
+            <p>Run an analysis to view results here.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-header">
+          <h2>Nutritional Interactions</h2>
+          <p class="section-description">Potential conflicts and caution signals based on ingredient combinations.</p>
+        </div>
+        <div id="interactionWarnings" class="result-panel">
+          <div class="placeholder-block">
+            <div class="placeholder-icon">Alert</div>
+            <p>No obvious nutritional conflicts detected.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="upgradeCard" class="upgrade-card section-card">
+      <h3>Upgrade to Premium</h3>
+      <p>Get unlimited scans, faster OCR, and priority insights for smarter nutrition decisions.</p>
+      <div class="upgrade-tags">
+        <span>Unlimited Scans</span>
+        <span>Advanced AI</span>
+        <span>Priority Support</span>
+      </div>
+      <button onclick="upgradeToPremium()" class="primary-btn upgrade-btn">Upgrade Now – $4.99/month</button>
+    </section>
+  </div>
+
+  <footer>
+    <p>Powered by cloud AI for practical nutrition decisions.</p>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
