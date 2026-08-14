@@ -1353,7 +1353,7 @@ async function analyzeIngredients(){
     const text = ingredientsField.value || ''
     const ingredients = extractIngredients(text).filter(isLikelyIngredientText)
 
-    if (!text.trim() || !ingredients.length) {
+    if (!text.trim() || (ingredients.length === 0 && text.trim().length < 20)) {
       displayInteractions([])
       displayAIAnalysis("❌ Enter or scan a clear ingredient list first.", [
         "Try typing ingredients manually or use the camera/upload scanner before analyzing."
@@ -1370,7 +1370,9 @@ async function analyzeIngredients(){
     if (analysisMode === 'local') {
       analysisResult = analyzeWithLocalDatabase(ingredients)
     } else {
-      analysisResult = await analyzeWithAI(ingredients)
+      // Pass the raw text so the backend can parse the full ingredient list
+      // without being limited by the frontend's local-database pattern matcher.
+      analysisResult = await analyzeWithAI(text)
     }
 
     await saveResult(text, formatSavedResult(analysisResult, warnings))
